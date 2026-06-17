@@ -122,6 +122,14 @@ export function App() {
     window.history.replaceState(null, "", nextUrl);
   }, [sequencer]);
 
+  useEffect(
+    () => () => {
+      void engineRef.current?.dispose();
+      engineRef.current = null;
+    },
+    [],
+  );
+
   useEffect(() => {
     setMicState((current) => {
       if (current.status !== "captured") {

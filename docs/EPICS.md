@@ -38,7 +38,7 @@ Goal: improve musical quality by isolating the audio engine, then testing
 Tone.js, licensed samples, Meyda feature extraction, and optional offline
 reference analysis.
 
-Tickets: PR-11, PR-12, PR-13, PR-14, PR-15
+Tickets: PR-11, PR-12, PR-13, PR-14, PR-15, PR-21
 
 ## Epic 7 - Code quality and test hygiene
 

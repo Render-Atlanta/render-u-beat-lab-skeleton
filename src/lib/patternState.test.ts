@@ -8,15 +8,14 @@ import {
   togglePatternStep,
   writeSequencerStateToParams,
 } from "./patternState";
+import { GOLDEN_BEAT_STYLE_FIXTURES } from "../test/beatStyleFixtures";
 
 describe("pattern state helpers", () => {
   it("serializes and deserializes a 4-lane pattern", () => {
     const pattern = BEAT_STYLES.trap.pattern;
     const serialized = serializePattern(pattern);
 
-    expect(serialized).toBe(
-      "1001001000100010.0000000010000000.1010101011111011.0000010000000100",
-    );
+    expect(serialized).toBe(GOLDEN_BEAT_STYLE_FIXTURES.trap.serializedPattern);
     expect(deserializePattern(serialized)).toEqual(pattern);
   });
 

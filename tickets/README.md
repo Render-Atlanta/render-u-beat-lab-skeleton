@@ -33,3 +33,4 @@ Suggested sequence for fastest testable prototypes:
 | [PR-18](PR-18-audio-contract-tests.md) | Audio contract tests | Quality | PR-11 |
 | [PR-19](PR-19-code-size-and-module-hygiene.md) | Code size and module hygiene | Quality | PR-16, PR-17 |
 | [PR-20](PR-20-test-fixtures-and-golden-patterns.md) | Test fixtures and golden patterns | Quality | PR-03, PR-06 |
+| [PR-21](PR-21-open-licensed-reference-examples.md) | Open-licensed reference examples | Content | PR-13, PR-15 |
