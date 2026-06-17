@@ -1,5 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createBeatEngine, type BeatEngine } from "./audio/beatEngine";
+import {
+  createBeatLabProject,
+  createDefaultArrangement,
+  createUnsupportedWavExportResult,
+  exportProjectJson,
+  isLaneMutedInSection,
+  toggleSectionLaneMute,
+  type Arrangement,
+} from "./lib/arrangement";
 import { BEAT_STYLES, type BeatStyle, type BeatStyleId } from "./lib/beatStyles";
 import {
   getInstrumentCoach,
@@ -12,6 +21,10 @@ import {
   type MicCaptureError,
   type MicCaptureResult,
 } from "./lib/micCapture";
+import {
+  createOnsetPreview,
+  type OnsetPreview,
+} from "./lib/onsetDetection";
 import {
   createDefaultSequencerState,
   readSequencerStateFromParams,
@@ -33,6 +46,8 @@ const INSTRUMENTS: Array<{ id: InstrumentId; label: string }> = [
   { id: "openHat", label: "Open" },
 ];
 
+const BEATS_PER_LOOP = 4;
+
 export function App() {
   const [sequencer, setSequencer] = useState<SequencerState>(() =>
     readSequencerStateFromParams(new URLSearchParams(window.location.search)),
@@ -44,10 +59,16 @@ export function App() {
     useState<ProducerTagTrigger>("manual");
   const [producerTagRate, setProducerTagRate] = useState(0.86);
   const [producerTagPitch, setProducerTagPitch] = useState(0.72);
+  const [arrangement, setArrangement] = useState<Arrangement>(() =>
+    createDefaultArrangement(),
+  );
+  const [captureSensitivity, setCaptureSensitivity] = useState(0.55);
+  const [projectJson, setProjectJson] = useState("");
+  const [exportMessage, setExportMessage] = useState("");
   const [micState, setMicState] = useState<
     | { status: "idle" }
     | { status: "recording" }
-    | { status: "captured"; result: MicCaptureResult }
+    | { status: "captured"; result: MicCaptureResult; preview: OnsetPreview }
     | { status: "error"; message: string }
   >({ status: "idle" });
   const engineRef = useRef<BeatEngine | null>(null);
@@ -79,6 +100,10 @@ export function App() {
     () => countActiveSteps(sequencer.pattern),
     [sequencer.pattern],
   );
+  const captureLoopDurationMs = useMemo(
+    () => getSequencerLoopDurationMs(sequencer.bpm),
+    [sequencer.bpm],
+  );
   const playableStyle = useMemo<BeatStyle>(
     () => ({
       ...baseStyle,
@@ -94,6 +119,23 @@ export function App() {
     const nextUrl = `${window.location.pathname}?${params.toString()}`;
     window.history.replaceState(null, "", nextUrl);
   }, [sequencer]);
+
+  useEffect(() => {
+    setMicState((current) => {
+      if (current.status !== "captured") {
+        return current;
+      }
+
+      return {
+        ...current,
+        preview: createCaptureOnsetPreview(
+          current.result,
+          captureSensitivity,
+          captureLoopDurationMs,
+        ),
+      };
+    });
+  }, [captureLoopDurationMs, captureSensitivity]);
 
   async function getEngine() {
     if (!engineRef.current) {
@@ -181,13 +223,47 @@ export function App() {
 
     try {
       const result = await captureMicrophoneSample();
-      setMicState({ status: "captured", result });
+      const preview = createCaptureOnsetPreview(
+        result,
+        captureSensitivity,
+        captureLoopDurationMs,
+      );
+      setMicState({ status: "captured", result, preview });
     } catch (error) {
       setMicState({
         status: "error",
         message: getMicCaptureErrorMessage(error),
       });
     }
+  }
+
+  function applyCapturedGridToHats() {
+    if (micState.status !== "captured") {
+      return;
+    }
+
+    applySequencerState({
+      ...sequencer,
+      pattern: {
+        ...sequencer.pattern,
+        hat: micState.preview.cleanedGrid,
+      },
+    });
+  }
+
+  function exportProject() {
+    const project = createBeatLabProject({
+      sequencer,
+      producerTag: producerTagConfig,
+      arrangement,
+    });
+    setProjectJson(exportProjectJson(project));
+    setExportMessage("Project JSON is ready.");
+  }
+
+  function showWavStretchMessage() {
+    const result = createUnsupportedWavExportResult();
+    setExportMessage(result.message);
   }
 
   return (
@@ -388,9 +464,79 @@ export function App() {
               />
             </label>
           </div>
+          <div className="arrangement-panel">
+            <p className="eyebrow">Arrangement</p>
+            <div className="arrangement-grid">
+              {arrangement.sections.map((section) => (
+                <div className="arrangement-section" key={section.id}>
+                  <strong>{section.label}</strong>
+                  <span>{section.bars} bar</span>
+                  <div className="lane-mutes" aria-label={`${section.label} lane mutes`}>
+                    {INSTRUMENTS.map((instrument) => (
+                      <button
+                        className={`lane-mute ${
+                          isLaneMutedInSection(arrangement, section.id, instrument.id)
+                            ? "muted"
+                            : ""
+                        }`}
+                        key={`${section.id}-${instrument.id}`}
+                        type="button"
+                        aria-pressed={isLaneMutedInSection(
+                          arrangement,
+                          section.id,
+                          instrument.id,
+                        )}
+                        onClick={() =>
+                          setArrangement((current) =>
+                            toggleSectionLaneMute(current, section.id, instrument.id),
+                          )
+                        }
+                      >
+                        {instrument.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="export-actions">
+              <button className="button secondary compact" type="button" onClick={exportProject}>
+                Export JSON
+              </button>
+              <button
+                className="button secondary compact"
+                type="button"
+                onClick={showWavStretchMessage}
+              >
+                WAV
+              </button>
+            </div>
+            {exportMessage ? <p className="status-copy">{exportMessage}</p> : null}
+            {projectJson ? (
+              <textarea
+                className="project-json"
+                readOnly
+                value={projectJson}
+                aria-label="Exported project JSON"
+              />
+            ) : null}
+          </div>
           <div className="capture-panel">
             <p className="eyebrow">Tap capture</p>
             <p>{getMicStateCopy(micState)}</p>
+            <label className="control-field">
+              <span className="eyebrow">
+                Sensitivity {Math.round(captureSensitivity * 100)}%
+              </span>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={captureSensitivity}
+                onChange={(event) => setCaptureSensitivity(Number(event.target.value))}
+              />
+            </label>
             <button
               className="button secondary compact"
               type="button"
@@ -400,20 +546,53 @@ export function App() {
               {micState.status === "recording" ? "Recording" : "Record 4s"}
             </button>
             {micState.status === "captured" ? (
-              <div className="waveform-preview" aria-label="Captured waveform preview">
-                {micState.result.waveform.slice(0, 32).map((level, index) => (
-                  <span
-                    key={index}
-                    style={{ height: `${Math.max(8, Math.round(level * 42))}px` }}
-                  />
-                ))}
-              </div>
+              <>
+                <div className="waveform-preview" aria-label="Captured waveform preview">
+                  {micState.result.waveform.slice(0, 32).map((level, index) => (
+                    <span
+                      key={index}
+                      style={{ height: `${Math.max(8, Math.round(level * 42))}px` }}
+                    />
+                  ))}
+                </div>
+                <div className="capture-grid" aria-label="Quantized capture preview">
+                  {micState.preview.cleanedGrid.map((hit, index) => (
+                    <span className={hit ? "hit" : ""} key={index} />
+                  ))}
+                </div>
+                <button
+                  className="button secondary compact"
+                  type="button"
+                  onClick={applyCapturedGridToHats}
+                >
+                  Send to hats
+                </button>
+              </>
             ) : null}
           </div>
         </aside>
       </section>
     </main>
   );
+}
+
+function getSequencerLoopDurationMs(bpm: number): number {
+  return (60_000 / bpm) * BEATS_PER_LOOP;
+}
+
+function createCaptureOnsetPreview(
+  result: MicCaptureResult,
+  sensitivity: number,
+  quantizationDurationMs: number,
+): OnsetPreview {
+  return createOnsetPreview({
+    levels: result.levels,
+    waveform: result.waveform,
+    durationMs: result.durationMs,
+    quantizationDurationMs,
+    sensitivity,
+    levelSource: "mixed",
+  });
 }
 
 function getMicCaptureErrorMessage(error: unknown): string {
@@ -437,7 +616,7 @@ function getMicStateCopy(
   micState:
     | { status: "idle" }
     | { status: "recording" }
-    | { status: "captured"; result: MicCaptureResult }
+    | { status: "captured"; result: MicCaptureResult; preview: OnsetPreview }
     | { status: "error"; message: string },
 ): string {
   if (micState.status === "recording") {
@@ -445,7 +624,7 @@ function getMicStateCopy(
   }
 
   if (micState.status === "captured") {
-    return `Captured ${micState.result.levels.length} level frames in memory.`;
+    return `Detected ${micState.preview.cleanedHits.length} cleaned hits from ${micState.preview.rawHits.length} raw hits.`;
   }
 
   if (micState.status === "error") {

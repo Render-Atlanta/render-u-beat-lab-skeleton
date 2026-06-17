@@ -385,6 +385,7 @@ button:disabled {
 
 .coach-panel > p,
 .capture-panel,
+.arrangement-panel,
 .coach-block,
 .instrument-list,
 .tag-controls,
@@ -397,6 +398,7 @@ button:disabled {
 }
 
 .coach-block,
+.arrangement-panel,
 .capture-panel,
 .instrument-list,
 .tag-controls,
@@ -459,6 +461,90 @@ button:disabled {
   gap: 12px;
 }
 
+.arrangement-panel {
+  gap: 12px;
+}
+
+.arrangement-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.arrangement-section {
+  background: hsl(var(--bg));
+  border: 1px solid hsl(var(--border));
+  border-radius: 6px;
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+}
+
+.arrangement-section strong {
+  color: hsl(var(--ink));
+  font-size: 0.82rem;
+  text-transform: uppercase;
+}
+
+.arrangement-section > span {
+  font-family:
+    JetBrains Mono,
+    ui-monospace,
+    monospace;
+  font-size: 0.74rem;
+  text-transform: uppercase;
+}
+
+.lane-mutes {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.lane-mute {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: 4px;
+  color: hsl(var(--ink));
+  font-size: 0.68rem;
+  font-weight: 900;
+  min-height: 30px;
+  text-transform: uppercase;
+}
+
+.lane-mute.muted {
+  background: hsl(var(--ink));
+  border-color: hsl(var(--ink));
+  color: hsl(var(--bg));
+}
+
+.export-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.status-copy {
+  color: hsl(var(--ink));
+  font-size: 0.86rem;
+  margin: 0;
+}
+
+.project-json {
+  background: hsl(var(--bg));
+  border: 1px solid hsl(var(--border));
+  border-radius: 6px;
+  color: hsl(var(--ink));
+  font-family:
+    JetBrains Mono,
+    ui-monospace,
+    monospace;
+  font-size: 0.72rem;
+  min-height: 120px;
+  padding: 10px;
+  resize: vertical;
+  width: 100%;
+}
+
 .waveform-preview {
   align-items: end;
   background: hsl(var(--bg));
@@ -475,6 +561,25 @@ button:disabled {
   background: hsl(var(--accent));
   border-radius: 2px 2px 0 0;
   min-height: 8px;
+}
+
+.capture-grid {
+  display: grid;
+  gap: 4px;
+  grid-template-columns: repeat(16, minmax(0, 1fr));
+}
+
+.capture-grid span {
+  aspect-ratio: 1;
+  background: hsl(var(--bg));
+  border: 1px solid hsl(var(--border));
+  border-radius: 3px;
+}
+
+.capture-grid span.hit {
+  background: hsl(var(--ink));
+  border-color: hsl(var(--ink));
+  box-shadow: inset 0 0 0 3px hsl(var(--accent));
 }
 
 @media (max-width: 980px) {
