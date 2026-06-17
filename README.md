@@ -51,6 +51,32 @@ npm run dev
 npm test
 ```
 
+## Deploy to Render
+
+This repo is configured as a Render Static Site through [`render.yaml`](render.yaml):
+
+- build command: `npm ci && npm run build`
+- publish directory: `./dist`
+
+Before deploy, run:
+
+```bash
+npm test
+npm run build
+```
+
+Then create the service from the Render Dashboard:
+
+1. New > Blueprint.
+2. Connect `William-Hill/render-u-beat-lab`.
+3. Confirm the `render-u-beat-lab` static service from `render.yaml`.
+4. Deploy from `main`.
+
+The hosted app must run on HTTPS for future microphone capture work. Render
+provides HTTPS on the `onrender.com` URL and managed TLS for custom domains.
+
+See [docs/DEPLOY_RENDER.md](docs/DEPLOY_RENDER.md) for the workshop runbook.
+
 ## Design system notes
 
 This skeleton borrows the RenderATL demo design language:
