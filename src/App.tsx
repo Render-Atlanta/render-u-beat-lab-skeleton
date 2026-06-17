@@ -2,6 +2,17 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createBeatEngine, type BeatEngine } from "./audio/beatEngine";
 import { BEAT_STYLES, type BeatStyle, type BeatStyleId } from "./lib/beatStyles";
 import {
+  getInstrumentCoach,
+  getStyleCoach,
+  summarizePatternChange,
+} from "./lib/beatCoach";
+import {
+  captureMicrophoneSample,
+  getMicCaptureSupport,
+  type MicCaptureError,
+  type MicCaptureResult,
+} from "./lib/micCapture";
+import {
   createDefaultSequencerState,
   readSequencerStateFromParams,
   togglePatternStep,
@@ -9,6 +20,11 @@ import {
   type SequencerState,
 } from "./lib/patternState";
 import { countActiveSteps, type InstrumentId } from "./lib/patterns";
+import {
+  DEFAULT_PRODUCER_TAG_TEXT,
+  normalizeProducerTagConfig,
+  type ProducerTagTrigger,
+} from "./lib/producerTag";
 
 const INSTRUMENTS: Array<{ id: InstrumentId; label: string }> = [
   { id: "kick", label: "Kick" },
@@ -22,10 +38,43 @@ export function App() {
     readSequencerStateFromParams(new URLSearchParams(window.location.search)),
   );
   const [isPlaying, setIsPlaying] = useState(false);
-  const [producerTag, setProducerTag] = useState("Render U made this");
+  const [producerTagText, setProducerTagText] = useState(DEFAULT_PRODUCER_TAG_TEXT);
+  const [producerTagEnabled, setProducerTagEnabled] = useState(true);
+  const [producerTagTrigger, setProducerTagTrigger] =
+    useState<ProducerTagTrigger>("manual");
+  const [producerTagRate, setProducerTagRate] = useState(0.86);
+  const [producerTagPitch, setProducerTagPitch] = useState(0.72);
+  const [micState, setMicState] = useState<
+    | { status: "idle" }
+    | { status: "recording" }
+    | { status: "captured"; result: MicCaptureResult }
+    | { status: "error"; message: string }
+  >({ status: "idle" });
   const engineRef = useRef<BeatEngine | null>(null);
 
   const baseStyle = BEAT_STYLES[sequencer.styleId];
+  const styleCoach = useMemo(
+    () => getStyleCoach(sequencer.styleId),
+    [sequencer.styleId],
+  );
+  const patternSummary = useMemo(
+    () => summarizePatternChange(sequencer.styleId, sequencer.pattern),
+    [sequencer.pattern, sequencer.styleId],
+  );
+  const producerTagConfig = useMemo(
+    () =>
+      normalizeProducerTagConfig({
+        enabled: producerTagEnabled,
+        text: producerTagText,
+        trigger: producerTagTrigger,
+        effects: {
+          rate: producerTagRate,
+          pitch: producerTagPitch,
+        },
+      }),
+    [producerTagEnabled, producerTagPitch, producerTagRate, producerTagText, producerTagTrigger],
+  );
+  const micSupport = useMemo(() => getMicCaptureSupport(), []);
   const activeSteps = useMemo(
     () => countActiveSteps(sequencer.pattern),
     [sequencer.pattern],
@@ -64,11 +113,19 @@ export function App() {
 
     engine.start(playableStyle);
     setIsPlaying(true);
+
+    if (producerTagConfig.enabled && producerTagConfig.trigger === "intro") {
+      engine.playProducerTag(producerTagConfig);
+    }
   }
 
   async function playProducerTag() {
+    if (!producerTagConfig.enabled) {
+      return;
+    }
+
     const engine = await getEngine();
-    engine.playProducerTag(producerTag);
+    engine.playProducerTag(producerTagConfig);
   }
 
   function applySequencerState(next: SequencerState) {
@@ -112,6 +169,25 @@ export function App() {
       ...sequencer,
       pattern: togglePatternStep(sequencer.pattern, instrument, stepIndex),
     });
+  }
+
+  async function captureMicSample() {
+    if (!micSupport.supported) {
+      setMicState({ status: "error", message: micSupport.message });
+      return;
+    }
+
+    setMicState({ status: "recording" });
+
+    try {
+      const result = await captureMicrophoneSample();
+      setMicState({ status: "captured", result });
+    } catch (error) {
+      setMicState({
+        status: "error",
+        message: getMicCaptureErrorMessage(error),
+      });
+    }
   }
 
   return (
@@ -167,6 +243,7 @@ export function App() {
                 <span className="style-meta">
                   {beatStyle.bpm} BPM · swing {Math.round(beatStyle.swing * 100)}%
                 </span>
+                <span className="style-note">{getStyleCoach(beatStyle.id).feelNote}</span>
               </button>
             ))}
           </div>
@@ -236,23 +313,144 @@ export function App() {
         <aside className="panel coach-panel">
           <div className="panel-header">
             <p className="eyebrow">Beat coach</p>
-            <h2 className="heading">Why this works</h2>
+            <h2 className="heading">{styleCoach.concept}</h2>
           </div>
           <p>{baseStyle.lesson}</p>
+          <div className="coach-block">
+            <p className="eyebrow">Pattern read</p>
+            <p>{patternSummary.densitySummary}</p>
+            <p>{patternSummary.pocketSummary}</p>
+          </div>
+          <div className="coach-block">
+            <p className="eyebrow">Try this</p>
+            <p>{patternSummary.tryThis}</p>
+          </div>
+          <div className="instrument-list">
+            {INSTRUMENTS.map((instrument) => {
+              const coach = getInstrumentCoach(instrument.id);
+              return (
+                <div className="instrument-card" key={instrument.id}>
+                  <strong>{coach.label}</strong>
+                  <span>{coach.role}</span>
+                </div>
+              );
+            })}
+          </div>
           <label className="tag-field">
             <span className="eyebrow">Producer tag</span>
             <input
-              value={producerTag}
-              onChange={(event) => setProducerTag(event.target.value)}
+              value={producerTagText}
+              onChange={(event) => setProducerTagText(event.target.value)}
               maxLength={48}
             />
           </label>
-          <div className="capture-placeholder">
-            <p className="eyebrow">Next prototype</p>
-            <p>Record beatbox or table taps, detect hits, quantize to this grid.</p>
+          <div className="tag-controls">
+            <label className="check-row">
+              <input
+                type="checkbox"
+                checked={producerTagEnabled}
+                onChange={(event) => setProducerTagEnabled(event.target.checked)}
+              />
+              <span>Tag on</span>
+            </label>
+            <label className="control-field">
+              <span className="eyebrow">Trigger</span>
+              <select
+                value={producerTagTrigger}
+                onChange={(event) =>
+                  setProducerTagTrigger(event.target.value as ProducerTagTrigger)
+                }
+              >
+                <option value="manual">Manual</option>
+                <option value="intro">Intro</option>
+              </select>
+            </label>
+            <label className="control-field">
+              <span className="eyebrow">Rate {producerTagConfig.effects.rate.toFixed(2)}</span>
+              <input
+                type="range"
+                min="0.5"
+                max="1.5"
+                step="0.01"
+                value={producerTagRate}
+                onChange={(event) => setProducerTagRate(Number(event.target.value))}
+              />
+            </label>
+            <label className="control-field">
+              <span className="eyebrow">Pitch {producerTagConfig.effects.pitch.toFixed(2)}</span>
+              <input
+                type="range"
+                min="0"
+                max="2"
+                step="0.01"
+                value={producerTagPitch}
+                onChange={(event) => setProducerTagPitch(Number(event.target.value))}
+              />
+            </label>
+          </div>
+          <div className="capture-panel">
+            <p className="eyebrow">Tap capture</p>
+            <p>{getMicStateCopy(micState)}</p>
+            <button
+              className="button secondary compact"
+              type="button"
+              onClick={captureMicSample}
+              disabled={micState.status === "recording"}
+            >
+              {micState.status === "recording" ? "Recording" : "Record 4s"}
+            </button>
+            {micState.status === "captured" ? (
+              <div className="waveform-preview" aria-label="Captured waveform preview">
+                {micState.result.waveform.slice(0, 32).map((level, index) => (
+                  <span
+                    key={index}
+                    style={{ height: `${Math.max(8, Math.round(level * 42))}px` }}
+                  />
+                ))}
+              </div>
+            ) : null}
           </div>
         </aside>
       </section>
     </main>
   );
+}
+
+function getMicCaptureErrorMessage(error: unknown): string {
+  const captureError = error as Partial<MicCaptureError>;
+
+  switch (captureError.code) {
+    case "permission-denied":
+      return "Microphone permission was denied. Manual beat-making still works.";
+    case "no-device":
+      return "No microphone was found. Plug one in or keep using the grid.";
+    case "unsupported":
+      return "This browser cannot capture microphone audio here.";
+    case "capture-failed":
+      return "The microphone could not be read. Another app may be using it.";
+    default:
+      return "Microphone capture failed, but the sequencer is still ready.";
+  }
+}
+
+function getMicStateCopy(
+  micState:
+    | { status: "idle" }
+    | { status: "recording" }
+    | { status: "captured"; result: MicCaptureResult }
+    | { status: "error"; message: string },
+): string {
+  if (micState.status === "recording") {
+    return "Listening for table taps or beatboxing. Keep it short and percussive.";
+  }
+
+  if (micState.status === "captured") {
+    return `Captured ${micState.result.levels.length} level frames in memory.`;
+  }
+
+  if (micState.status === "error") {
+    return micState.message;
+  }
+
+  return "Record a short rhythm. Nothing uploads; the sample stays in this tab.";
 }

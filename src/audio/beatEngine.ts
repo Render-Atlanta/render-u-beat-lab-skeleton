@@ -1,11 +1,17 @@
 import type { BeatStyle } from "../lib/beatStyles";
 import type { InstrumentId } from "../lib/patterns";
+import {
+  createProducerTagPlaybackPlan,
+  createProducerTagUtterance,
+  getBrowserProducerTagRuntime,
+  type ProducerTagConfigInput,
+} from "../lib/producerTag";
 
 export interface BeatEngine {
   ready(): Promise<void>;
   start(style: BeatStyle): void;
   stop(): void;
-  playProducerTag(text: string): void;
+  playProducerTag(input: ProducerTagConfigInput | string): void;
 }
 
 type DrumVoice = (time: number, accent?: number) => void;
@@ -70,19 +76,34 @@ export function createBeatEngine(): BeatEngine {
     }
   }
 
-  function playProducerTag(text: string) {
-    const phrase = text.trim();
-    if (!phrase || !("speechSynthesis" in window)) {
+  function playProducerTag(input: ProducerTagConfigInput | string) {
+    const runtime = getBrowserProducerTagRuntime();
+    const plan = createProducerTagPlaybackPlan(
+      typeof input === "string" ? { text: input, trigger: "manual" } : input,
+      runtime,
+    );
+
+    if (plan.action === "disabled") {
+      return;
+    }
+
+    if (plan.action === "fallback") {
       playOpenHat(context.currentTime, 1.2);
       return;
     }
 
-    const utterance = new SpeechSynthesisUtterance(phrase);
-    utterance.rate = 0.86;
-    utterance.pitch = 0.72;
-    utterance.volume = 0.9;
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(utterance);
+    const { speechSynthesis, SpeechSynthesisUtterance } = runtime;
+    if (!speechSynthesis || !SpeechSynthesisUtterance) {
+      playOpenHat(context.currentTime, 1.2);
+      return;
+    }
+
+    const utterance = createProducerTagUtterance(
+      plan.config,
+      SpeechSynthesisUtterance,
+    );
+    speechSynthesis.cancel();
+    speechSynthesis.speak(utterance);
   }
 
   function playKick(time: number, accent = 1) {
