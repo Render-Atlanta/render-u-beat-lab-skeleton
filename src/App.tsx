@@ -11,6 +11,13 @@ import {
 } from "./lib/arrangement";
 import { BEAT_STYLES, type BeatStyle, type BeatStyleId } from "./lib/beatStyles";
 import {
+  classifiedHitsToPattern,
+  classifyBeatboxHits,
+  moveBeatboxHitToLane,
+  preserveManualBeatboxCorrections,
+  type BeatboxLaneClassification,
+} from "./lib/beatboxClassifier";
+import {
   getInstrumentCoach,
   getStyleCoach,
   summarizePatternChange,
@@ -68,7 +75,12 @@ export function App() {
   const [micState, setMicState] = useState<
     | { status: "idle" }
     | { status: "recording" }
-    | { status: "captured"; result: MicCaptureResult; preview: OnsetPreview }
+    | {
+        status: "captured";
+        result: MicCaptureResult;
+        preview: OnsetPreview;
+        classifications: BeatboxLaneClassification[];
+      }
     | { status: "error"; message: string }
   >({ status: "idle" });
   const engineRef = useRef<BeatEngine | null>(null);
@@ -126,12 +138,18 @@ export function App() {
         return current;
       }
 
+      const nextAnalysis = createCaptureAnalysis(
+        current.result,
+        captureSensitivity,
+        captureLoopDurationMs,
+      );
+
       return {
         ...current,
-        preview: createCaptureOnsetPreview(
-          current.result,
-          captureSensitivity,
-          captureLoopDurationMs,
+        preview: nextAnalysis.preview,
+        classifications: preserveManualBeatboxCorrections(
+          nextAnalysis.classifications,
+          current.classifications,
         ),
       };
     });
@@ -223,12 +241,8 @@ export function App() {
 
     try {
       const result = await captureMicrophoneSample();
-      const preview = createCaptureOnsetPreview(
-        result,
-        captureSensitivity,
-        captureLoopDurationMs,
-      );
-      setMicState({ status: "captured", result, preview });
+      const analysis = createCaptureAnalysis(result, captureSensitivity, captureLoopDurationMs);
+      setMicState({ status: "captured", result, ...analysis });
     } catch (error) {
       setMicState({
         status: "error",
@@ -237,17 +251,27 @@ export function App() {
     }
   }
 
-  function applyCapturedGridToHats() {
+  function updateCapturedHitLane(hitId: string, instrument: InstrumentId) {
+    setMicState((current) => {
+      if (current.status !== "captured") {
+        return current;
+      }
+
+      return {
+        ...current,
+        classifications: moveBeatboxHitToLane(current.classifications, hitId, instrument),
+      };
+    });
+  }
+
+  function applyClassifiedHitsToPattern() {
     if (micState.status !== "captured") {
       return;
     }
 
     applySequencerState({
       ...sequencer,
-      pattern: {
-        ...sequencer.pattern,
-        hat: micState.preview.cleanedGrid,
-      },
+      pattern: classifiedHitsToPattern(micState.classifications),
     });
   }
 
@@ -560,12 +584,70 @@ export function App() {
                     <span className={hit ? "hit" : ""} key={index} />
                   ))}
                 </div>
+                <div className="classification-grid" aria-label="Classified beatbox lanes">
+                  {INSTRUMENTS.map((instrument) => (
+                    <div className="classification-row" key={instrument.id}>
+                      <span>{instrument.label}</span>
+                      {Array.from({ length: 16 }, (_, stepIndex) => {
+                        const hit = micState.classifications.find(
+                          (classification) =>
+                            classification.instrument === instrument.id &&
+                            classification.stepIndex === stepIndex,
+                        );
+
+                        return (
+                          <span
+                            className={hit ? `hit ${hit.needsCorrection ? "check" : ""}` : ""}
+                            key={`${instrument.id}-${stepIndex}`}
+                            title={
+                              hit
+                                ? `${instrument.label} step ${stepIndex + 1}, ${Math.round(
+                                    hit.confidence * 100,
+                                  )}%`
+                                : undefined
+                            }
+                          />
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
+                <div className="classification-list" aria-label="Beatbox hit lane corrections">
+                  {micState.classifications.map((classification) => (
+                    <label className="classification-item" key={classification.id}>
+                      <span>
+                        Step {classification.stepNumber}
+                        <small>
+                          {Math.round(classification.confidence * 100)}%
+                          {classification.needsCorrection ? " check" : ""}
+                          {classification.source === "manual" ? " fixed" : ""}
+                        </small>
+                      </span>
+                      <select
+                        value={classification.instrument}
+                        aria-label={`Lane for captured hit on step ${classification.stepNumber}`}
+                        onChange={(event) =>
+                          updateCapturedHitLane(
+                            classification.id,
+                            event.target.value as InstrumentId,
+                          )
+                        }
+                      >
+                        {INSTRUMENTS.map((instrument) => (
+                          <option key={instrument.id} value={instrument.id}>
+                            {instrument.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  ))}
+                </div>
                 <button
                   className="button secondary compact"
                   type="button"
-                  onClick={applyCapturedGridToHats}
+                  onClick={applyClassifiedHitsToPattern}
                 >
-                  Send to hats
+                  Send lanes
                 </button>
               </>
             ) : null}
@@ -595,6 +677,22 @@ function createCaptureOnsetPreview(
   });
 }
 
+function createCaptureAnalysis(
+  result: MicCaptureResult,
+  sensitivity: number,
+  quantizationDurationMs: number,
+): {
+  preview: OnsetPreview;
+  classifications: BeatboxLaneClassification[];
+} {
+  const preview = createCaptureOnsetPreview(result, sensitivity, quantizationDurationMs);
+
+  return {
+    preview,
+    classifications: classifyBeatboxHits(preview, result.levels),
+  };
+}
+
 function getMicCaptureErrorMessage(error: unknown): string {
   const captureError = error as Partial<MicCaptureError>;
 
@@ -616,7 +714,12 @@ function getMicStateCopy(
   micState:
     | { status: "idle" }
     | { status: "recording" }
-    | { status: "captured"; result: MicCaptureResult; preview: OnsetPreview }
+    | {
+        status: "captured";
+        result: MicCaptureResult;
+        preview: OnsetPreview;
+        classifications: BeatboxLaneClassification[];
+      }
     | { status: "error"; message: string },
 ): string {
   if (micState.status === "recording") {
@@ -624,7 +727,10 @@ function getMicStateCopy(
   }
 
   if (micState.status === "captured") {
-    return `Detected ${micState.preview.cleanedHits.length} cleaned hits from ${micState.preview.rawHits.length} raw hits.`;
+    const needsCorrection = micState.classifications.filter(
+      (classification) => classification.needsCorrection,
+    ).length;
+    return `Detected ${micState.preview.cleanedHits.length} cleaned hits from ${micState.preview.rawHits.length} raw hits. ${needsCorrection} need a lane check.`;
   }
 
   if (micState.status === "error") {

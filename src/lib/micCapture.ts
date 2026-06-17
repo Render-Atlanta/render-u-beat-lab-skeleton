@@ -16,6 +16,7 @@ export interface MicLevelFrame {
   atMs: number;
   rms: number;
   peak: number;
+  zeroCrossingRate?: number;
 }
 
 export interface MicCaptureResult {
@@ -230,15 +231,27 @@ export async function captureMicrophoneSample(
 
 export function calculateAudioLevel(samples: ArrayLike<number>): Omit<MicLevelFrame, "atMs"> {
   if (samples.length === 0) {
-    return { rms: 0, peak: 0 };
+    return { rms: 0, peak: 0, zeroCrossingRate: 0 };
   }
 
   let sumSquares = 0;
   let peak = 0;
+  let zeroCrossings = 0;
+  let previousSign = 0;
 
   for (let index = 0; index < samples.length; index += 1) {
     const sample = clampAudioSample(samples[index]);
     const absolute = Math.abs(sample);
+    const sign = sample > 0 ? 1 : sample < 0 ? -1 : previousSign;
+
+    if (index > 0 && sign !== 0 && previousSign !== 0 && sign !== previousSign) {
+      zeroCrossings += 1;
+    }
+
+    if (sign !== 0) {
+      previousSign = sign;
+    }
+
     sumSquares += sample * sample;
     peak = Math.max(peak, absolute);
   }
@@ -246,6 +259,7 @@ export function calculateAudioLevel(samples: ArrayLike<number>): Omit<MicLevelFr
   return {
     rms: roundLevel(Math.sqrt(sumSquares / samples.length)),
     peak: roundLevel(peak),
+    zeroCrossingRate: roundLevel(zeroCrossings / Math.max(1, samples.length - 1)),
   };
 }
 

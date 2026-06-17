@@ -88,6 +88,7 @@ describe("mic capture helpers", () => {
     expect(calculateAudioLevel([0, 0.5, -1, 2, Number.NaN])).toEqual({
       rms: 0.67082,
       peak: 1,
+      zeroCrossingRate: 0.5,
     });
   });
 
