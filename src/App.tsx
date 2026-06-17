@@ -1,6 +1,13 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createBeatEngine, type BeatEngine } from "./audio/beatEngine";
-import { BEAT_STYLES, type BeatStyleId } from "./lib/beatStyles";
+import { BEAT_STYLES, type BeatStyle, type BeatStyleId } from "./lib/beatStyles";
+import {
+  createDefaultSequencerState,
+  readSequencerStateFromParams,
+  togglePatternStep,
+  writeSequencerStateToParams,
+  type SequencerState,
+} from "./lib/patternState";
 import { countActiveSteps, type InstrumentId } from "./lib/patterns";
 
 const INSTRUMENTS: Array<{ id: InstrumentId; label: string }> = [
@@ -11,13 +18,33 @@ const INSTRUMENTS: Array<{ id: InstrumentId; label: string }> = [
 ];
 
 export function App() {
-  const [selectedStyle, setSelectedStyle] = useState<BeatStyleId>("trap");
+  const [sequencer, setSequencer] = useState<SequencerState>(() =>
+    readSequencerStateFromParams(new URLSearchParams(window.location.search)),
+  );
   const [isPlaying, setIsPlaying] = useState(false);
   const [producerTag, setProducerTag] = useState("Render U made this");
   const engineRef = useRef<BeatEngine | null>(null);
 
-  const style = BEAT_STYLES[selectedStyle];
-  const activeSteps = useMemo(() => countActiveSteps(style.pattern), [style]);
+  const baseStyle = BEAT_STYLES[sequencer.styleId];
+  const activeSteps = useMemo(
+    () => countActiveSteps(sequencer.pattern),
+    [sequencer.pattern],
+  );
+  const playableStyle = useMemo<BeatStyle>(
+    () => ({
+      ...baseStyle,
+      bpm: sequencer.bpm,
+      swing: sequencer.swing,
+      pattern: sequencer.pattern,
+    }),
+    [baseStyle, sequencer.bpm, sequencer.pattern, sequencer.swing],
+  );
+
+  useEffect(() => {
+    const params = writeSequencerStateToParams(sequencer);
+    const nextUrl = `${window.location.pathname}?${params.toString()}`;
+    window.history.replaceState(null, "", nextUrl);
+  }, [sequencer]);
 
   async function getEngine() {
     if (!engineRef.current) {
@@ -35,13 +62,56 @@ export function App() {
       return;
     }
 
-    engine.start(style);
+    engine.start(playableStyle);
     setIsPlaying(true);
   }
 
   async function playProducerTag() {
     const engine = await getEngine();
     engine.playProducerTag(producerTag);
+  }
+
+  function applySequencerState(next: SequencerState) {
+    setSequencer(next);
+    if (isPlaying && engineRef.current) {
+      engineRef.current.start({
+        ...BEAT_STYLES[next.styleId],
+        bpm: next.bpm,
+        swing: next.swing,
+        pattern: next.pattern,
+      });
+    }
+  }
+
+  function resetToStyle(styleId = sequencer.styleId) {
+    applySequencerState(createDefaultSequencerState(styleId));
+  }
+
+  function updateBpm(bpm: number) {
+    if (!Number.isFinite(bpm)) {
+      return;
+    }
+
+    applySequencerState({
+      ...sequencer,
+      bpm: Math.max(60, Math.min(180, Math.round(bpm))),
+    });
+  }
+
+  function updateSwing(swingPercent: number) {
+    if (!Number.isFinite(swingPercent)) {
+      return;
+    }
+
+    const clampedSwing = Math.max(0, Math.min(30, Math.round(swingPercent)));
+    applySequencerState({ ...sequencer, swing: clampedSwing / 100 });
+  }
+
+  function toggleStep(instrument: InstrumentId, stepIndex: number) {
+    applySequencerState({
+      ...sequencer,
+      pattern: togglePatternStep(sequencer.pattern, instrument, stepIndex),
+    });
   }
 
   return (
@@ -52,7 +122,7 @@ export function App() {
           Render U Beat Lab
         </a>
         <div className="nav-actions">
-          <span className="eyebrow">Prototype 00</span>
+          <span className="eyebrow">Prototype 01</span>
         </div>
       </nav>
 
@@ -86,14 +156,11 @@ export function App() {
           <div className="style-list">
             {Object.values(BEAT_STYLES).map((beatStyle) => (
               <button
-                className={`style-card ${beatStyle.id === selectedStyle ? "active" : ""}`}
+                className={`style-card ${beatStyle.id === sequencer.styleId ? "active" : ""}`}
                 key={beatStyle.id}
                 type="button"
                 onClick={() => {
-                  setSelectedStyle(beatStyle.id);
-                  if (isPlaying && engineRef.current) {
-                    engineRef.current.start(beatStyle);
-                  }
+                  resetToStyle(beatStyle.id);
                 }}
               >
                 <span className="style-name">{beatStyle.name}</span>
@@ -109,7 +176,7 @@ export function App() {
           <div className="panel-header split">
             <div>
               <p className="eyebrow">Pattern</p>
-              <h2 className="heading">{style.name}</h2>
+              <h2 className="heading">{baseStyle.name}</h2>
             </div>
             <div className="stat-block">
               <span>{activeSteps}</span>
@@ -117,19 +184,48 @@ export function App() {
             </div>
           </div>
 
-          <div className="step-grid" aria-label={`${style.name} drum pattern`}>
+          <div className="sequencer-controls" aria-label="Sequencer controls">
+            <label className="control-field">
+              <span className="eyebrow">BPM</span>
+              <input
+                type="number"
+                min="60"
+                max="180"
+                value={sequencer.bpm}
+                onChange={(event) => updateBpm(Number(event.target.value))}
+              />
+            </label>
+            <label className="control-field wide">
+              <span className="eyebrow">Swing {Math.round(sequencer.swing * 100)}%</span>
+              <input
+                type="range"
+                min="0"
+                max="30"
+                value={Math.round(sequencer.swing * 100)}
+                onChange={(event) => updateSwing(Number(event.target.value))}
+              />
+            </label>
+            <button className="button secondary compact" type="button" onClick={() => resetToStyle()}>
+              Reset
+            </button>
+          </div>
+
+          <div className="step-grid" aria-label={`${baseStyle.name} drum pattern`}>
             {INSTRUMENTS.map((instrument) => (
               <div className="track-row" key={instrument.id}>
                 <div className="track-label">{instrument.label}</div>
-                {style.pattern[instrument.id].map((step, index) => (
-                  <div
+                {sequencer.pattern[instrument.id].map((step, index) => (
+                  <button
                     className={`step-cell ${step ? "on" : ""} ${
                       index % 4 === 0 ? "downbeat" : ""
                     }`}
                     key={`${instrument.id}-${index}`}
+                    type="button"
+                    aria-pressed={step}
                     aria-label={`${instrument.label} step ${index + 1} ${
                       step ? "on" : "off"
                     }`}
+                    onClick={() => toggleStep(instrument.id, index)}
                   />
                 ))}
               </div>
@@ -142,7 +238,7 @@ export function App() {
             <p className="eyebrow">Beat coach</p>
             <h2 className="heading">Why this works</h2>
           </div>
-          <p>{style.lesson}</p>
+          <p>{baseStyle.lesson}</p>
           <label className="tag-field">
             <span className="eyebrow">Producer tag</span>
             <input

@@ -185,6 +185,11 @@ button {
   color: hsl(var(--ink));
 }
 
+.button.compact {
+  min-height: 40px;
+  padding-inline: 14px;
+}
+
 .button:hover,
 .star-button:hover {
   transform: translateY(-1px);
@@ -276,9 +281,38 @@ button {
   letter-spacing: 0;
 }
 
+.sequencer-controls {
+  align-items: end;
+  border-bottom: 1px solid hsl(var(--border));
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 92px minmax(180px, 1fr) auto;
+  padding: 14px 18px;
+}
+
+.control-field {
+  display: grid;
+  gap: 8px;
+}
+
+.control-field input {
+  accent-color: hsl(var(--accent));
+  background: hsl(var(--bg));
+  border: 1px solid hsl(var(--border));
+  border-radius: 6px;
+  color: hsl(var(--ink));
+  min-height: 40px;
+  padding: 0 10px;
+}
+
+.control-field input[type="range"] {
+  padding: 0;
+}
+
 .step-grid {
   display: grid;
   gap: 10px;
+  overflow-x: auto;
   padding: 18px;
 }
 
@@ -287,6 +321,7 @@ button {
   display: grid;
   gap: 8px;
   grid-template-columns: 56px repeat(16, minmax(16px, 1fr));
+  min-width: 520px;
 }
 
 .track-label {
@@ -302,6 +337,16 @@ button {
   border: 1px solid hsl(var(--border));
   border-radius: 4px;
   min-width: 16px;
+  padding: 0;
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease,
+    transform 120ms ease;
+}
+
+.step-cell:hover {
+  border-color: hsl(var(--ink) / 0.7);
+  transform: translateY(-1px);
 }
 
 .step-cell.downbeat {
@@ -352,11 +397,7 @@ button {
 }
 
 @media (max-width: 680px) {
-  .track-row {
-    grid-template-columns: 1fr repeat(8, minmax(18px, 1fr));
-  }
-
-  .track-row .step-cell:nth-of-type(n + 10) {
-    display: none;
+  .sequencer-controls {
+    grid-template-columns: 1fr;
   }
 }
