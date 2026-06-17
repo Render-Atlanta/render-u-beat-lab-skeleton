@@ -388,6 +388,7 @@ button:disabled {
 .arrangement-panel,
 .coach-block,
 .instrument-list,
+.reference-panel,
 .tag-controls,
 .tag-field {
   display: grid;
@@ -401,6 +402,7 @@ button:disabled {
 .arrangement-panel,
 .capture-panel,
 .instrument-list,
+.reference-panel,
 .tag-controls,
 .tag-field {
   border-top: 1px solid hsl(var(--border));
@@ -436,6 +438,56 @@ button:disabled {
 
 .instrument-card span {
   font-size: 0.86rem;
+}
+
+.reference-list {
+  display: grid;
+  gap: 8px;
+}
+
+.reference-card {
+  background: hsl(var(--bg));
+  border: 1px solid hsl(var(--border));
+  border-radius: 6px;
+  color: hsl(var(--muted));
+  display: grid;
+  gap: 6px;
+  padding: 10px;
+  text-decoration: none;
+}
+
+.reference-card:hover {
+  border-color: hsl(var(--ink) / 0.42);
+}
+
+.reference-card strong {
+  color: hsl(var(--ink));
+  display: block;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+}
+
+.reference-card small,
+.reference-meta {
+  font-family:
+    JetBrains Mono,
+    ui-monospace,
+    monospace;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.reference-meta {
+  color: hsl(var(--teal));
+}
+
+.reference-note {
+  color: hsl(var(--muted));
+  font-size: 0.74rem;
+  line-height: 1.35;
+  margin: 0;
 }
 
 .tag-controls {

@@ -1,37 +1,39 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createBeatEngine, type BeatEngine } from "./audio/beatEngine";
+import { ArrangementPanel } from "./components/ArrangementPanel";
+import { BeatCoachPanel } from "./components/BeatCoachPanel";
+import { CapturePanel } from "./components/CapturePanel";
+import { ProducerTagControls } from "./components/ProducerTagControls";
+import { SequencerPanel } from "./components/SequencerPanel";
+import { StyleSelector } from "./components/StyleSelector";
 import {
   createBeatLabProject,
   createDefaultArrangement,
   createUnsupportedWavExportResult,
   exportProjectJson,
-  isLaneMutedInSection,
   toggleSectionLaneMute,
   type Arrangement,
+  type ArrangementSectionId,
 } from "./lib/arrangement";
-import { BEAT_STYLES, type BeatStyle, type BeatStyleId } from "./lib/beatStyles";
+import { BEAT_STYLES, type BeatStyleId } from "./lib/beatStyles";
 import {
   classifiedHitsToPattern,
-  classifyBeatboxHits,
   moveBeatboxHitToLane,
   preserveManualBeatboxCorrections,
-  type BeatboxLaneClassification,
 } from "./lib/beatboxClassifier";
 import {
-  getInstrumentCoach,
+  createCaptureAnalysis,
+  getMicCaptureErrorMessage,
+  type MicCaptureState,
+} from "./lib/captureAnalysis";
+import {
   getStyleCoach,
   summarizePatternChange,
 } from "./lib/beatCoach";
 import {
   captureMicrophoneSample,
   getMicCaptureSupport,
-  type MicCaptureError,
-  type MicCaptureResult,
 } from "./lib/micCapture";
-import {
-  createOnsetPreview,
-  type OnsetPreview,
-} from "./lib/onsetDetection";
 import {
   createDefaultSequencerState,
   readSequencerStateFromParams,
@@ -45,15 +47,14 @@ import {
   normalizeProducerTagConfig,
   type ProducerTagTrigger,
 } from "./lib/producerTag";
-
-const INSTRUMENTS: Array<{ id: InstrumentId; label: string }> = [
-  { id: "kick", label: "Kick" },
-  { id: "snare", label: "Snare" },
-  { id: "hat", label: "Hat" },
-  { id: "openHat", label: "Open" },
-];
-
-const BEATS_PER_LOOP = 4;
+import {
+  createPlayableStyle,
+  getSequencerLoopDurationMs,
+  getSwingPercent,
+  updateSequencerBpm,
+  updateSequencerSwing,
+} from "./lib/sequencerDomain";
+import { getStyleReferences } from "./lib/styleReferences";
 
 export function App() {
   const [sequencer, setSequencer] = useState<SequencerState>(() =>
@@ -72,22 +73,16 @@ export function App() {
   const [captureSensitivity, setCaptureSensitivity] = useState(0.55);
   const [projectJson, setProjectJson] = useState("");
   const [exportMessage, setExportMessage] = useState("");
-  const [micState, setMicState] = useState<
-    | { status: "idle" }
-    | { status: "recording" }
-    | {
-        status: "captured";
-        result: MicCaptureResult;
-        preview: OnsetPreview;
-        classifications: BeatboxLaneClassification[];
-      }
-    | { status: "error"; message: string }
-  >({ status: "idle" });
+  const [micState, setMicState] = useState<MicCaptureState>({ status: "idle" });
   const engineRef = useRef<BeatEngine | null>(null);
 
   const baseStyle = BEAT_STYLES[sequencer.styleId];
   const styleCoach = useMemo(
     () => getStyleCoach(sequencer.styleId),
+    [sequencer.styleId],
+  );
+  const styleReferences = useMemo(
+    () => getStyleReferences(sequencer.styleId),
     [sequencer.styleId],
   );
   const patternSummary = useMemo(
@@ -116,14 +111,9 @@ export function App() {
     () => getSequencerLoopDurationMs(sequencer.bpm),
     [sequencer.bpm],
   );
-  const playableStyle = useMemo<BeatStyle>(
-    () => ({
-      ...baseStyle,
-      bpm: sequencer.bpm,
-      swing: sequencer.swing,
-      pattern: sequencer.pattern,
-    }),
-    [baseStyle, sequencer.bpm, sequencer.pattern, sequencer.swing],
+  const playableStyle = useMemo(
+    () => createPlayableStyle(sequencer),
+    [sequencer],
   );
 
   useEffect(() => {
@@ -191,12 +181,7 @@ export function App() {
   function applySequencerState(next: SequencerState) {
     setSequencer(next);
     if (isPlaying && engineRef.current) {
-      engineRef.current.start({
-        ...BEAT_STYLES[next.styleId],
-        bpm: next.bpm,
-        swing: next.swing,
-        pattern: next.pattern,
-      });
+      engineRef.current.start(createPlayableStyle(next));
     }
   }
 
@@ -205,23 +190,11 @@ export function App() {
   }
 
   function updateBpm(bpm: number) {
-    if (!Number.isFinite(bpm)) {
-      return;
-    }
-
-    applySequencerState({
-      ...sequencer,
-      bpm: Math.max(60, Math.min(180, Math.round(bpm))),
-    });
+    applySequencerState(updateSequencerBpm(sequencer, bpm));
   }
 
   function updateSwing(swingPercent: number) {
-    if (!Number.isFinite(swingPercent)) {
-      return;
-    }
-
-    const clampedSwing = Math.max(0, Math.min(30, Math.round(swingPercent)));
-    applySequencerState({ ...sequencer, swing: clampedSwing / 100 });
+    applySequencerState(updateSequencerSwing(sequencer, swingPercent));
   }
 
   function toggleStep(instrument: InstrumentId, stepIndex: number) {
@@ -290,6 +263,15 @@ export function App() {
     setExportMessage(result.message);
   }
 
+  function toggleArrangementLaneMute(
+    sectionId: ArrangementSectionId,
+    instrument: InstrumentId,
+  ) {
+    setArrangement((current) =>
+      toggleSectionLaneMute(current, sectionId, instrument),
+    );
+  }
+
   return (
     <main data-palette="atl" className="app-shell">
       <nav className="site-nav" aria-label="Primary">
@@ -324,418 +306,62 @@ export function App() {
       </section>
 
       <section className="workbench" aria-label="Beat workbench">
-        <aside className="panel style-panel">
-          <div className="panel-header">
-            <p className="eyebrow">Styles</p>
-            <h2 className="heading">Choose a starting pocket</h2>
-          </div>
-          <div className="style-list">
-            {Object.values(BEAT_STYLES).map((beatStyle) => (
-              <button
-                className={`style-card ${beatStyle.id === sequencer.styleId ? "active" : ""}`}
-                key={beatStyle.id}
-                type="button"
-                onClick={() => {
-                  resetToStyle(beatStyle.id);
-                }}
-              >
-                <span className="style-name">{beatStyle.name}</span>
-                <span className="style-meta">
-                  {beatStyle.bpm} BPM · swing {Math.round(beatStyle.swing * 100)}%
-                </span>
-                <span className="style-note">{getStyleCoach(beatStyle.id).feelNote}</span>
-              </button>
-            ))}
-          </div>
-        </aside>
+        <StyleSelector
+          styles={Object.values(BEAT_STYLES)}
+          selectedStyleId={sequencer.styleId}
+          onSelectStyle={resetToStyle}
+        />
 
-        <section className="panel grid-panel">
-          <div className="panel-header split">
-            <div>
-              <p className="eyebrow">Pattern</p>
-              <h2 className="heading">{baseStyle.name}</h2>
-            </div>
-            <div className="stat-block">
-              <span>{activeSteps}</span>
-              hits
-            </div>
-          </div>
-
-          <div className="sequencer-controls" aria-label="Sequencer controls">
-            <label className="control-field">
-              <span className="eyebrow">BPM</span>
-              <input
-                type="number"
-                min="60"
-                max="180"
-                value={sequencer.bpm}
-                onChange={(event) => updateBpm(Number(event.target.value))}
-              />
-            </label>
-            <label className="control-field wide">
-              <span className="eyebrow">Swing {Math.round(sequencer.swing * 100)}%</span>
-              <input
-                type="range"
-                min="0"
-                max="30"
-                value={Math.round(sequencer.swing * 100)}
-                onChange={(event) => updateSwing(Number(event.target.value))}
-              />
-            </label>
-            <button className="button secondary compact" type="button" onClick={() => resetToStyle()}>
-              Reset
-            </button>
-          </div>
-
-          <div className="step-grid" aria-label={`${baseStyle.name} drum pattern`}>
-            {INSTRUMENTS.map((instrument) => (
-              <div className="track-row" key={instrument.id}>
-                <div className="track-label">{instrument.label}</div>
-                {sequencer.pattern[instrument.id].map((step, index) => (
-                  <button
-                    className={`step-cell ${step ? "on" : ""} ${
-                      index % 4 === 0 ? "downbeat" : ""
-                    }`}
-                    key={`${instrument.id}-${index}`}
-                    type="button"
-                    aria-pressed={step}
-                    aria-label={`${instrument.label} step ${index + 1} ${
-                      step ? "on" : "off"
-                    }`}
-                    onClick={() => toggleStep(instrument.id, index)}
-                  />
-                ))}
-              </div>
-            ))}
-          </div>
-        </section>
+        <SequencerPanel
+          styleName={baseStyle.name}
+          activeSteps={activeSteps}
+          bpm={sequencer.bpm}
+          swingPercent={getSwingPercent(sequencer.swing)}
+          pattern={sequencer.pattern}
+          onBpmChange={updateBpm}
+          onSwingChange={updateSwing}
+          onReset={() => resetToStyle()}
+          onToggleStep={toggleStep}
+        />
 
         <aside className="panel coach-panel">
-          <div className="panel-header">
-            <p className="eyebrow">Beat coach</p>
-            <h2 className="heading">{styleCoach.concept}</h2>
-          </div>
-          <p>{baseStyle.lesson}</p>
-          <div className="coach-block">
-            <p className="eyebrow">Pattern read</p>
-            <p>{patternSummary.densitySummary}</p>
-            <p>{patternSummary.pocketSummary}</p>
-          </div>
-          <div className="coach-block">
-            <p className="eyebrow">Try this</p>
-            <p>{patternSummary.tryThis}</p>
-          </div>
-          <div className="instrument-list">
-            {INSTRUMENTS.map((instrument) => {
-              const coach = getInstrumentCoach(instrument.id);
-              return (
-                <div className="instrument-card" key={instrument.id}>
-                  <strong>{coach.label}</strong>
-                  <span>{coach.role}</span>
-                </div>
-              );
-            })}
-          </div>
-          <label className="tag-field">
-            <span className="eyebrow">Producer tag</span>
-            <input
-              value={producerTagText}
-              onChange={(event) => setProducerTagText(event.target.value)}
-              maxLength={48}
-            />
-          </label>
-          <div className="tag-controls">
-            <label className="check-row">
-              <input
-                type="checkbox"
-                checked={producerTagEnabled}
-                onChange={(event) => setProducerTagEnabled(event.target.checked)}
-              />
-              <span>Tag on</span>
-            </label>
-            <label className="control-field">
-              <span className="eyebrow">Trigger</span>
-              <select
-                value={producerTagTrigger}
-                onChange={(event) =>
-                  setProducerTagTrigger(event.target.value as ProducerTagTrigger)
-                }
-              >
-                <option value="manual">Manual</option>
-                <option value="intro">Intro</option>
-              </select>
-            </label>
-            <label className="control-field">
-              <span className="eyebrow">Rate {producerTagConfig.effects.rate.toFixed(2)}</span>
-              <input
-                type="range"
-                min="0.5"
-                max="1.5"
-                step="0.01"
-                value={producerTagRate}
-                onChange={(event) => setProducerTagRate(Number(event.target.value))}
-              />
-            </label>
-            <label className="control-field">
-              <span className="eyebrow">Pitch {producerTagConfig.effects.pitch.toFixed(2)}</span>
-              <input
-                type="range"
-                min="0"
-                max="2"
-                step="0.01"
-                value={producerTagPitch}
-                onChange={(event) => setProducerTagPitch(Number(event.target.value))}
-              />
-            </label>
-          </div>
-          <div className="arrangement-panel">
-            <p className="eyebrow">Arrangement</p>
-            <div className="arrangement-grid">
-              {arrangement.sections.map((section) => (
-                <div className="arrangement-section" key={section.id}>
-                  <strong>{section.label}</strong>
-                  <span>{section.bars} bar</span>
-                  <div className="lane-mutes" aria-label={`${section.label} lane mutes`}>
-                    {INSTRUMENTS.map((instrument) => (
-                      <button
-                        className={`lane-mute ${
-                          isLaneMutedInSection(arrangement, section.id, instrument.id)
-                            ? "muted"
-                            : ""
-                        }`}
-                        key={`${section.id}-${instrument.id}`}
-                        type="button"
-                        aria-pressed={isLaneMutedInSection(
-                          arrangement,
-                          section.id,
-                          instrument.id,
-                        )}
-                        onClick={() =>
-                          setArrangement((current) =>
-                            toggleSectionLaneMute(current, section.id, instrument.id),
-                          )
-                        }
-                      >
-                        {instrument.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="export-actions">
-              <button className="button secondary compact" type="button" onClick={exportProject}>
-                Export JSON
-              </button>
-              <button
-                className="button secondary compact"
-                type="button"
-                onClick={showWavStretchMessage}
-              >
-                WAV
-              </button>
-            </div>
-            {exportMessage ? <p className="status-copy">{exportMessage}</p> : null}
-            {projectJson ? (
-              <textarea
-                className="project-json"
-                readOnly
-                value={projectJson}
-                aria-label="Exported project JSON"
-              />
-            ) : null}
-          </div>
-          <div className="capture-panel">
-            <p className="eyebrow">Tap capture</p>
-            <p>{getMicStateCopy(micState)}</p>
-            <label className="control-field">
-              <span className="eyebrow">
-                Sensitivity {Math.round(captureSensitivity * 100)}%
-              </span>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.01"
-                value={captureSensitivity}
-                onChange={(event) => setCaptureSensitivity(Number(event.target.value))}
-              />
-            </label>
-            <button
-              className="button secondary compact"
-              type="button"
-              onClick={captureMicSample}
-              disabled={micState.status === "recording"}
-            >
-              {micState.status === "recording" ? "Recording" : "Record 4s"}
-            </button>
-            {micState.status === "captured" ? (
-              <>
-                <div className="waveform-preview" aria-label="Captured waveform preview">
-                  {micState.result.waveform.slice(0, 32).map((level, index) => (
-                    <span
-                      key={index}
-                      style={{ height: `${Math.max(8, Math.round(level * 42))}px` }}
-                    />
-                  ))}
-                </div>
-                <div className="capture-grid" aria-label="Quantized capture preview">
-                  {micState.preview.cleanedGrid.map((hit, index) => (
-                    <span className={hit ? "hit" : ""} key={index} />
-                  ))}
-                </div>
-                <div className="classification-grid" aria-label="Classified beatbox lanes">
-                  {INSTRUMENTS.map((instrument) => (
-                    <div className="classification-row" key={instrument.id}>
-                      <span>{instrument.label}</span>
-                      {Array.from({ length: 16 }, (_, stepIndex) => {
-                        const hit = micState.classifications.find(
-                          (classification) =>
-                            classification.instrument === instrument.id &&
-                            classification.stepIndex === stepIndex,
-                        );
-
-                        return (
-                          <span
-                            className={hit ? `hit ${hit.needsCorrection ? "check" : ""}` : ""}
-                            key={`${instrument.id}-${stepIndex}`}
-                            title={
-                              hit
-                                ? `${instrument.label} step ${stepIndex + 1}, ${Math.round(
-                                    hit.confidence * 100,
-                                  )}%`
-                                : undefined
-                            }
-                          />
-                        );
-                      })}
-                    </div>
-                  ))}
-                </div>
-                <div className="classification-list" aria-label="Beatbox hit lane corrections">
-                  {micState.classifications.map((classification) => (
-                    <label className="classification-item" key={classification.id}>
-                      <span>
-                        Step {classification.stepNumber}
-                        <small>
-                          {Math.round(classification.confidence * 100)}%
-                          {classification.needsCorrection ? " check" : ""}
-                          {classification.source === "manual" ? " fixed" : ""}
-                        </small>
-                      </span>
-                      <select
-                        value={classification.instrument}
-                        aria-label={`Lane for captured hit on step ${classification.stepNumber}`}
-                        onChange={(event) =>
-                          updateCapturedHitLane(
-                            classification.id,
-                            event.target.value as InstrumentId,
-                          )
-                        }
-                      >
-                        {INSTRUMENTS.map((instrument) => (
-                          <option key={instrument.id} value={instrument.id}>
-                            {instrument.label}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  ))}
-                </div>
-                <button
-                  className="button secondary compact"
-                  type="button"
-                  onClick={applyClassifiedHitsToPattern}
-                >
-                  Send lanes
-                </button>
-              </>
-            ) : null}
-          </div>
+          <BeatCoachPanel
+            lesson={baseStyle.lesson}
+            styleCoach={styleCoach}
+            patternSummary={patternSummary}
+            references={styleReferences}
+          />
+          <ProducerTagControls
+            config={producerTagConfig}
+            text={producerTagText}
+            enabled={producerTagEnabled}
+            trigger={producerTagTrigger}
+            rate={producerTagRate}
+            pitch={producerTagPitch}
+            onTextChange={setProducerTagText}
+            onEnabledChange={setProducerTagEnabled}
+            onTriggerChange={setProducerTagTrigger}
+            onRateChange={setProducerTagRate}
+            onPitchChange={setProducerTagPitch}
+          />
+          <ArrangementPanel
+            arrangement={arrangement}
+            exportMessage={exportMessage}
+            projectJson={projectJson}
+            onToggleLaneMute={toggleArrangementLaneMute}
+            onExportProject={exportProject}
+            onShowWavMessage={showWavStretchMessage}
+          />
+          <CapturePanel
+            micState={micState}
+            sensitivity={captureSensitivity}
+            onSensitivityChange={setCaptureSensitivity}
+            onCapture={captureMicSample}
+            onHitLaneChange={updateCapturedHitLane}
+            onSendLanes={applyClassifiedHitsToPattern}
+          />
         </aside>
       </section>
     </main>
   );
-}
-
-function getSequencerLoopDurationMs(bpm: number): number {
-  return (60_000 / bpm) * BEATS_PER_LOOP;
-}
-
-function createCaptureOnsetPreview(
-  result: MicCaptureResult,
-  sensitivity: number,
-  quantizationDurationMs: number,
-): OnsetPreview {
-  return createOnsetPreview({
-    levels: result.levels,
-    waveform: result.waveform,
-    durationMs: result.durationMs,
-    quantizationDurationMs,
-    sensitivity,
-    levelSource: "mixed",
-  });
-}
-
-function createCaptureAnalysis(
-  result: MicCaptureResult,
-  sensitivity: number,
-  quantizationDurationMs: number,
-): {
-  preview: OnsetPreview;
-  classifications: BeatboxLaneClassification[];
-} {
-  const preview = createCaptureOnsetPreview(result, sensitivity, quantizationDurationMs);
-
-  return {
-    preview,
-    classifications: classifyBeatboxHits(preview, result.levels),
-  };
-}
-
-function getMicCaptureErrorMessage(error: unknown): string {
-  const captureError = error as Partial<MicCaptureError>;
-
-  switch (captureError.code) {
-    case "permission-denied":
-      return "Microphone permission was denied. Manual beat-making still works.";
-    case "no-device":
-      return "No microphone was found. Plug one in or keep using the grid.";
-    case "unsupported":
-      return "This browser cannot capture microphone audio here.";
-    case "capture-failed":
-      return "The microphone could not be read. Another app may be using it.";
-    default:
-      return "Microphone capture failed, but the sequencer is still ready.";
-  }
-}
-
-function getMicStateCopy(
-  micState:
-    | { status: "idle" }
-    | { status: "recording" }
-    | {
-        status: "captured";
-        result: MicCaptureResult;
-        preview: OnsetPreview;
-        classifications: BeatboxLaneClassification[];
-      }
-    | { status: "error"; message: string },
-): string {
-  if (micState.status === "recording") {
-    return "Listening for table taps or beatboxing. Keep it short and percussive.";
-  }
-
-  if (micState.status === "captured") {
-    const needsCorrection = micState.classifications.filter(
-      (classification) => classification.needsCorrection,
-    ).length;
-    return `Detected ${micState.preview.cleanedHits.length} cleaned hits from ${micState.preview.rawHits.length} raw hits. ${needsCorrection} need a lane check.`;
-  }
-
-  if (micState.status === "error") {
-    return micState.message;
-  }
-
-  return "Record a short rhythm. Nothing uploads; the sample stays in this tab.";
 }

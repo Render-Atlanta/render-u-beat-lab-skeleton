@@ -55,24 +55,9 @@ describe("arrangement helpers", () => {
     );
     expect(sections[1].pattern).toEqual(sequencer.pattern);
     expect(sections[2].pattern.kick).toEqual(Array.from({ length: 16 }, () => false));
-    expect(sequencer.pattern.snare).toEqual([
-      false,
-      false,
-      false,
-      false,
-      true,
-      false,
-      false,
-      false,
-      false,
-      false,
-      false,
-      false,
-      true,
-      false,
-      false,
-      false,
-    ]);
+    expect(sequencer.pattern.snare).toEqual(
+      Array.from({ length: 16 }, (_, index) => index === 8),
+    );
   });
 
   it("sets and toggles lane mutes immutably with deterministic lane ordering", () => {

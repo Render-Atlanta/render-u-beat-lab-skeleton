@@ -32,6 +32,21 @@ Goal: make the project deployable, teachable, and agent-friendly.
 
 Tickets: PR-09, PR-10
 
+## Epic 6 - Higher-quality sound integrations
+
+Goal: improve musical quality by isolating the audio engine, then testing
+Tone.js, licensed samples, Meyda feature extraction, and optional offline
+reference analysis.
+
+Tickets: PR-11, PR-12, PR-13, PR-14, PR-15
+
+## Epic 7 - Code quality and test hygiene
+
+Goal: keep the workshop code small, composable, and easy to inspect by moving
+logic into focused modules with clear tests and guardrails.
+
+Tickets: PR-16, PR-17, PR-18, PR-19, PR-20
+
 ## MVP recommendation
 
 For the next workshop, target PR-01 through PR-05. That gives you a complete arc:
@@ -44,3 +59,10 @@ For the next workshop, target PR-01 through PR-05. That gives you a complete arc
 
 Beatbox lane classification and producer polish are excellent stretch goals, but
 they should not block the core lesson.
+
+## Next prototype recommendation
+
+For the sound-quality phase, start with PR-11 and PR-12. That gives the project a
+clean engine seam and a testable Tone.js sample playback spike before committing
+to a full sample library. PR-16 and PR-17 can run in parallel because they reduce
+UI and domain complexity without changing the musical feature set.

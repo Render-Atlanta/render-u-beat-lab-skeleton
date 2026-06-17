@@ -62,9 +62,9 @@ const STYLE_COACH_NOTES: Record<
   Pick<StyleCoachMetadata, "concept" | "feelNote" | "tryThis">
 > = {
   trap: {
-    concept: "Fast hats can make a simple kick and snare feel energetic.",
-    feelNote: "Crisp backbeat, busy top line, kick bounce in the gaps.",
-    tryThis: "Try muting every other hat, then add one kick before the snare.",
+    concept: "Half-time snare placement makes fast hats feel heavy instead of frantic.",
+    feelNote: "Atlanta half-time center, busy hats, syncopated kick/808 bounce.",
+    tryThis: "Try adding two hats in a row before the snare, then remove one kick.",
   },
   crunk: {
     concept: "Space leaves room for chants, hooks, and crowd response.",
@@ -85,6 +85,16 @@ const STYLE_COACH_NOTES: Record<
     concept: "A familiar backbeat helps the pattern read quickly.",
     feelNote: "Clean kick/snare center, bright hats, accents that lift the hook.",
     tryThis: "Try adding one open hat before the snare to make the loop lift.",
+  },
+  afrobeats: {
+    concept: "Syncopated drums can feel relaxed and forward at the same time.",
+    feelNote: "Warm kick movement, light backbeat, hats that dance around the grid.",
+    tryThis: "Try removing one snare, then add a kick right before the downbeat.",
+  },
+  amapiano: {
+    concept: "A hypnotic pulse works when the drums leave room for the bass idea.",
+    feelNote: "Roomy bounce, patient hats, open accents that answer the low pulse.",
+    tryThis: "Try muting one kick and moving an open hat later by a step.",
   },
 };
 
@@ -170,10 +180,14 @@ function describeDensityChange(delta: number, hitCount: number, styleName: strin
 
 function describePocketChange(basePattern: Pattern, editedPattern: Pattern): string {
   const notes: string[] = [];
+  const baseHasBackbeat = hasBackbeat(basePattern.snare);
+  const editedHasBackbeat = hasBackbeat(editedPattern.snare);
 
-  if (hasBackbeat(editedPattern.snare)) {
+  if (baseHasBackbeat && editedHasBackbeat) {
     notes.push("The snare still marks steps 5 and 13, so the center stays easy to follow");
-  } else if (hasBackbeat(basePattern.snare)) {
+  } else if (!baseHasBackbeat && editedHasBackbeat) {
+    notes.push("The snare moved onto steps 5 and 13, so the groove feels more square");
+  } else if (baseHasBackbeat) {
     notes.push("The snare moved away from steps 5 and 13, so the pocket feels less expected");
   } else if (arraysEqual(basePattern.snare, editedPattern.snare)) {
     notes.push("The offset snare pocket stays intact");

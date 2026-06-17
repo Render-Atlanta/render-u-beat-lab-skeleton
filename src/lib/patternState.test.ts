@@ -15,7 +15,7 @@ describe("pattern state helpers", () => {
     const serialized = serializePattern(pattern);
 
     expect(serialized).toBe(
-      "1000001000100010.0000100000001000.1010101011111010.0000000100000001",
+      "1001001000100010.0000000010000000.1010101011111011.0000010000000100",
     );
     expect(deserializePattern(serialized)).toEqual(pattern);
   });
@@ -37,18 +37,18 @@ describe("pattern state helpers", () => {
   });
 
   it("round-trips sequencer state through URL params", () => {
-    const state = createDefaultSequencerState("rnb");
+    const state = createDefaultSequencerState("afrobeats");
     const params = writeSequencerStateToParams({
       ...state,
-      bpm: 82,
-      swing: 0.21,
+      bpm: 106,
+      swing: 0.12,
       pattern: togglePatternStep(state.pattern, "snare", 3),
     });
 
     expect(readSequencerStateFromParams(params)).toEqual({
-      styleId: "rnb",
-      bpm: 82,
-      swing: 0.21,
+      styleId: "afrobeats",
+      bpm: 106,
+      swing: 0.12,
       pattern: togglePatternStep(state.pattern, "snare", 3),
     });
   });
@@ -72,5 +72,11 @@ describe("pattern state helpers", () => {
     );
 
     expect(state).toEqual(createDefaultSequencerState("trap"));
+  });
+
+  it("accepts Amapiano as a URL-requested style", () => {
+    const state = readSequencerStateFromParams(new URLSearchParams("style=amapiano"));
+
+    expect(state).toEqual(createDefaultSequencerState("amapiano"));
   });
 });

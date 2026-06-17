@@ -31,6 +31,22 @@ describe("beat coach helpers", () => {
       feelNote: "Slow pulse, relaxed swing, light hats, warm kick placement.",
       tryThis: "Try deleting one kick and raising swing until the loop relaxes.",
     });
+
+    expect(getStyleCoach("afrobeats")).toMatchObject({
+      id: "afrobeats",
+      name: "Afrobeats bounce",
+      bpm: 104,
+      swingPercent: 10,
+      concept: "Syncopated drums can feel relaxed and forward at the same time.",
+    });
+
+    expect(getStyleCoach("amapiano")).toMatchObject({
+      id: "amapiano",
+      name: "Amapiano log pulse",
+      bpm: 112,
+      swingPercent: 14,
+      concept: "A hypnotic pulse works when the drums leave room for the bass idea.",
+    });
   });
 
   it("summarizes when an edited pattern gets denser", () => {
@@ -43,21 +59,21 @@ describe("beat coach helpers", () => {
 
     expect(summarizePatternChange("trap", editedPattern)).toEqual({
       styleId: "trap",
-      baseHitCount: 18,
+      baseHitCount: 19,
       editedHitCount: 21,
-      densityDelta: 3,
+      densityDelta: 2,
       densityLevel: "balanced",
       densitySummary:
-        "Balanced: you added 3 hits, so the beat feels busier than Trap starter.",
+        "Balanced: you added 2 hits, so the beat feels busier than Atlanta trap pocket.",
       pocketSummary:
-        "The snare still marks steps 5 and 13, so the center stays easy to follow; extra kicks add push; more hats make the top line move faster.",
+        "The snare moved onto steps 5 and 13, so the groove feels more square.",
       instrumentSummaries: [
-        "Kick: up 1 to 5 hits.",
-        "Snare: unchanged at 2 hits.",
-        "Hat: up 2 to 12 hits.",
+        "Kick: unchanged at 5 hits.",
+        "Snare: up 1 to 2 hits.",
+        "Hat: up 1 to 12 hits.",
         "Open hat: unchanged at 2 hits.",
       ],
-      tryThis: "Try muting every other hat, then add one kick before the snare.",
+      tryThis: "Try adding two hats in a row before the snare, then remove one kick.",
     });
   });
 

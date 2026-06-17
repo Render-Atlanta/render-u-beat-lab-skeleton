@@ -1,6 +1,13 @@
 import { patternFromSteps, type Pattern } from "./patterns";
 
-export type BeatStyleId = "trap" | "crunk" | "drill" | "rnb" | "pop";
+export type BeatStyleId =
+  | "trap"
+  | "crunk"
+  | "drill"
+  | "rnb"
+  | "pop"
+  | "afrobeats"
+  | "amapiano";
 
 export interface BeatStyle {
   id: BeatStyleId;
@@ -14,17 +21,17 @@ export interface BeatStyle {
 export const BEAT_STYLES: Record<BeatStyleId, BeatStyle> = {
   trap: {
     id: "trap",
-    name: "Trap starter",
+    name: "Atlanta trap pocket",
     bpm: 142,
-    swing: 0.08,
+    swing: 0.04,
     pattern: patternFromSteps({
-      kick: [1, 7, 11, 15],
-      snare: [5, 13],
-      hat: [1, 3, 5, 7, 9, 10, 11, 12, 13, 15],
-      openHat: [8, 16],
+      kick: [1, 4, 7, 11, 15],
+      snare: [9],
+      hat: [1, 3, 5, 7, 9, 10, 11, 12, 13, 15, 16],
+      openHat: [6, 14],
     }),
     lesson:
-      "Trap often feels fast because the hats move, while the snare anchors the backbeat. Start simple: kick choices create the bounce.",
+      "Atlanta trap often feels fast on top and slow in the body: rapid hats move around a half-time snare while the kick and 808 create the bounce.",
   },
   crunk: {
     id: "crunk",
@@ -81,5 +88,33 @@ export const BEAT_STYLES: Record<BeatStyleId, BeatStyle> = {
     }),
     lesson:
       "Pop patterns are built to read quickly. Keep the backbeat familiar, then use texture and arrangement to make it yours.",
+  },
+  afrobeats: {
+    id: "afrobeats",
+    name: "Afrobeats bounce",
+    bpm: 104,
+    swing: 0.1,
+    pattern: patternFromSteps({
+      kick: [1, 4, 7, 11, 14],
+      snare: [5, 13],
+      hat: [1, 3, 6, 8, 10, 12, 15, 16],
+      openHat: [7, 15],
+    }),
+    lesson:
+      "Afrobeats lives in syncopation: the groove feels relaxed, but the kick and hats keep nudging you forward between the obvious beats.",
+  },
+  amapiano: {
+    id: "amapiano",
+    name: "Amapiano log pulse",
+    bpm: 112,
+    swing: 0.14,
+    pattern: patternFromSteps({
+      kick: [1, 9, 12, 15],
+      snare: [5, 13],
+      hat: [1, 4, 7, 10, 13, 16],
+      openHat: [6, 11, 15],
+    }),
+    lesson:
+      "Amapiano leaves air around the drums so the bass/log-drum idea can talk. Keep the pulse hypnotic and let accents answer each other.",
   },
 };
