@@ -71,6 +71,11 @@ open-license examples we may bundle (`src/lib/openReferences.ts`). See
 [docs/OPEN_REFERENCES.md](docs/OPEN_REFERENCES.md) for the difference, the
 allowed/rejected license policy, and the workflow for adding vetted open picks.
 
+The style fidelity meter scores the user's edited pattern against a canonical
+genre signature using rhythm, tempo, and spectral-balance features. See
+[docs/STYLE_FIDELITY.md](docs/STYLE_FIDELITY.md) for what the score means,
+how the golden-snapshot oracle works, and when to regenerate style profiles.
+
 ## Deploy to Render
 
 This repo is configured as a Render Static Site through [`render.yaml`](render.yaml):

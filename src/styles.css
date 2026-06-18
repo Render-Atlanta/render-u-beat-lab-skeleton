@@ -733,3 +733,49 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 }
+
+/* Style Fidelity Meter */
+.style-fidelity {
+  display: grid;
+  gap: 6px;
+  padding: 14px 18px;
+}
+
+.style-fidelity__label {
+  color: hsl(var(--ink));
+  font-family:
+    "JetBrains Mono",
+    ui-monospace,
+    monospace;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.style-fidelity__bar {
+  background: hsl(var(--border));
+  border-radius: 4px;
+  height: 8px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.style-fidelity__bar-fill {
+  background: hsl(var(--accent));
+  border-radius: 4px;
+  height: 100%;
+  transition: width 300ms ease;
+}
+
+.style-fidelity__hint {
+  color: hsl(var(--muted));
+  font-family:
+    "JetBrains Mono",
+    ui-monospace,
+    monospace;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}

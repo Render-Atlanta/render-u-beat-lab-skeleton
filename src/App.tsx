@@ -60,6 +60,9 @@ import {
   updateSequencerSwing,
 } from "./lib/sequencerDomain";
 import { getStyleReferences } from "./lib/styleReferences";
+import { StyleFidelityMeter } from "./components/StyleFidelityMeter";
+import type { DecodedKit } from "./lib/styleRender";
+import { loadKitFromUrls } from "./lib/loadKit.browser";
 
 export function App() {
   const [sequencer, setSequencer] = useState<SequencerState>(() =>
@@ -82,6 +85,8 @@ export function App() {
   const [exportMessage, setExportMessage] = useState("");
   const [micState, setMicState] = useState<MicCaptureState>({ status: "idle" });
   const engineRef = useRef<BeatEngine | null>(null);
+  const [kit, setKit] = useState<DecodedKit | null>(null);
+  const [kitError, setKitError] = useState(false);
 
   const baseStyle = BEAT_STYLES[sequencer.styleId];
   const styleCoach = useMemo(
@@ -136,6 +141,10 @@ export function App() {
     },
     [],
   );
+
+  useEffect(() => {
+    void loadKitFromUrls().then(setKit).catch(() => { setKit(null); setKitError(true); });
+  }, []);
 
   useEffect(() => {
     setMicState((current) => {
@@ -366,6 +375,8 @@ export function App() {
           onReset={() => resetToStyle()}
           onToggleStep={toggleStep}
         />
+
+        <StyleFidelityMeter style={playableStyle} kit={kit} kitError={kitError} />
 
         <aside className="panel coach-panel">
           <BeatCoachPanel

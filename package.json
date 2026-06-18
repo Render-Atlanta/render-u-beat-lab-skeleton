@@ -13,6 +13,7 @@
     "check": "npm run hygiene && npm run typecheck:scripts && npm test",
     "analyze:reference": "tsx scripts/analyze-reference.ts",
     "generate:kit": "tsx scripts/generate-kit.ts",
+    "generate:style-profiles": "tsx scripts/generate-style-profiles.ts",
     "typecheck:scripts": "tsc -p tsconfig.scripts.json"
   },
   "dependencies": {
