@@ -68,6 +68,82 @@ describe("Tone.js sample beat engine", () => {
     expect(runtime.sampleUrls).toEqual(["/samples/kick.wav"]);
     expect(runtime.voices.kick.starts).toEqual([0.5]);
   });
+
+  it("falls back to the synth voice when a sample player fails to load", () => {
+    const runtime = createFakeToneRuntime();
+    // Simulate a failed/missing sample: the player returns null instead of a
+    // voice, so the engine must degrade to createKickSynth without throwing.
+    runtime.createSamplePlayer = (url) => {
+      runtime.sampleUrls.push(url);
+      return null;
+    };
+
+    const engine = createToneSampleBeatEngine({
+      runtime,
+      sampleUrls: { kick: "/missing/kick.wav" },
+    });
+
+    expect(() => {
+      engine.start(BEAT_STYLES.trap);
+      runtime.transport.run(0.5);
+    }).not.toThrow();
+
+    expect(runtime.sampleUrls).toEqual(["/missing/kick.wav"]);
+    // The synth kick voice fired (triggerAttackRelease), not a sample start.
+    expect(runtime.voices.kick.plays.length).toBeGreaterThan(0);
+    expect(runtime.voices.kick.starts).toEqual([]);
+  });
+
+  it("falls back to the synth voice when constructing a sample player throws", () => {
+    const runtime = createFakeToneRuntime();
+    runtime.createSamplePlayer = () => {
+      throw new Error("decode failure");
+    };
+
+    const engine = createToneSampleBeatEngine({
+      runtime,
+      sampleUrls: { kick: "/broken/kick.wav" },
+    });
+
+    expect(() => {
+      engine.start(BEAT_STYLES.trap);
+      runtime.transport.run(0.5);
+    }).not.toThrow();
+
+    expect(runtime.voices.kick.plays.length).toBeGreaterThan(0);
+  });
+
+  it("falls back to the synth voice when a sample fails to load after construction", () => {
+    const runtime = createFakeToneRuntime();
+    const kickSynth = createFakeVoice();
+    // The player constructs fine but start() throws — Tone's `onerror` path for
+    // a 404 / undecodable file. The lane must degrade to the synth voice rather
+    // than going silent on every scheduled hit.
+    runtime.createSamplePlayer = (url) => {
+      runtime.sampleUrls.push(url);
+      return {
+        start: () => {
+          throw new Error("load failed after construction");
+        },
+        dispose: () => {},
+      };
+    };
+    runtime.createKickSynth = () => kickSynth;
+
+    const engine = createToneSampleBeatEngine({
+      runtime,
+      sampleUrls: { kick: "/late-fail/kick.wav" },
+    });
+
+    expect(() => {
+      engine.start(BEAT_STYLES.trap);
+      runtime.transport.run(0.5);
+    }).not.toThrow();
+
+    expect(runtime.sampleUrls).toEqual(["/late-fail/kick.wav"]);
+    // The synth kick voice fired after the player threw — not silence.
+    expect(kickSynth.plays.length).toBeGreaterThan(0);
+  });
 });
 
 function createFakeToneRuntime() {

@@ -4,6 +4,7 @@ import {
   type AudioEngineKind,
   type BeatEngine,
 } from "./audio/beatEngine";
+import { getKitSampleUrls } from "./audio/sampleKit";
 import { ArrangementPanel } from "./components/ArrangementPanel";
 import { BeatCoachPanel } from "./components/BeatCoachPanel";
 import { CapturePanel } from "./components/CapturePanel";
@@ -163,7 +164,13 @@ export function App() {
     let engine = engineRef.current;
     if (!engine || engine.kind !== audioEngineKind) {
       void engine?.dispose();
-      engine = createBeatEngine({ kind: audioEngineKind });
+      engine = createBeatEngine({
+        kind: audioEngineKind,
+        toneSampleUrls:
+          audioEngineKind === "tone-sample"
+            ? getKitSampleUrls(sequencer.styleId)
+            : undefined,
+      });
       engineRef.current = engine;
     }
     await engine.ready();

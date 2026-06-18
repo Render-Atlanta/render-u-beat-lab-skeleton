@@ -4,6 +4,7 @@ import type { InstrumentId } from "../lib/patterns";
 import type { ProducerTagConfigInput } from "../lib/producerTag";
 import type { AudioEngine } from "./audioEngine";
 import { getStepEvents } from "./transport";
+import { createToneVoices, playVoice } from "./toneVoices";
 
 export interface ToneTransportPort {
   bpm: { value: number };
@@ -28,7 +29,12 @@ export interface ToneRuntimePort {
   start(): Promise<void>;
   loaded(): Promise<void>;
   getTransport(): ToneTransportPort;
-  createSamplePlayer?(url: string): ToneVoicePort;
+  /**
+   * Create a sample-player voice for `url`. Returns `null` if the player
+   * cannot be constructed/loaded so the engine can fall back to a synth voice
+   * without throwing or logging console errors.
+   */
+  createSamplePlayer?(url: string): ToneVoicePort | null;
   createKickSynth(): ToneVoicePort;
   createNoiseSynth(options?: unknown): ToneVoicePort;
 }
@@ -109,73 +115,43 @@ export function createToneSampleBeatEngine(
   };
 }
 
-function createToneVoices(
-  runtime: ToneRuntimePort,
-  sampleUrls: ToneSampleUrls,
-): Record<InstrumentId, ToneVoicePort> {
-  return {
-    kick: createVoice(runtime, "kick", sampleUrls.kick),
-    snare: createVoice(runtime, "snare", sampleUrls.snare),
-    hat: createVoice(runtime, "hat", sampleUrls.hat),
-    openHat: createVoice(runtime, "openHat", sampleUrls.openHat),
-  };
-}
-
-function createVoice(
-  runtime: ToneRuntimePort,
-  instrument: InstrumentId,
-  sampleUrl: string | undefined,
-): ToneVoicePort {
-  if (sampleUrl && runtime.createSamplePlayer) {
-    return runtime.createSamplePlayer(sampleUrl);
-  }
-
-  if (instrument === "kick") {
-    return runtime.createKickSynth();
-  }
-
-  return runtime.createNoiseSynth({
-    envelope: {
-      attack: 0.001,
-      decay: instrument === "openHat" ? 0.18 : 0.045,
-      sustain: 0,
-      release: instrument === "openHat" ? 0.12 : 0.03,
-    },
-  });
-}
-
-function playVoice(
-  voice: ToneVoicePort,
-  instrument: InstrumentId,
-  time: number,
-  accent: number,
-) {
-  if (voice.start) {
-    voice.start(time);
-    return;
-  }
-
-  if (instrument === "kick") {
-    voice.triggerAttackRelease?.("C1", "8n", time, accent);
-    return;
-  }
-
-  voice.triggerAttackRelease?.(instrument === "openHat" ? "8n" : "32n", time, accent);
-}
-
 function getDefaultToneRuntime(): ToneRuntimePort {
   return {
     start: Tone.start,
     loaded: Tone.loaded,
     getTransport: Tone.getTransport,
     createSamplePlayer: (url) => {
-      const player = new Tone.Player(url).toDestination();
-      return {
-        start: (time) => player.start(time),
-        dispose: () => {
-          player.dispose();
-        },
-      };
+      try {
+        // `onerror` swallows decode/network failures (Tone otherwise logs to
+        // the console). The voice keeps a `failed` flag and *throws* from
+        // start() once the sample is known-bad, so the engine wrapper degrades
+        // the lane to its synth fallback instead of going silent.
+        let failed = false;
+        const player = new Tone.Player({
+          url,
+          onerror: () => {
+            failed = true;
+          },
+        }).toDestination();
+        return {
+          start: (time) => {
+            if (failed) {
+              throw new Error(`tone sample failed to load: ${url}`);
+            }
+            try {
+              player.start(time);
+            } catch (error) {
+              failed = true;
+              throw error;
+            }
+          },
+          dispose: () => {
+            player.dispose();
+          },
+        };
+      } catch {
+        return null;
+      }
     },
     createKickSynth: () => {
       const synth = new Tone.MembraneSynth().toDestination();
