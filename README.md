@@ -51,6 +51,18 @@ npm run dev
 npm test
 ```
 
+## Code quality
+
+Run the full quality pass (module-size check, script typecheck, and tests):
+
+```bash
+npm run check
+```
+
+`npm run hygiene` runs the module-size check on its own, and `npm run build`
+runs it automatically. See [docs/CODE_QUALITY.md](docs/CODE_QUALITY.md) for the
+file-size target, the exceptions policy, and module/test guidance.
+
 ## Deploy to Render
 
 This repo is configured as a Render Static Site through [`render.yaml`](render.yaml):
