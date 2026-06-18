@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { createBeatEngine, type BeatEngine } from "./audio/beatEngine";
+import {
+  createBeatEngine,
+  type AudioEngineKind,
+  type BeatEngine,
+} from "./audio/beatEngine";
 import { ArrangementPanel } from "./components/ArrangementPanel";
 import { BeatCoachPanel } from "./components/BeatCoachPanel";
 import { CapturePanel } from "./components/CapturePanel";
@@ -71,6 +75,8 @@ export function App() {
     createDefaultArrangement(),
   );
   const [captureSensitivity, setCaptureSensitivity] = useState(0.55);
+  const [audioEngineKind, setAudioEngineKind] =
+    useState<AudioEngineKind>("web-audio");
   const [projectJson, setProjectJson] = useState("");
   const [exportMessage, setExportMessage] = useState("");
   const [micState, setMicState] = useState<MicCaptureState>({ status: "idle" });
@@ -154,11 +160,19 @@ export function App() {
   }, [captureLoopDurationMs, captureSensitivity]);
 
   async function getEngine() {
-    if (!engineRef.current) {
-      engineRef.current = createBeatEngine();
+    let engine = engineRef.current;
+    if (!engine || engine.kind !== audioEngineKind) {
+      void engine?.dispose();
+      engine = createBeatEngine({ kind: audioEngineKind });
+      engineRef.current = engine;
     }
-    await engineRef.current.ready();
-    return engineRef.current;
+    await engine.ready();
+    // The ref can be replaced or nulled while ready() is in flight (e.g. an
+    // engine switch). If so, retry with the current selection.
+    if (engineRef.current !== engine || engine.kind !== audioEngineKind) {
+      return getEngine();
+    }
+    return engine;
   }
 
   async function togglePlayback() {
@@ -203,6 +217,18 @@ export function App() {
 
   function updateSwing(swingPercent: number) {
     applySequencerState(updateSequencerSwing(sequencer, swingPercent));
+  }
+
+  function updateAudioEngineKind(kind: AudioEngineKind) {
+    if (kind === audioEngineKind) {
+      return;
+    }
+
+    engineRef.current?.stop();
+    void engineRef.current?.dispose();
+    engineRef.current = null;
+    setIsPlaying(false);
+    setAudioEngineKind(kind);
   }
 
   function toggleStep(instrument: InstrumentId, stepIndex: number) {
@@ -325,9 +351,11 @@ export function App() {
           activeSteps={activeSteps}
           bpm={sequencer.bpm}
           swingPercent={getSwingPercent(sequencer.swing)}
+          audioEngineKind={audioEngineKind}
           pattern={sequencer.pattern}
           onBpmChange={updateBpm}
           onSwingChange={updateSwing}
+          onAudioEngineKindChange={updateAudioEngineKind}
           onReset={() => resetToStyle()}
           onToggleStep={toggleStep}
         />

@@ -2,6 +2,7 @@ import {
   classifyBeatboxHits,
   type BeatboxLaneClassification,
 } from "./beatboxClassifier";
+import { createMeydaBeatboxAnalysisProvider } from "./meydaBeatboxAnalysis";
 import type { MicCaptureError, MicCaptureResult } from "./micCapture";
 import {
   createOnsetPreview,
@@ -48,7 +49,11 @@ export function createCaptureAnalysis(
 
   return {
     preview,
-    classifications: classifyBeatboxHits(preview, result.levels),
+    classifications: classifyBeatboxHits(preview, result.levels, {
+      durationMs: result.durationMs,
+      provider: createMeydaBeatboxAnalysisProvider(),
+      waveform: result.waveform,
+    }),
   };
 }
 

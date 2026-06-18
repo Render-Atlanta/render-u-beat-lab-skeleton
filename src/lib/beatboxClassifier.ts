@@ -26,6 +26,26 @@ export interface BeatboxLaneClassification {
   features: BeatboxHitFeatures;
 }
 
+export interface BeatboxAnalysisContext {
+  levels: ReadonlyArray<MicLevelFrame>;
+  waveform?: ArrayLike<number>;
+  durationMs?: number;
+}
+
+export interface BeatboxAnalysisProvider {
+  id: string;
+  extractHitFeatures(
+    hit: QuantizedOnset,
+    context: BeatboxAnalysisContext,
+  ): BeatboxHitFeatures;
+}
+
+export interface BeatboxClassificationOptions {
+  provider?: BeatboxAnalysisProvider;
+  waveform?: ArrayLike<number>;
+  durationMs?: number;
+}
+
 interface InstrumentScore {
   instrument: InstrumentId;
   score: number;
@@ -33,12 +53,26 @@ interface InstrumentScore {
 
 const LOW_CONFIDENCE_THRESHOLD = 0.65;
 
+export const RULE_BASED_BEATBOX_ANALYSIS_PROVIDER: BeatboxAnalysisProvider = {
+  id: "rule-based-levels",
+  extractHitFeatures: (hit, context) =>
+    extractBeatboxHitFeatures(hit, context.levels),
+};
+
 export function classifyBeatboxHits(
   preview: OnsetPreview,
   levels: ReadonlyArray<MicLevelFrame>,
+  options: BeatboxClassificationOptions = {},
 ): BeatboxLaneClassification[] {
+  const provider = options.provider ?? RULE_BASED_BEATBOX_ANALYSIS_PROVIDER;
+  const context: BeatboxAnalysisContext = {
+    levels,
+    waveform: options.waveform,
+    durationMs: options.durationMs,
+  };
+
   return preview.cleanedHits.map((hit) => {
-    const features = extractBeatboxHitFeatures(hit, levels);
+    const features = provider.extractHitFeatures(hit, context);
     const scores = scoreBeatboxFeatures(features);
     const [winner, runnerUp] = scores;
     const confidence = calculateConfidence(winner.score, runnerUp?.score ?? 0);

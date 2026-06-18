@@ -1,14 +1,17 @@
 import { INSTRUMENTS } from "../lib/instruments";
 import type { InstrumentId, Pattern } from "../lib/patterns";
+import type { AudioEngineKind } from "../audio/audioEngine";
 
 export interface SequencerPanelProps {
   styleName: string;
   activeSteps: number;
   bpm: number;
   swingPercent: number;
+  audioEngineKind: AudioEngineKind;
   pattern: Pattern;
   onBpmChange: (bpm: number) => void;
   onSwingChange: (swingPercent: number) => void;
+  onAudioEngineKindChange: (kind: AudioEngineKind) => void;
   onReset: () => void;
   onToggleStep: (instrument: InstrumentId, stepIndex: number) => void;
 }
@@ -18,9 +21,11 @@ export function SequencerPanel({
   activeSteps,
   bpm,
   swingPercent,
+  audioEngineKind,
   pattern,
   onBpmChange,
   onSwingChange,
+  onAudioEngineKindChange,
   onReset,
   onToggleStep,
 }: SequencerPanelProps) {
@@ -57,6 +62,18 @@ export function SequencerPanel({
             value={swingPercent}
             onChange={(event) => onSwingChange(Number(event.target.value))}
           />
+        </label>
+        <label className="control-field">
+          <span className="eyebrow">Engine</span>
+          <select
+            value={audioEngineKind}
+            onChange={(event) =>
+              onAudioEngineKindChange(event.target.value as AudioEngineKind)
+            }
+          >
+            <option value="web-audio">Web Audio</option>
+            <option value="tone-sample">Tone.js</option>
+          </select>
         </label>
         <button className="button secondary compact" type="button" onClick={onReset}>
           Reset

@@ -4,8 +4,13 @@ import {
   createWebAudioBeatEngine,
   type WebAudioBeatEngineRuntime,
 } from "./webAudioBeatEngine";
+import {
+  createToneSampleBeatEngine,
+  type ToneRuntimePort,
+  type ToneSampleUrls,
+} from "./toneSampleBeatEngine";
 
-export type AudioEngineKind = "web-audio";
+export type AudioEngineKind = "web-audio" | "tone-sample";
 
 export interface AudioEngine {
   readonly kind: AudioEngineKind;
@@ -19,11 +24,18 @@ export interface AudioEngine {
 export interface AudioEngineOptions {
   kind?: AudioEngineKind;
   runtime?: WebAudioBeatEngineRuntime;
+  toneRuntime?: ToneRuntimePort;
+  toneSampleUrls?: ToneSampleUrls;
 }
 
 export function createAudioEngine(options: AudioEngineOptions = {}): AudioEngine {
   switch (options.kind ?? "web-audio") {
     case "web-audio":
       return createWebAudioBeatEngine(options.runtime);
+    case "tone-sample":
+      return createToneSampleBeatEngine({
+        runtime: options.toneRuntime,
+        sampleUrls: options.toneSampleUrls,
+      });
   }
 }
