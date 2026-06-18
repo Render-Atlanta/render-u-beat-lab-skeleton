@@ -69,12 +69,38 @@ ours to redistribute, and needs no external attribution.
 
 **No external tracks are bundled, and none were fabricated.** We deliberately do
 not list invented creators, URLs, BPMs, or license terms — fabricated
-attribution is a real-world harm. External curation is left to a human (below).
+attribution is a real-world harm.
+
+## Vetted external candidates (link-only, awaiting human confirmation)
+
+Alongside each style's in-repo CC0 original, `OPEN_REFERENCES` now carries
+**researched external candidates**. Each was found in a source pool below, its
+license read **directly from the asset's own page** (URLs in the table), and is
+stored as `bundleable: false` + `verified: false` — a link-only pointer for a
+human to confirm the license and download before any bundling. All verified
+candidates below are Free Music Archive tracks under **CC BY 4.0**.
+
+| Style | Candidate | Creator | License | Source page (license verified here) |
+| --- | --- | --- | --- | --- |
+| trap | Achilles | 1000 Handz | CC BY 4.0 | <https://freemusicarchive.org/music/1000-handz/cc-by-free-to-use-melodic-rap-instrumentals/achilles-1/> |
+| crunk | *(none found)* | — | — | No verified CC0/CC-BY crunk-specific candidate located; keeps only its in-repo CC0 original. |
+| drill | Fugitive (73 BPM) | JMHBM (Beat Mekanik) | CC BY 4.0 | <https://freemusicarchive.org/music/beat-mekanik/single/fugitive/> |
+| drill | Runnin' (145 BPM) | JMHBM (Beat Mekanik) | CC BY 4.0 | <https://freemusicarchive.org/music/beat-mekanik/single/runnin/> |
+| rnb | Soul Sync | Ketsa | CC BY 4.0 | <https://freemusicarchive.org/music/Ketsa/cc-by-free-to-use-for-anything/soul-sync/> |
+| pop | Upbeat Corporate Pop | Music for Creators | CC BY 4.0 | <https://freemusicarchive.org/music/fretbound/corporate-background-music-1/upbeat-corporate-pop/> |
+| afrobeats | Sun Still Sky | Ketsa | CC BY 4.0 | <https://freemusicarchive.org/music/Ketsa/upbeat-street/sun-still-sky/> |
+| amapiano | Amapiano | Elijah_K | CC BY 4.0 | <https://freemusicarchive.org/music/elijah-k/single/amapiano/> |
+
+These are CC BY (an allowed bundle license) but remain **link-only** until a
+human verifies and downloads them; only then should `verified`/`bundleable`
+flip. CC BY requires attribution — each row ships a ready-to-paste
+`attributionText`.
 
 ## Candidate source pools (research pointers)
 
 Real pools a human can mine for genuinely open CC0/CC-BY assets:
 
+- Free Music Archive (per-track CC license shown on the page): <https://freemusicarchive.org>
 - Freesound license FAQ: <https://freesound.org/help/faq/#licenses>
 - Freesound Loop Dataset: <https://arxiv.org/abs/2008.11507>
 - Free Music Archive dataset: <https://arxiv.org/abs/1612.01840>
@@ -99,9 +125,13 @@ If you cannot verify a candidate, **omit it**. Do not add a placeholder row.
 
 ## Weak-coverage genres and the fallback plan
 
-Open, representative assets are thin for some styles — crunk, drill, Afrobeats,
-and amapiano in particular have little reliably-licensed CC0/CC-BY material that
-genuinely captures the groove. Rather than ship questionable or fabricated
+Open, representative assets are thin for some styles. In particular, **crunk**
+has no dedicated CC0/CC-BY instrumental that genuinely captures the groove —
+research across Free Music Archive, Freesound, and OpenGameArt turned up no
+honest crunk-specific match, so crunk deliberately keeps **only its in-repo CC0
+original** rather than a forced or fabricated pointer. Drill, Afrobeats, and
+amapiano were thin too, but real CC BY candidates were found and recorded as
+link-only pointers above. Rather than ship questionable or fabricated
 attribution, the **fallback is what we already do for every style**:
 
 - the **original in-repo pattern** for that style (`BEAT_STYLES[styleId]`), plus

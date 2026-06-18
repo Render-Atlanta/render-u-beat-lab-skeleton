@@ -53,6 +53,20 @@ describe("OPEN_REFERENCES coverage", () => {
       }
     }
   });
+
+  it("keeps every external (non-repo) candidate link-only and unverified", () => {
+    for (const styleId of STYLE_IDS) {
+      const externals = getOpenReferences(styleId).filter(
+        (ref) => ref.creator !== "Render U Beat Lab (original)",
+      );
+      for (const ref of externals) {
+        expect(ref.bundleable).toBe(false);
+        expect(ref.verified).toBe(false);
+        expect(ref.attributionText.trim().length).toBeGreaterThan(0);
+        expect(ref.sourceUrl.trim().length).toBeGreaterThan(0);
+      }
+    }
+  });
 });
 
 describe("validateOpenReferences (real manifest)", () => {
