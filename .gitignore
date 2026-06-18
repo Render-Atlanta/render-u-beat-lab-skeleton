@@ -4,3 +4,8 @@ dist
 .env
 .env.local
 coverage
+
+# PR-15 reference analyzer: never commit audio or generated profiles
+reference-audio/
+*.wav
+*.profile.json
