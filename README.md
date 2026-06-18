@@ -63,6 +63,14 @@ npm run check
 runs it automatically. See [docs/CODE_QUALITY.md](docs/CODE_QUALITY.md) for the
 file-size target, the exceptions policy, and module/test guidance.
 
+## Reference material
+
+The app keeps two distinct kinds of style references: commercial
+metadata-only study targets (`src/lib/styleReferences.ts`) and redistributable
+open-license examples we may bundle (`src/lib/openReferences.ts`). See
+[docs/OPEN_REFERENCES.md](docs/OPEN_REFERENCES.md) for the difference, the
+allowed/rejected license policy, and the workflow for adding vetted open picks.
+
 ## Deploy to Render
 
 This repo is configured as a Render Static Site through [`render.yaml`](render.yaml):
