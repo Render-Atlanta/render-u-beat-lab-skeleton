@@ -831,3 +831,44 @@ button:disabled {
   background: rgba(0, 0, 0, 0.25);
   border-radius: 8px;
 }
+
+/* Producer tag source toggle + record controls */
+.tag-source-toggle {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.tag-source-btn {
+  flex: 1;
+  padding: 0.3rem 0.5rem;
+  border: 1px solid var(--border, #444);
+  background: transparent;
+  color: inherit;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  opacity: 0.7;
+  transition: opacity 0.15s, background 0.15s;
+}
+
+.tag-source-btn.active {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.tag-record-controls {
+  margin-bottom: 0.5rem;
+}
+
+.tag-recorded-actions {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.tag-recording-status {
+  display: inline-block;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.8rem;
+  opacity: 0.75;
+}

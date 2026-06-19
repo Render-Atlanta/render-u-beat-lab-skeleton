@@ -90,3 +90,41 @@ function readStr(view: DataView, offset: number, length: number): string {
   for (let i = 0; i < length; i += 1) s += String.fromCharCode(view.getUint8(offset + i));
   return s;
 }
+
+/**
+ * Encode mono PCM samples (−1..1) as a 16-bit RIFF/WAVE buffer. Round-trips
+ * with `decodeWav`. Samples are clamped to [-1, 1] before quantization.
+ */
+export function encodeWav(samples: Float32Array, sampleRate: number): Uint8Array {
+  const bytesPerSample = 2;
+  const dataLength = samples.length * bytesPerSample;
+  const buffer = new ArrayBuffer(44 + dataLength);
+  const view = new DataView(buffer);
+
+  writeStr(view, 0, "RIFF");
+  view.setUint32(4, 36 + dataLength, true);
+  writeStr(view, 8, "WAVE");
+  writeStr(view, 12, "fmt ");
+  view.setUint32(16, 16, true); // fmt chunk size
+  view.setUint16(20, 1, true); // PCM
+  view.setUint16(22, 1, true); // mono
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * bytesPerSample, true); // byte rate
+  view.setUint16(32, bytesPerSample, true); // block align
+  view.setUint16(34, 16, true); // bits per sample
+  writeStr(view, 36, "data");
+  view.setUint32(40, dataLength, true);
+
+  for (let i = 0; i < samples.length; i += 1) {
+    const clamped = Math.max(-1, Math.min(1, samples[i]));
+    view.setInt16(44 + i * bytesPerSample, Math.round(clamped * 32767), true);
+  }
+
+  return new Uint8Array(buffer);
+}
+
+function writeStr(view: DataView, offset: number, value: string): void {
+  for (let i = 0; i < value.length; i += 1) {
+    view.setUint8(offset + i, value.charCodeAt(i));
+  }
+}

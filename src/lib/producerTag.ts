@@ -1,4 +1,6 @@
-export type ProducerTagTrigger = "manual" | "intro";
+export type ProducerTagTrigger = "manual" | "intro" | "loop";
+
+export type ProducerTagSource = "text" | "recorded";
 
 export type ProducerTagText = string & { readonly __producerTagText: unique symbol };
 
@@ -13,6 +15,7 @@ export interface ProducerTagConfig {
   text: ProducerTagText;
   trigger: ProducerTagTrigger;
   effects: ProducerTagEffects;
+  source: ProducerTagSource;
 }
 
 export interface ProducerTagConfigInput {
@@ -20,6 +23,7 @@ export interface ProducerTagConfigInput {
   text?: string;
   trigger?: ProducerTagTrigger;
   effects?: Partial<ProducerTagEffects>;
+  source?: ProducerTagSource;
 }
 
 export type ProducerTagUnavailableReason =
@@ -69,8 +73,9 @@ export function normalizeProducerTagConfig(
   return {
     enabled: input.enabled ?? true,
     text: createProducerTagText(input.text),
-    trigger: input.trigger ?? "manual",
+    trigger: input.trigger === "intro" || input.trigger === "loop" ? input.trigger : "manual",
     effects: normalizeProducerTagEffects(input.effects),
+    source: input.source === "recorded" ? "recorded" : "text",
   };
 }
 

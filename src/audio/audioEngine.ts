@@ -12,6 +12,11 @@ import {
 
 export type AudioEngineKind = "web-audio" | "tone-sample";
 
+export interface ProducerTagSample {
+  samples: Float32Array;
+  sampleRate: number;
+}
+
 export interface AudioEngine {
   readonly kind: AudioEngineKind;
   ready(): Promise<void>;
@@ -26,6 +31,10 @@ export interface AudioEngine {
    * Returns false when no analyser is available (idle/unsupported engine).
    */
   getFrequencyData(target: Uint8Array): boolean;
+  /** Store a recorded audio sample for playback via the "recorded" source path. null clears it. */
+  setProducerTagSample(sample: ProducerTagSample | null): void;
+  /** Store the active producer tag config; the engine uses it to fire at loop boundaries. null clears it. */
+  setProducerTagConfig(config: ProducerTagConfigInput | null): void;
 }
 
 export interface AudioEngineOptions {

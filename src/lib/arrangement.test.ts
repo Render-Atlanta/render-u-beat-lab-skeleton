@@ -3,7 +3,6 @@ import {
   createArrangementPlaybackSections,
   createBeatLabProject,
   createDefaultArrangement,
-  createUnsupportedWavExportResult,
   exportProjectJson,
   importProjectJson,
   isLaneMutedInSection,
@@ -113,9 +112,26 @@ describe("arrangement helpers", () => {
         text: "Render U exclusive",
         trigger: "intro",
         effects: { rate: 0.7, pitch: 1.2, volume: 0.6 },
+        source: "text",
       },
       arrangement,
     });
+  });
+
+  it("roundtrips a project with a loop trigger through export and import", () => {
+    const project = createBeatLabProject({
+      sequencer: createDefaultSequencerState("trap"),
+      producerTag: { trigger: "loop", source: "recorded" },
+    });
+
+    const result = importProjectJson(exportProjectJson(project, { pretty: false }));
+
+    if (!result.ok) {
+      throw new Error(result.errors.join("\n"));
+    }
+
+    expect(result.project.producerTag.trigger).toBe("loop");
+    expect(result.project.producerTag.source).toBe("recorded");
   });
 
   it("validates project imports before reconstruction", () => {
@@ -197,12 +213,35 @@ describe("arrangement helpers", () => {
     ).toThrow(/Invalid project export/);
   });
 
-  it("documents WAV export as unsupported until offline rendering is stable", () => {
-    expect(createUnsupportedWavExportResult()).toEqual({
-      ok: false,
-      reason: "unsupported",
-      message:
-        "WAV export is reserved for a stable offline render path; export project JSON for now.",
+  it("defaults missing producerTag.source to text for backward-compat with older project JSON", () => {
+    const project = createBeatLabProject({
+      sequencer: createDefaultSequencerState("trap"),
+      producerTag: { text: "Render U made this" },
     });
+    const parsed = JSON.parse(exportProjectJson(project, { pretty: false }));
+    delete parsed.producerTag.source;
+    const result = importProjectJson(JSON.stringify(parsed));
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      throw new Error(result.errors.join("\n"));
+    }
+    expect(result.project.producerTag.source).toBe("text");
+  });
+
+  it("rejects a genuinely-invalid producerTag.source value", () => {
+    const project = createBeatLabProject({
+      sequencer: createDefaultSequencerState("trap"),
+      producerTag: { text: "Render U made this" },
+    });
+    const parsed = JSON.parse(exportProjectJson(project, { pretty: false }));
+    parsed.producerTag.source = "bogus";
+    const result = importProjectJson(JSON.stringify(parsed));
+
+    expect(result.ok).toBe(false);
+    if (result.ok) {
+      throw new Error("Expected import to fail for invalid source");
+    }
+    expect(result.errors).toContain("Producer tag source must be text or recorded.");
   });
 });

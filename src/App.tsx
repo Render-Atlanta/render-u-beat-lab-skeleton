@@ -4,17 +4,17 @@ import {
   type AudioEngineKind,
   type BeatEngine,
 } from "./audio/beatEngine";
+import type { ProducerTagSample } from "./audio/audioEngine";
 import { getKitSampleUrls } from "./audio/sampleKit";
 import { ArrangementPanel } from "./components/ArrangementPanel";
 import { BeatCoachPanel } from "./components/BeatCoachPanel";
 import { CapturePanel } from "./components/CapturePanel";
-import { ProducerTagControls } from "./components/ProducerTagControls";
+import { ProducerTagControls, type RecordedState } from "./components/ProducerTagControls";
 import { SequencerPanel } from "./components/SequencerPanel";
 import { StyleSelector } from "./components/StyleSelector";
 import {
   createBeatLabProject,
   createDefaultArrangement,
-  createUnsupportedWavExportResult,
   exportProjectJson,
   toggleSectionLaneMute,
   type Arrangement,
@@ -50,8 +50,11 @@ import { countActiveSteps, type InstrumentId } from "./lib/patterns";
 import {
   DEFAULT_PRODUCER_TAG_TEXT,
   normalizeProducerTagConfig,
+  type ProducerTagSource,
   type ProducerTagTrigger,
 } from "./lib/producerTag";
+import { decodeProducerTagSample } from "./lib/producerTagSample";
+import { renderBeatWav } from "./lib/exportBeat";
 import {
   createPlayableStyle,
   getSequencerLoopDurationMs,
@@ -76,6 +79,9 @@ export function App() {
     useState<ProducerTagTrigger>("manual");
   const [producerTagRate, setProducerTagRate] = useState(0.86);
   const [producerTagPitch, setProducerTagPitch] = useState(0.72);
+  const [producerTagSource, setProducerTagSource] = useState<ProducerTagSource>("text");
+  const [recordedPcm, setRecordedPcm] = useState<ProducerTagSample | null>(null);
+  const [recordedState, setRecordedState] = useState<RecordedState>("none");
   const [arrangement, setArrangement] = useState<Arrangement>(() =>
     createDefaultArrangement(),
   );
@@ -109,12 +115,13 @@ export function App() {
         enabled: producerTagEnabled,
         text: producerTagText,
         trigger: producerTagTrigger,
+        source: producerTagSource,
         effects: {
           rate: producerTagRate,
           pitch: producerTagPitch,
         },
       }),
-    [producerTagEnabled, producerTagPitch, producerTagRate, producerTagText, producerTagTrigger],
+    [producerTagEnabled, producerTagPitch, producerTagRate, producerTagText, producerTagTrigger, producerTagSource],
   );
   const micSupport = useMemo(() => getMicCaptureSupport(), []);
   const activeSteps = useMemo(
@@ -191,8 +198,16 @@ export function App() {
     });
   }, [captureLoopDurationMs, captureSensitivity]);
 
+  // Sync producer tag config to engine whenever it changes.
+  useEffect(() => {
+    if (engineRef.current) {
+      engineRef.current.setProducerTagConfig(producerTagConfig);
+    }
+  }, [producerTagConfig]);
+
   async function getEngine() {
     let engine = engineRef.current;
+    let isNewEngine = false;
     if (!engine || engine.kind !== audioEngineKind) {
       void engine?.dispose();
       engine = createBeatEngine({
@@ -203,12 +218,19 @@ export function App() {
             : undefined,
       });
       engineRef.current = engine;
+      isNewEngine = true;
     }
     await engine.ready();
     // The ref can be replaced or nulled while ready() is in flight (e.g. an
     // engine switch). If so, retry with the current selection.
     if (engineRef.current !== engine || engine.kind !== audioEngineKind) {
       return getEngine();
+    }
+    // Replay current producer-tag state onto a freshly-created engine so that
+    // recorded sample + config are not lost after an engine switch.
+    if (isNewEngine) {
+      engine.setProducerTagSample(recordedPcm);
+      engine.setProducerTagConfig(producerTagConfig);
     }
     return engine;
   }
@@ -296,6 +318,40 @@ export function App() {
     }
   }
 
+  async function recordTag() {
+    if (!micSupport.supported) {
+      setMicState({ status: "error", message: micSupport.message });
+      return;
+    }
+
+    setRecordedState("recording");
+
+    try {
+      const result = await captureMicrophoneSample({ durationMs: 3000 });
+      const pcm = await decodeProducerTagSample(result.blob);
+      setRecordedPcm(pcm);
+      setRecordedState("recorded");
+      const engine = engineRef.current;
+      if (engine) {
+        engine.setProducerTagSample(pcm);
+      }
+    } catch (error) {
+      setRecordedState("none");
+      setRecordedPcm(null);
+      engineRef.current?.setProducerTagSample(null);
+      setMicState({
+        status: "error",
+        message: getMicCaptureErrorMessage(error),
+      });
+    }
+  }
+
+  function clearRecording() {
+    setRecordedPcm(null);
+    setRecordedState("none");
+    engineRef.current?.setProducerTagSample(null);
+  }
+
   function updateCapturedHitLane(hitId: string, instrument: InstrumentId) {
     setMicState((current) => {
       if (current.status !== "captured") {
@@ -330,9 +386,41 @@ export function App() {
     setExportMessage("Project JSON is ready.");
   }
 
-  function showWavStretchMessage() {
-    const result = createUnsupportedWavExportResult();
-    setExportMessage(result.message);
+  function downloadWav() {
+    if (!kit) {
+      setExportMessage("Kit is still loading — try again in a moment.");
+      return;
+    }
+
+    try {
+      const tag =
+        producerTagEnabled && producerTagSource === "recorded" && recordedPcm
+          ? { samples: recordedPcm.samples, trigger: producerTagTrigger }
+          : undefined;
+
+      const bytes = renderBeatWav({
+        pattern: sequencer.pattern,
+        style: playableStyle,
+        kit,
+        loops: 2,
+        tag,
+      });
+
+      const blob = new Blob([bytes.buffer as ArrayBuffer], { type: "audio/wav" });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = "render-u-beat.wav";
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      URL.revokeObjectURL(url);
+      setExportMessage("WAV download started.");
+    } catch (error) {
+      setExportMessage(
+        error instanceof Error ? error.message : "WAV export failed.",
+      );
+    }
   }
 
   function toggleArrangementLaneMute(
@@ -417,11 +505,16 @@ export function App() {
             trigger={producerTagTrigger}
             rate={producerTagRate}
             pitch={producerTagPitch}
+            source={producerTagSource}
+            recordedState={recordedState}
             onTextChange={setProducerTagText}
             onEnabledChange={setProducerTagEnabled}
             onTriggerChange={setProducerTagTrigger}
             onRateChange={setProducerTagRate}
             onPitchChange={setProducerTagPitch}
+            onSourceChange={setProducerTagSource}
+            onRecord={recordTag}
+            onClearRecording={clearRecording}
           />
           <ArrangementPanel
             arrangement={arrangement}
@@ -429,7 +522,7 @@ export function App() {
             projectJson={projectJson}
             onToggleLaneMute={toggleArrangementLaneMute}
             onExportProject={exportProject}
-            onShowWavMessage={showWavStretchMessage}
+            onDownloadWav={downloadWav}
           />
           <CapturePanel
             micState={micState}

@@ -15,7 +15,7 @@ export interface ArrangementPanelProps {
     instrument: InstrumentId,
   ) => void;
   onExportProject: () => void;
-  onShowWavMessage: () => void;
+  onDownloadWav: () => void;
 }
 
 export function ArrangementPanel({
@@ -24,7 +24,7 @@ export function ArrangementPanel({
   projectJson,
   onToggleLaneMute,
   onExportProject,
-  onShowWavMessage,
+  onDownloadWav,
 }: ArrangementPanelProps) {
   return (
     <div className="arrangement-panel">
@@ -65,9 +65,9 @@ export function ArrangementPanel({
         <button
           className="button secondary compact"
           type="button"
-          onClick={onShowWavMessage}
+          onClick={onDownloadWav}
         >
-          WAV
+          Download WAV
         </button>
       </div>
       {exportMessage ? <p className="status-copy">{exportMessage}</p> : null}

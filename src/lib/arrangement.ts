@@ -6,6 +6,7 @@ import {
   type ProducerTagConfig,
   type ProducerTagConfigInput,
   type ProducerTagEffects,
+  type ProducerTagSource,
   type ProducerTagTrigger,
 } from "./producerTag";
 
@@ -51,12 +52,6 @@ export type ProjectImportResult =
 export interface ProjectJsonOptions {
   pretty?: boolean;
 }
-
-export type WavExportResult = {
-  ok: false;
-  reason: "unsupported";
-  message: string;
-};
 
 const SECTION_LABELS: Record<ArrangementSectionId, string> = {
   intro: "Intro",
@@ -244,15 +239,6 @@ export function reconstructProjectState(project: BeatLabProject): BeatLabProject
   return result.project;
 }
 
-export function createUnsupportedWavExportResult(): WavExportResult {
-  return {
-    ok: false,
-    reason: "unsupported",
-    message:
-      "WAV export is reserved for a stable offline render path; export project JSON for now.",
-  };
-}
-
 function cloneSequencerState(sequencer: SequencerState): SequencerState {
   return {
     styleId: sequencer.styleId,
@@ -309,12 +295,14 @@ function readProducerTagConfig(
   const text = readString(value.text, errors, "Producer tag text");
   const trigger = readProducerTagTrigger(value.trigger, errors);
   const effects = readProducerTagEffects(value.effects, errors);
+  const source = readProducerTagSource(value.source, errors);
 
   if (
     enabled === null ||
     text === null ||
     trigger === null ||
-    effects === null
+    effects === null ||
+    source === null
   ) {
     return null;
   }
@@ -324,6 +312,7 @@ function readProducerTagConfig(
     text,
     trigger,
     effects,
+    source,
   });
 }
 
@@ -510,11 +499,22 @@ function readProducerTagTrigger(
   value: unknown,
   errors: string[],
 ): ProducerTagTrigger | null {
-  if (value === "manual" || value === "intro") {
+  if (value === "manual" || value === "intro" || value === "loop") {
     return value;
   }
 
-  errors.push("Producer tag trigger must be manual or intro.");
+  errors.push("Producer tag trigger must be manual, intro, or loop.");
+  return null;
+}
+
+function readProducerTagSource(
+  value: unknown,
+  errors: string[],
+): ProducerTagSource | null {
+  if (value === undefined || value === "text") return "text";
+  if (value === "recorded") return "recorded";
+
+  errors.push("Producer tag source must be text or recorded.");
   return null;
 }
 

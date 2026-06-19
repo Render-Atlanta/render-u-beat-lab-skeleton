@@ -1,6 +1,6 @@
 import type { BeatStyle } from "../lib/beatStyles";
 import type { ProducerTagConfigInput } from "../lib/producerTag";
-import type { AudioEngine } from "./audioEngine";
+import type { AudioEngine, ProducerTagSample } from "./audioEngine";
 
 /**
  * A lightweight, fully in-memory `AudioEngine` for UI/component tests.
@@ -31,6 +31,12 @@ export interface FakeAudioEngine extends AudioEngine {
   readonly startedStyles: readonly BeatStyle[];
   /** Every producer-tag input passed to `playProducerTag()`, in order. */
   readonly producerTags: readonly (ProducerTagConfigInput | string)[];
+  /** The producer tag sample currently set, or null. */
+  readonly producerTagSample: ProducerTagSample | null;
+  setProducerTagSample(sample: ProducerTagSample | null): void;
+  /** The producer tag config currently set, or null. */
+  readonly producerTagConfig: ProducerTagConfigInput | null;
+  setProducerTagConfig(config: ProducerTagConfigInput | null): void;
 }
 
 export function createFakeAudioEngine(): FakeAudioEngine {
@@ -40,6 +46,8 @@ export function createFakeAudioEngine(): FakeAudioEngine {
   let disposed = false;
   let readyCount = 0;
   let activeStep: number | null = null;
+  let tagSample: ProducerTagSample | null = null;
+  let tagConfig: ProducerTagConfigInput | null = null;
 
   return {
     // Cast keeps the fake distinguishable in tests without widening the public
@@ -62,6 +70,18 @@ export function createFakeAudioEngine(): FakeAudioEngine {
     },
     get producerTags() {
       return producerTags;
+    },
+    get producerTagSample() {
+      return tagSample;
+    },
+    setProducerTagSample(sample: ProducerTagSample | null) {
+      tagSample = sample;
+    },
+    get producerTagConfig() {
+      return tagConfig;
+    },
+    setProducerTagConfig(config: ProducerTagConfigInput | null) {
+      tagConfig = config;
     },
     async ready() {
       readyCount += 1;

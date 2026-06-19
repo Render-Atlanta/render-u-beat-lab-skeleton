@@ -32,6 +32,7 @@ describe("producer tag helpers", () => {
         pitch: 0,
         volume: 0.42,
       },
+      source: "text",
     });
   });
 
@@ -48,6 +49,7 @@ describe("producer tag helpers", () => {
     expect(config.text).toBe(DEFAULT_PRODUCER_TAG_TEXT);
     expect(config.trigger).toBe("manual");
     expect(config.effects).toEqual(DEFAULT_PRODUCER_TAG_EFFECTS);
+    expect(config.source).toBe("text");
   });
 
   it("reports speech synthesis fallback reasons deterministically", () => {
@@ -114,6 +116,23 @@ describe("producer tag helpers", () => {
     expect(utterance.rate).toBe(0.6);
     expect(utterance.pitch).toBe(1.1);
     expect(utterance.volume).toBe(0.75);
+  });
+});
+
+describe("producer tag source + loop trigger", () => {
+  it("defaults source to text", () => {
+    expect(normalizeProducerTagConfig({}).source).toBe("text");
+  });
+
+  it("accepts recorded source and loop trigger", () => {
+    const config = normalizeProducerTagConfig({ source: "recorded", trigger: "loop" });
+    expect(config.source).toBe("recorded");
+    expect(config.trigger).toBe("loop");
+  });
+
+  it("falls back to text for an unknown source", () => {
+    // @ts-expect-error exercising runtime guard
+    expect(normalizeProducerTagConfig({ source: "bogus" }).source).toBe("text");
   });
 });
 

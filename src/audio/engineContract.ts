@@ -157,5 +157,18 @@ export function runAudioEngineContract(
       const filled = engine.getFrequencyData(new Uint8Array(32));
       expect(typeof filled).toBe("boolean");
     });
+
+    it("accepts and clears a producer tag sample without throwing", () => {
+      const { engine } = makeHarness();
+      engine.setProducerTagSample({ samples: new Float32Array([0.1, 0.2]), sampleRate: 22050 });
+      engine.playProducerTag({ source: "recorded", trigger: "manual" });
+      engine.setProducerTagSample(null);
+    });
+
+    it("accepts a producer tag config for loop placement without throwing", () => {
+      const { engine } = makeHarness();
+      engine.setProducerTagConfig({ source: "recorded", trigger: "loop" });
+      engine.setProducerTagConfig(null);
+    });
   });
 }

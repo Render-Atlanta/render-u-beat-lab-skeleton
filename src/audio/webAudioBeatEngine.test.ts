@@ -61,6 +61,40 @@ describe("web audio beat engine adapter", () => {
     engine.stop();
     expect(engine.getActiveStep()).toBeNull();
   });
+
+  it("plays recorded producer tag sample through a buffer source", () => {
+    const runtime = createFakeRuntime();
+    const engine = createWebAudioBeatEngine(runtime);
+
+    engine.setProducerTagSample({ samples: new Float32Array([0.1, 0.2, 0.3]), sampleRate: 22050 });
+    engine.playProducerTag({ source: "recorded", trigger: "manual" });
+
+    expect(runtime.contexts[0].bufferSourceStarts.length).toBeGreaterThan(0);
+  });
+
+  it("fires the recorded tag at step 0 (loop boundary) when loop config is set", () => {
+    const sample = { samples: new Float32Array([0.5, 0.6]), sampleRate: 22050 };
+
+    // Control: sample set, but no loop config — drums only
+    const controlRuntime = createFakeRuntime();
+    const controlEngine = createWebAudioBeatEngine(controlRuntime);
+    controlEngine.setProducerTagSample(sample);
+    controlEngine.start(BEAT_STYLES.trap);
+    controlRuntime.runTimer(1);
+    const controlCount = controlRuntime.contexts[0].bufferSourceStarts.length;
+
+    // Tag: sample + loop config — tag should fire at step 0
+    const tagRuntime = createFakeRuntime();
+    const tagEngine = createWebAudioBeatEngine(tagRuntime);
+    tagEngine.setProducerTagSample(sample);
+    tagEngine.setProducerTagConfig({ source: "recorded", trigger: "loop" });
+    tagEngine.start(BEAT_STYLES.trap);
+    tagRuntime.runTimer(1);
+    const tagCount = tagRuntime.contexts[0].bufferSourceStarts.length;
+
+    // Tag engine must start strictly more buffer sources than control (the extra is the tag)
+    expect(tagCount).toBeGreaterThan(controlCount);
+  });
 });
 
 function createFakeRuntime() {

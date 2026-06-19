@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { decodeWav } from "./wav";
+import { decodeWav, encodeWav } from "./wav";
 
 // Build a canonical PCM WAV in-memory. channels interleaved.
 function buildWav(
@@ -129,5 +129,26 @@ describe("decodeWav", () => {
     expect(decoded.samples).toHaveLength(4);
     expect(decoded.samples[1]).toBeCloseTo(0.5, 2);
     expect(decoded.samples[3]).toBeCloseTo(1, 2);
+  });
+});
+
+describe("encodeWav", () => {
+  it("produces a RIFF/WAVE buffer that decodeWav reads back", () => {
+    const samples = new Float32Array([0, 0.5, -0.5, 1, -1, 0.25]);
+    const bytes = encodeWav(samples, 22050);
+    const decoded = decodeWav(bytes);
+    expect(decoded.sampleRate).toBe(22050);
+    expect(decoded.samples).toHaveLength(samples.length);
+    for (let i = 0; i < samples.length; i += 1) {
+      // 16-bit quantization tolerance.
+      expect(Math.abs(decoded.samples[i] - samples[i])).toBeLessThan(0.001);
+    }
+  });
+
+  it("clamps out-of-range samples to [-1, 1]", () => {
+    const bytes = encodeWav(new Float32Array([2, -2]), 8000);
+    const decoded = decodeWav(bytes);
+    expect(decoded.samples[0]).toBeCloseTo(1, 2);
+    expect(decoded.samples[1]).toBeCloseTo(-1, 2);
   });
 });

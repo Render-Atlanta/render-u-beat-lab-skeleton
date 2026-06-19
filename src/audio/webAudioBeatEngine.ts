@@ -6,7 +6,7 @@ import {
   getBrowserProducerTagRuntime,
   type ProducerTagConfigInput,
 } from "../lib/producerTag";
-import type { AudioEngine } from "./audioEngine";
+import type { AudioEngine, ProducerTagSample } from "./audioEngine";
 import {
   getActiveStep,
   getNextStepIndex,
@@ -43,6 +43,8 @@ export function createWebAudioBeatEngine(
   let nextStepTime = 0;
   let step = 0;
   let stepQueue: StepQueueEntry[] = [];
+  let tagSample: ProducerTagSample | null = null;
+  let tagConfig: ProducerTagConfigInput | null = null;
 
   const master = context.createGain();
   master.gain.value = 0.65;
@@ -77,6 +79,9 @@ export function createWebAudioBeatEngine(
     timer = setRuntimeInterval(() => {
       while (nextStepTime < context.currentTime + SCHEDULE_AHEAD_SECONDS) {
         scheduleStep(style, step, nextStepTime);
+        if (step === 0 && tagConfig?.enabled !== false && tagConfig?.trigger === "loop" && tagConfig.source === "recorded" && tagSample) {
+          playTagSample(nextStepTime);
+        }
         stepQueue.push({ stepIndex: step, time: nextStepTime });
         if (stepQueue.length > 64) {
           stepQueue = stepQueue.slice(-32);
@@ -118,7 +123,36 @@ export function createWebAudioBeatEngine(
     return true;
   }
 
+  function playTagSample(time: number) {
+    if (!tagSample) return;
+    const { samples, sampleRate } = tagSample;
+    const buffer = context.createBuffer(1, samples.length, sampleRate);
+    const channelData = buffer.getChannelData(0);
+    for (let i = 0; i < samples.length; i++) {
+      channelData[i] = samples[i];
+    }
+    const source = context.createBufferSource();
+    source.buffer = buffer;
+    source.connect(master);
+    source.start(time);
+  }
+
+  function setProducerTagSample(sample: ProducerTagSample | null) {
+    tagSample = sample;
+  }
+
+  function setProducerTagConfig(config: ProducerTagConfigInput | null) {
+    tagConfig = config;
+  }
+
   function playProducerTag(input: ProducerTagConfigInput | string) {
+    const configInput = typeof input === "string" ? {} : input;
+    if (typeof input !== "string" && input.enabled === false) return;
+    if (configInput.source === "recorded" && tagSample) {
+      playTagSample(context.currentTime);
+      return;
+    }
+
     const producerTagRuntime = getBrowserProducerTagRuntime();
     const plan = createProducerTagPlaybackPlan(
       typeof input === "string" ? { text: input, trigger: "manual" } : input,
@@ -223,6 +257,8 @@ export function createWebAudioBeatEngine(
     playProducerTag,
     getActiveStep: getActiveStepIndex,
     getFrequencyData,
+    setProducerTagSample,
+    setProducerTagConfig,
   };
 }
 

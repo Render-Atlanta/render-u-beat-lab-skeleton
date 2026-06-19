@@ -1,0 +1,51 @@
+import { describe, expect, it } from "vitest";
+import { BEAT_STYLES } from "./beatStyles";
+import { loadKitFromDisk } from "./loadKit.node";
+import { decodeWav } from "./wav";
+import { renderBeatWav } from "./exportBeat";
+
+describe("renderBeatWav", () => {
+  const kit = loadKitFromDisk();
+
+  it("encodes a valid WAV whose length scales with loops", () => {
+    const one = decodeWav(renderBeatWav({ pattern: BEAT_STYLES.trap.pattern, style: BEAT_STYLES.trap, kit, loops: 1 }));
+    const two = decodeWav(renderBeatWav({ pattern: BEAT_STYLES.trap.pattern, style: BEAT_STYLES.trap, kit, loops: 2 }));
+    expect(one.sampleRate).toBe(22050);
+    expect(two.samples.length).toBeGreaterThan(one.samples.length);
+  });
+
+  it("mixes a recorded tag in so the output is not identical to drums-only", () => {
+    const drumsOnly = decodeWav(renderBeatWav({ pattern: BEAT_STYLES.trap.pattern, style: BEAT_STYLES.trap, kit, loops: 2 }));
+    const tag = new Float32Array(2205).fill(0.3); // ~0.1s tone
+    const withTag = decodeWav(renderBeatWav({
+      pattern: BEAT_STYLES.trap.pattern, style: BEAT_STYLES.trap, kit, loops: 2,
+      tag: { samples: tag, trigger: "intro" },
+    }));
+    let differs = false;
+    for (let i = 0; i < Math.min(2205, drumsOnly.samples.length); i += 1) {
+      if (Math.abs(withTag.samples[i] - drumsOnly.samples[i]) > 1e-4) { differs = true; break; }
+    }
+    expect(differs).toBe(true);
+  });
+
+  it("does not truncate a loop tag that extends past the drum tail", () => {
+    // Use 2 loops. The "loop" trigger fires at offset 0 and offset loopSamples.
+    // If the tag is longer than bar.length - loopSamples (the drum decay tail),
+    // it would be clipped without the buffer-extension fix.
+    const loopSamples = Math.round((60 / BEAT_STYLES.trap.bpm / 4) * 16 * 22050);
+    const longTag = new Float32Array(loopSamples + 4410).fill(0.5); // extends well past drum tail
+    const result = decodeWav(renderBeatWav({
+      pattern: BEAT_STYLES.trap.pattern,
+      style: BEAT_STYLES.trap,
+      kit,
+      loops: 2,
+      tag: { samples: longTag, trigger: "loop" },
+    }));
+    // The decoded WAV must cover at least loopSamples (last loop offset) + longTag.length
+    const minExpected = loopSamples + longTag.length;
+    expect(result.samples.length).toBeGreaterThanOrEqual(minExpected);
+    // And the last sample of the tag must NOT be zero (i.e. not truncated)
+    const lastTagSample = result.samples[loopSamples + longTag.length - 1];
+    expect(lastTagSample).not.toBeCloseTo(0, 3);
+  });
+});

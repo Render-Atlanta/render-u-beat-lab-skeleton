@@ -2,7 +2,7 @@ import * as Tone from "tone";
 import type { BeatStyle } from "../lib/beatStyles";
 import type { InstrumentId } from "../lib/patterns";
 import type { ProducerTagConfigInput } from "../lib/producerTag";
-import type { AudioEngine } from "./audioEngine";
+import type { AudioEngine, ProducerTagSample } from "./audioEngine";
 import { getStepEvents } from "./transport";
 import { createToneVoices, playVoice } from "./toneVoices";
 
@@ -55,6 +55,8 @@ export function createToneSampleBeatEngine(
   let eventId: number | string | null = null;
   let stepIndex = 0;
   let visualStep: number | null = null;
+  let tagSample: ProducerTagSample | null = null;
+  let tagConfig: ProducerTagConfigInput | null = null;
 
   async function ready() {
     await runtime.start();
@@ -69,6 +71,13 @@ export function createToneSampleBeatEngine(
     transport.swingSubdivision = "16n";
     eventId = transport.scheduleRepeat((time) => {
       scheduleStep(style, stepIndex, time);
+      if (stepIndex === 0 && tagConfig?.enabled !== false && tagConfig?.trigger === "loop" && tagConfig.source === "recorded" && tagSample) {
+        if (voices.openHat.start) {
+          voices.openHat.start(time);
+        } else {
+          voices.openHat.triggerAttackRelease?.("8n", time, undefined, 0.85);
+        }
+      }
       visualStep = stepIndex;
       stepIndex = (stepIndex + 1) % 16;
     }, "16n");
@@ -91,10 +100,26 @@ export function createToneSampleBeatEngine(
     }
   }
 
-  function playProducerTag(_input: ProducerTagConfigInput | string) {
-    // Sample-player voices expose `start`; synth voices expose
-    // `triggerAttackRelease`. Prefer the sample path so the tag is audible
-    // once a kit configures an openHat sample.
+  function setProducerTagSample(sample: ProducerTagSample | null) {
+    tagSample = sample;
+  }
+
+  function setProducerTagConfig(config: ProducerTagConfigInput | null) {
+    tagConfig = config;
+  }
+
+  function playProducerTag(input: ProducerTagConfigInput | string) {
+    const configInput = typeof input === "string" ? {} : input;
+    if (typeof input !== "string" && input.enabled === false) return;
+    if (configInput.source === "recorded" && tagSample) {
+      // Tone.js has no raw PCM buffer API; fall through to the existing voice path
+      if (voices.openHat.start) {
+        voices.openHat.start();
+        return;
+      }
+      voices.openHat.triggerAttackRelease?.("8n", undefined, undefined, 0.85);
+      return;
+    }
     if (voices.openHat.start) {
       voices.openHat.start();
       return;
@@ -117,6 +142,8 @@ export function createToneSampleBeatEngine(
     playProducerTag,
     getActiveStep: () => visualStep,
     getFrequencyData: () => false,
+    setProducerTagSample,
+    setProducerTagConfig,
   };
 }
 
