@@ -46,4 +46,10 @@ export const INSTRUMENTS: InstrumentOption[] = [
     role: "Bass",
     explainer: "The deep sub-bass boom that gives the beat its low-end weight.",
   },
+  {
+    id: "melody",
+    label: "Melody",
+    role: "Lead",
+    explainer: "An optional in-key synth line for hooks, riffs, and simple motifs.",
+  },
 ];

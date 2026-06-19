@@ -11,10 +11,16 @@ import { INSTRUMENT_IDS, type InstrumentId, type Pattern } from "./patterns";
 import {
   bassStepPitchesAreDefault,
   cloneBassStepPitches,
+  cloneMelodyStepPitches,
   createDefaultBassStepPitches,
+  createDefaultMelodyStepPitches,
   deserializeBassStepPitches,
+  deserializeMelodyStepPitches,
+  melodyStepPitchesAreDefault,
   serializeBassStepPitches,
+  serializeMelodyStepPitches,
   type BassStepPitches,
+  type MelodyStepPitches,
 } from "./stepPitch";
 
 export const INSTRUMENT_ORDER: InstrumentId[] = INSTRUMENT_IDS;
@@ -26,6 +32,7 @@ export interface SequencerState {
   pattern: Pattern;
   laneVolumes: LaneVolumes;
   bassStepPitches: BassStepPitches;
+  melodyStepPitches: MelodyStepPitches;
 }
 
 export function createDefaultSequencerState(styleId: BeatStyleId): SequencerState {
@@ -37,6 +44,7 @@ export function createDefaultSequencerState(styleId: BeatStyleId): SequencerStat
     pattern: clonePattern(style.pattern),
     laneVolumes: createDefaultLaneVolumes(),
     bassStepPitches: createDefaultBassStepPitches(),
+    melodyStepPitches: createDefaultMelodyStepPitches(),
   };
 }
 
@@ -67,12 +75,15 @@ export function serializePattern(pattern: Pattern): string {
 }
 
 const LEGACY_LANE_ORDER: InstrumentId[] = ["kick", "snare", "hat", "openHat"];
+const SIX_LANE_ORDER: InstrumentId[] = ["kick", "snare", "hat", "openHat", "clap", "808"];
 
 export function deserializePattern(value: string): Pattern | null {
   const rows = value.split(".");
   const order =
     rows.length === INSTRUMENT_ORDER.length
       ? INSTRUMENT_ORDER
+      : rows.length === SIX_LANE_ORDER.length
+        ? SIX_LANE_ORDER
       : rows.length === LEGACY_LANE_ORDER.length
         ? LEGACY_LANE_ORDER
         : null;
@@ -116,6 +127,8 @@ export function readSequencerStateFromParams(params: URLSearchParams): Sequencer
     deserializeLaneVolumes(params.get("vol")) ?? defaults.laneVolumes;
   const bassStepPitches =
     deserializeBassStepPitches(params.get("bass")) ?? defaults.bassStepPitches;
+  const melodyStepPitches =
+    deserializeMelodyStepPitches(params.get("melody")) ?? defaults.melodyStepPitches;
 
   return {
     styleId,
@@ -124,6 +137,7 @@ export function readSequencerStateFromParams(params: URLSearchParams): Sequencer
     pattern,
     laneVolumes,
     bassStepPitches,
+    melodyStepPitches,
   };
 }
 
@@ -139,6 +153,9 @@ export function writeSequencerStateToParams(state: SequencerState): URLSearchPar
   if (!bassStepPitchesAreDefault(state.bassStepPitches)) {
     params.set("bass", serializeBassStepPitches(state.bassStepPitches));
   }
+  if (!melodyStepPitchesAreDefault(state.melodyStepPitches)) {
+    params.set("melody", serializeMelodyStepPitches(state.melodyStepPitches));
+  }
   return params;
 }
 
@@ -150,6 +167,7 @@ export function cloneSequencerState(sequencer: SequencerState): SequencerState {
     pattern: clonePattern(sequencer.pattern),
     laneVolumes: cloneLaneVolumes(sequencer.laneVolumes),
     bassStepPitches: cloneBassStepPitches(sequencer.bassStepPitches),
+    melodyStepPitches: cloneMelodyStepPitches(sequencer.melodyStepPitches),
   };
 }
 

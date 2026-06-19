@@ -2,6 +2,8 @@ import type { BeatStyleId } from "../lib/beatStyles";
 import type { InstrumentId } from "../lib/patterns";
 import type { ToneSampleUrls } from "./toneSampleBeatEngine";
 
+type SampleKitLane = Exclude<InstrumentId, "melody">;
+
 // ---------------------------------------------------------------------------
 // PR-13 sample kit manifest
 //
@@ -15,7 +17,7 @@ import type { ToneSampleUrls } from "./toneSampleBeatEngine";
 // ---------------------------------------------------------------------------
 
 /** The lanes the tone-sample engine must always be able to resolve. */
-export const REQUIRED_LANES: readonly InstrumentId[] = [
+export const REQUIRED_LANES: readonly SampleKitLane[] = [
   "kick",
   "snare",
   "hat",
@@ -26,7 +28,7 @@ export const REQUIRED_LANES: readonly InstrumentId[] = [
 
 export interface KitPiece {
   /** Lane this piece feeds. */
-  lane: InstrumentId;
+  lane: SampleKitLane;
   /** Human-friendly piece name. */
   name: string;
   /** Public URL the engine loads (served from public/). */
@@ -34,7 +36,7 @@ export interface KitPiece {
 }
 
 /** The default kit every style starts from. */
-export const DEFAULT_KIT: Record<InstrumentId, KitPiece> = {
+export const DEFAULT_KIT: Record<SampleKitLane, KitPiece> = {
   kick: { lane: "kick", name: "Kit Kick", url: "/kit/kick.wav" },
   snare: { lane: "snare", name: "Kit Snare", url: "/kit/snare.wav" },
   hat: { lane: "hat", name: "Kit Closed Hat", url: "/kit/hat.wav" },
@@ -49,7 +51,7 @@ export const DEFAULT_KIT: Record<InstrumentId, KitPiece> = {
  * touching the engine.
  */
 export const STYLE_KIT_OVERRIDES: Partial<
-  Record<BeatStyleId, Partial<Record<InstrumentId, KitPiece>>>
+  Record<BeatStyleId, Partial<Record<SampleKitLane, KitPiece>>>
 > = {};
 
 /**
@@ -58,7 +60,7 @@ export const STYLE_KIT_OVERRIDES: Partial<
  */
 export function getKitPieces(
   styleId?: BeatStyleId,
-): Record<InstrumentId, KitPiece> {
+): Record<SampleKitLane, KitPiece> {
   const overrides = styleId ? STYLE_KIT_OVERRIDES[styleId] ?? {} : {};
   return {
     kick: overrides.kick ?? DEFAULT_KIT.kick,

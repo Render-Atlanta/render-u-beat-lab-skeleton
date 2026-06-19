@@ -1,14 +1,20 @@
 import type { BeatStyle } from "./beatStyles";
 import { getLaneVolumes } from "./laneVolumes";
 import { INSTRUMENT_IDS, type InstrumentId, type Pattern } from "./patterns";
-import { getBassPitchForStep, synthesizeBassNotePcm } from "./stepPitch";
+import {
+  getBassPitchForStep,
+  getMelodyPitchForStep,
+  synthesizeBassNotePcm,
+  synthesizeMelodyNotePcm,
+} from "./stepPitch";
 
 export const RENDER_SAMPLE_RATE = 22050;
 const STEPS = 16;
 const TAIL_SECONDS = 0.5;
 const PEAK_TARGET = 0.9;
 
-export type DecodedKit = Record<InstrumentId, Float32Array>;
+type SampledInstrumentId = Exclude<InstrumentId, "melody">;
+export type DecodedKit = Record<SampledInstrumentId, Float32Array>;
 
 export function renderPatternToPcm(
   pattern: Pattern,
@@ -44,7 +50,24 @@ export function renderPatternToPcm(
       continue;
     }
 
+    if (lane === "melody") {
+      pattern[lane].forEach((on, i) => {
+        if (!on) return;
+        const pitch = getMelodyPitchForStep(style.musicalKey, i, style.melodyStepPitches);
+        const sample = synthesizeMelodyNotePcm(pitch.frequency, RENDER_SAMPLE_RATE);
+        const swungSec = i * stepSec + (i % 2 === 1 ? swing * stepSec : 0);
+        const start = Math.round(swungSec * RENDER_SAMPLE_RATE);
+        for (let s = 0; s < sample.length && start + s < length; s += 1) {
+          out[start + s] += sample[s] * laneVolume;
+        }
+      });
+      continue;
+    }
+
     const sample = kit[lane];
+    if (!sample) {
+      throw new Error(`Missing kit sample for ${lane}`);
+    }
     pattern[lane].forEach((on, i) => {
       if (!on) return;
       // Swing: delay odd 16ths by a fraction of a step.

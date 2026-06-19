@@ -19,6 +19,7 @@ export type ScaleType = "minor" | "major";
 export type ScaleDegree = number;
 
 export type BassStepPitches = ScaleDegree[];
+export type MelodyStepPitches = ScaleDegree[];
 
 export type PitchFunction = "root" | "third" | "fifth" | "other";
 
@@ -33,6 +34,7 @@ export interface PaletteEntry {
 export const BASS_STEPS = 16;
 export const DEFAULT_BASS_DEGREE = 0;
 export const BASS_REGISTER_OFFSET = 24;
+export const MELODY_REGISTER_OFFSET = 48;
 
 const NOTE_TO_SEMITONE: Record<NoteName, number> = {
   C: 0,
@@ -88,13 +90,16 @@ export function getDegreeFunction(degree: ScaleDegree, scale: ScaleType): PitchF
   return "other";
 }
 
-export function getInKeyPalette(key: MusicalKey): PaletteEntry[] {
+export function getInKeyPalette(
+  key: MusicalKey,
+  registerOffset = BASS_REGISTER_OFFSET,
+): PaletteEntry[] {
   const rootSemitone = NOTE_TO_SEMITONE[key.root];
   const intervals = getScaleIntervals(key.scale);
   const labels = key.scale === "major" ? DEGREE_LABELS_MAJOR : DEGREE_LABELS_MINOR;
 
   return intervals.map((interval, degree) => {
-    const midi = rootSemitone + interval + BASS_REGISTER_OFFSET;
+    const midi = rootSemitone + interval + registerOffset;
     return {
       degree,
       label: labels[degree] ?? String(degree + 1),
@@ -105,12 +110,22 @@ export function getInKeyPalette(key: MusicalKey): PaletteEntry[] {
   });
 }
 
+export function getMelodyPalette(key: MusicalKey): PaletteEntry[] { return getInKeyPalette(key, MELODY_REGISTER_OFFSET); }
+
 export function createDefaultBassStepPitches(): BassStepPitches {
-  return Array.from({ length: BASS_STEPS }, () => DEFAULT_BASS_DEGREE);
+  return rootStepPitches();
 }
 
-export function cloneBassStepPitches(pitches: BassStepPitches): BassStepPitches {
-  return [...pitches];
+export function createDefaultMelodyStepPitches(): MelodyStepPitches {
+  return rootStepPitches();
+}
+
+export function cloneBassStepPitches(pitches: BassStepPitches): BassStepPitches { return [...pitches]; }
+
+export function cloneMelodyStepPitches(pitches: MelodyStepPitches): MelodyStepPitches { return [...pitches]; }
+
+function rootStepPitches() {
+  return Array.from({ length: BASS_STEPS }, () => DEFAULT_BASS_DEGREE);
 }
 
 export function normalizeBassDegree(
@@ -155,11 +170,17 @@ export function updateBassStepPitch(
   return next;
 }
 
-export function getBassStepPitches(style: { bassStepPitches?: BassStepPitches }): BassStepPitches {
-  return style.bassStepPitches
-    ? cloneBassStepPitches(style.bassStepPitches)
-    : createDefaultBassStepPitches();
-}
+export function normalizeMelodyStepPitches(
+  input: unknown,
+  paletteSize = 7,
+): MelodyStepPitches { return normalizeBassStepPitches(input, paletteSize); }
+
+export function updateMelodyStepPitch(
+  pitches: MelodyStepPitches,
+  stepIndex: number,
+  degree: ScaleDegree,
+  paletteSize: number,
+): MelodyStepPitches { return updateBassStepPitch(pitches, stepIndex, degree, paletteSize); }
 
 export function getBassPitchForStep(
   musicalKey: MusicalKey,
@@ -178,13 +199,36 @@ export function getBassPitchForStep(
   return palette[degree];
 }
 
+export function getMelodyPitchForStep(
+  musicalKey: MusicalKey,
+  stepIndex: number,
+  melodyStepPitches?: MelodyStepPitches,
+): PaletteEntry {
+  const palette = getMelodyPalette(musicalKey);
+  const pitches = melodyStepPitches
+    ? cloneMelodyStepPitches(melodyStepPitches)
+    : createDefaultMelodyStepPitches();
+  const degree = normalizeBassDegree(
+    pitches[stepIndex],
+    palette.length,
+    DEFAULT_BASS_DEGREE,
+  );
+  return palette[degree];
+}
+
 export function bassStepPitchesAreDefault(pitches: BassStepPitches): boolean {
+  return pitches.every((degree) => degree === DEFAULT_BASS_DEGREE);
+}
+
+export function melodyStepPitchesAreDefault(pitches: MelodyStepPitches): boolean {
   return pitches.every((degree) => degree === DEFAULT_BASS_DEGREE);
 }
 
 export function serializeBassStepPitches(pitches: BassStepPitches): string {
   return pitches.join(",");
 }
+
+export function serializeMelodyStepPitches(pitches: MelodyStepPitches): string { return pitches.join(","); }
 
 export function deserializeBassStepPitches(value: string | null): BassStepPitches | null {
   if (value === null || value.trim() === "") {
@@ -202,6 +246,11 @@ export function deserializeBassStepPitches(value: string | null): BassStepPitche
   }
 
   return normalizeBassStepPitches(parsed);
+}
+
+export function deserializeMelodyStepPitches(value: string | null): MelodyStepPitches | null {
+  const parsed = deserializeBassStepPitches(value);
+  return parsed ? normalizeMelodyStepPitches(parsed) : null;
 }
 
 export function synthesizeBassNotePcm(
@@ -224,6 +273,26 @@ export function synthesizeBassNotePcm(
     const saw = 2 * (phase / (2 * Math.PI) - 0.5);
     const envelope = Math.exp(-t / decaySeconds);
     out[i] = saw * envelope * 0.55;
+  }
+
+  return out;
+}
+
+export function synthesizeMelodyNotePcm(
+  frequency: number,
+  sampleRate: number,
+  durationSeconds = 0.24,
+): Float32Array {
+  const length = Math.max(1, Math.ceil(durationSeconds * sampleRate));
+  const out = new Float32Array(length);
+  const decaySeconds = 0.16;
+
+  for (let i = 0; i < length; i += 1) {
+    const t = i / sampleRate;
+    const phase = (2 * Math.PI * frequency * t) % (2 * Math.PI);
+    const triangle = 2 * Math.abs(2 * (phase / (2 * Math.PI) - 0.5)) - 1;
+    const envelope = Math.exp(-t / decaySeconds);
+    out[i] = triangle * envelope * 0.32;
   }
 
   return out;

@@ -57,6 +57,7 @@ describe("beat coach helpers", () => {
       openHat: [8, 16],
       clap: [],
       "808": [],
+      melody: [],
     });
 
     // trap base now has clap:[9] and 808:[1,7,11] (4 extra hits), so base=23.
@@ -78,6 +79,7 @@ describe("beat coach helpers", () => {
         "Open hat: unchanged at 2 hits.",
         "Clap: down 1 to 0 hits.",
         "808: down 3 to 0 hits.",
+        "Melody: unchanged at 0 hits.",
       ],
       tryThis: "Try adding two hats in a row before the snare, then remove one kick.",
     });
@@ -91,6 +93,7 @@ describe("beat coach helpers", () => {
       openHat: [],
       clap: [],
       "808": [],
+      melody: [],
     });
 
     // pop base now has clap:[5,13] and 808:[1,11] (4 extra hits), so base=19.
@@ -111,6 +114,7 @@ describe("beat coach helpers", () => {
         "Open hat: down 2 to 0 hits.",
         "Clap: down 2 to 0 hits.",
         "808: down 2 to 0 hits.",
+        "Melody: unchanged at 0 hits.",
       ],
     });
   });

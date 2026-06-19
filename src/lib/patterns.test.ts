@@ -37,6 +37,7 @@ describe("pattern helpers", () => {
       openHat: [16],
       clap: [],
       "808": [],
+      melody: [],
     });
 
     expect(countActiveSteps(pattern)).toBe(9);
@@ -48,11 +49,19 @@ describe("pattern helpers", () => {
 });
 
 describe("instrument vocabulary", () => {
-  it("exposes the six canonical lanes in order", () => {
-    expect(INSTRUMENT_IDS).toEqual(["kick", "snare", "hat", "openHat", "clap", "808"]);
+  it("exposes the seven canonical lanes in order", () => {
+    expect(INSTRUMENT_IDS).toEqual([
+      "kick",
+      "snare",
+      "hat",
+      "openHat",
+      "clap",
+      "808",
+      "melody",
+    ]);
   });
 
-  it("builds a six-lane pattern with empty new lanes by default", () => {
+  it("builds a seven-lane pattern with empty scaffolded lanes by default", () => {
     const pattern = patternFromSteps({
       kick: [1],
       snare: [5],
@@ -60,11 +69,13 @@ describe("instrument vocabulary", () => {
       openHat: [8],
       clap: [],
       "808": [],
+      melody: [],
     });
     expect(Object.keys(pattern).sort()).toEqual(
-      ["808", "clap", "hat", "kick", "openHat", "snare"],
+      ["808", "clap", "hat", "kick", "melody", "openHat", "snare"],
     );
     expect(pattern.clap.every((s) => s === false)).toBe(true);
     expect(pattern["808"].every((s) => s === false)).toBe(true);
+    expect(pattern.melody.every((s) => s === false)).toBe(true);
   });
 });

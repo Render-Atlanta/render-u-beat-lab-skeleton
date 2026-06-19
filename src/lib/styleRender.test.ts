@@ -33,4 +33,13 @@ describe("renderPatternToPcm", () => {
     // Clamping negative swing to 0 must produce byte-identical output
     expect(Array.from(neg)).toEqual(Array.from(zero));
   });
+
+  it("throws when a required sampled lane is missing from the kit", () => {
+    const kitWithoutKick: Partial<typeof kit> = { ...kit };
+    delete kitWithoutKick.kick;
+
+    expect(() =>
+      renderPatternToPcm(BEAT_STYLES.trap.pattern, BEAT_STYLES.trap, kitWithoutKick as typeof kit),
+    ).toThrow("Missing kit sample for kick");
+  });
 });

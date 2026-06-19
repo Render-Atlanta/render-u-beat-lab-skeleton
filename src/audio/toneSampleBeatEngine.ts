@@ -45,6 +45,7 @@ export interface ToneRuntimePort {
   createSamplePlayer?(url: string, destination?: LaneVolumePort): ToneVoicePort | null;
   createKickSynth(destination?: LaneVolumePort): ToneVoicePort;
   createBassSynth?(destination?: LaneVolumePort): ToneVoicePort;
+  createMelodySynth?(destination?: LaneVolumePort): ToneVoicePort;
   createNoiseSynth(options?: unknown, destination?: LaneVolumePort): ToneVoicePort;
 }
 
@@ -218,11 +219,8 @@ function getDefaultToneRuntime(): ToneRuntimePort {
     },
     createKickSynth: (destination) => {
       const synth = new Tone.MembraneSynth();
-      if (destination) {
-        synth.connect(destination.node);
-      } else {
-        synth.toDestination();
-      }
+      if (destination) synth.connect(destination.node);
+      else synth.toDestination();
       return {
         triggerAttackRelease: (...args) => {
           (
@@ -231,9 +229,7 @@ function getDefaultToneRuntime(): ToneRuntimePort {
             ) => unknown
           )(...args);
         },
-        dispose: () => {
-          synth.dispose();
-        },
+        dispose: () => synth.dispose(),
       };
     },
     createBassSynth: (destination) => {
@@ -257,6 +253,24 @@ function getDefaultToneRuntime(): ToneRuntimePort {
         dispose: () => {
           synth.dispose();
         },
+      };
+    },
+    createMelodySynth: (destination) => {
+      const synth = new Tone.Synth({
+        oscillator: { type: "triangle" },
+        envelope: { attack: 0.003, decay: 0.16, sustain: 0.05, release: 0.08 },
+      });
+      if (destination) synth.connect(destination.node);
+      else synth.toDestination();
+      return {
+        triggerAttackRelease: (...args) => {
+          (
+            synth.triggerAttackRelease as unknown as (
+              ...triggerArgs: unknown[]
+            ) => unknown
+          )(...args);
+        },
+        dispose: () => synth.dispose(),
       };
     },
     createNoiseSynth: (options, destination) => {

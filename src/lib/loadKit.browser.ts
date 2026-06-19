@@ -3,7 +3,8 @@ import type { InstrumentId } from "./patterns";
 import { decodeWav } from "./wav";
 import type { DecodedKit } from "./styleRender";
 
-const LANES: InstrumentId[] = ["kick", "snare", "hat", "openHat", "clap", "808"];
+type SampledInstrumentId = Exclude<InstrumentId, "melody">;
+const LANES: SampledInstrumentId[] = ["kick", "snare", "hat", "openHat", "clap", "808"];
 
 /** Fetch + decode the bundled CC0 kit in the browser. */
 export async function loadKitFromUrls(base = "/kit"): Promise<DecodedKit> {

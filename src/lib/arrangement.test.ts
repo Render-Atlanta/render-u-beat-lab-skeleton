@@ -12,7 +12,7 @@ import {
   validateProjectExport,
 } from "./arrangement";
 import { createDefaultSequencerState, togglePatternStep } from "./patternState";
-import { updateBassStepPitch } from "./stepPitch";
+import { updateBassStepPitch, updateMelodyStepPitch } from "./stepPitch";
 
 describe("arrangement helpers", () => {
   it("creates the four workshop arrangement sections in playback order", () => {
@@ -304,5 +304,47 @@ describe("arrangement helpers", () => {
       throw new Error(result.errors.join("\n"));
     }
     expect(result.project.sequencer.bassStepPitches).toEqual(bassStepPitches);
+  });
+
+  it("defaults missing sequencer.melodyStepPitches to the root degree for backward-compat", () => {
+    const project = createBeatLabProject({
+      sequencer: createDefaultSequencerState("trap"),
+      producerTag: { text: "Render U made this" },
+    });
+    const parsed = JSON.parse(exportProjectJson(project, { pretty: false }));
+    delete parsed.sequencer.melodyStepPitches;
+    const result = importProjectJson(JSON.stringify(parsed));
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      throw new Error(result.errors.join("\n"));
+    }
+    expect(result.project.sequencer.melodyStepPitches).toEqual(
+      createDefaultSequencerState("trap").melodyStepPitches,
+    );
+  });
+
+  it("round-trips non-default melody step pitches through project JSON", () => {
+    const baseSequencer = createDefaultSequencerState("trap");
+    const melodyStepPitches = updateMelodyStepPitch(
+      updateMelodyStepPitch(baseSequencer.melodyStepPitches, 0, 1, 7),
+      4,
+      3,
+      7,
+    );
+    const project = createBeatLabProject({
+      sequencer: {
+        ...baseSequencer,
+        melodyStepPitches,
+      },
+    });
+
+    const result = importProjectJson(exportProjectJson(project, { pretty: false }));
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      throw new Error(result.errors.join("\n"));
+    }
+    expect(result.project.sequencer.melodyStepPitches).toEqual(melodyStepPitches);
   });
 });

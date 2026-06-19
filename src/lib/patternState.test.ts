@@ -9,11 +9,14 @@ import {
   writeSequencerStateToParams,
 } from "./patternState";
 import { createDefaultLaneVolumes } from "./laneVolumes";
-import { createDefaultBassStepPitches } from "./stepPitch";
+import {
+  createDefaultBassStepPitches,
+  createDefaultMelodyStepPitches,
+} from "./stepPitch";
 import { GOLDEN_BEAT_STYLE_FIXTURES } from "../test/beatStyleFixtures";
 
 describe("pattern state helpers", () => {
-  it("serializes and deserializes a six-lane pattern", () => {
+  it("serializes and deserializes a seven-lane pattern", () => {
     const pattern = BEAT_STYLES.trap.pattern;
     const serialized = serializePattern(pattern);
 
@@ -35,6 +38,23 @@ describe("pattern state helpers", () => {
     expect(pattern!.kick[0]).toBe(true);
     expect(pattern!.clap.every((s) => s === false)).toBe(true);
     expect(pattern!["808"].every((s) => s === false)).toBe(true);
+    expect(pattern!.melody.every((s) => s === false)).toBe(true);
+  });
+
+  it("loads a six-lane serialized pattern with an empty melody lane", () => {
+    const sixLane = [
+      "1000000000000000",
+      "0000100000000000",
+      "1010101010101010",
+      "0000000100000000",
+      "0000100000000000",
+      "1000000000000000",
+    ].join(".");
+    const pattern = deserializePattern(sixLane);
+
+    expect(pattern).not.toBeNull();
+    expect(pattern!.kick[0]).toBe(true);
+    expect(pattern!.melody.every((s) => s === false)).toBe(true);
   });
 
   it("toggles one grid cell without mutating the original pattern", () => {
@@ -62,6 +82,7 @@ describe("pattern state helpers", () => {
       pattern: togglePatternStep(state.pattern, "snare", 3),
       laneVolumes: { ...createDefaultLaneVolumes(), hat: 0.5 },
       bassStepPitches: createDefaultBassStepPitches(),
+      melodyStepPitches: createDefaultMelodyStepPitches(),
     });
   });
 
@@ -77,6 +98,21 @@ describe("pattern state helpers", () => {
     });
 
     expect(readSequencerStateFromParams(params).bassStepPitches).toEqual(bassStepPitches);
+  });
+
+  it("round-trips melody pitch data through URL params", () => {
+    const state = createDefaultSequencerState("trap");
+    const melodyStepPitches = [...state.melodyStepPitches];
+    melodyStepPitches[0] = 1;
+    melodyStepPitches[4] = 3;
+
+    const params = writeSequencerStateToParams({
+      ...state,
+      melodyStepPitches,
+    });
+
+    expect(params.get("melody")).toBe("1,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0");
+    expect(readSequencerStateFromParams(params).melodyStepPitches).toEqual(melodyStepPitches);
   });
 
   it("defaults lane volumes when the vol param is missing or invalid", () => {
@@ -100,6 +136,7 @@ describe("pattern state helpers", () => {
       pattern: BEAT_STYLES.drill.pattern,
       laneVolumes: createDefaultLaneVolumes(),
       bassStepPitches: createDefaultBassStepPitches(),
+      melodyStepPitches: createDefaultMelodyStepPitches(),
     });
   });
 

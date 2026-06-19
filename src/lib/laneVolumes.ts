@@ -5,6 +5,7 @@ export type LaneVolumes = Record<InstrumentId, number>;
 export const DEFAULT_LANE_VOLUME = 1;
 export const MIN_LANE_VOLUME = 0;
 export const MAX_LANE_VOLUME = 1.5;
+const LEGACY_VOLUME_ORDER: InstrumentId[] = ["kick", "snare", "hat", "openHat", "clap", "808"];
 
 export function createDefaultLaneVolumes(): LaneVolumes {
   return Object.fromEntries(
@@ -61,15 +62,21 @@ export function deserializeLaneVolumes(value: string | null): LaneVolumes | null
   }
 
   const parts = value.split(",");
-  if (parts.length !== INSTRUMENT_IDS.length) {
+  const order =
+    parts.length === INSTRUMENT_IDS.length
+      ? INSTRUMENT_IDS
+      : parts.length === LEGACY_VOLUME_ORDER.length
+        ? LEGACY_VOLUME_ORDER
+        : null;
+  if (!order) {
     return null;
   }
 
   const parsed = Object.fromEntries(
-    INSTRUMENT_IDS.map((id, index) => [id, Number(parts[index])]),
+    order.map((id, index) => [id, Number(parts[index])]),
   ) as Partial<Record<InstrumentId, number>>;
 
-  if (INSTRUMENT_IDS.some((id) => !Number.isFinite(parsed[id]))) {
+  if (order.some((id) => !Number.isFinite(parsed[id]))) {
     return null;
   }
 

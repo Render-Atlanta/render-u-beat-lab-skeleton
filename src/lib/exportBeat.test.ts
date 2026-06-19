@@ -2,7 +2,12 @@ import { describe, expect, it } from "vitest";
 import { BEAT_STYLES } from "./beatStyles";
 import { loadKitFromDisk } from "./loadKit.node";
 import { createDefaultLaneVolumes } from "./laneVolumes";
-import { createDefaultBassStepPitches, updateBassStepPitch } from "./stepPitch";
+import {
+  createDefaultBassStepPitches,
+  createDefaultMelodyStepPitches,
+  updateBassStepPitch,
+  updateMelodyStepPitch,
+} from "./stepPitch";
 import { patternFromSteps } from "./patterns";
 import { renderPatternToPcm } from "./styleRender";
 import { decodeWav } from "./wav";
@@ -61,6 +66,7 @@ describe("renderBeatWav", () => {
       openHat: [],
       clap: [],
       "808": [],
+      melody: [],
     });
     const audible = renderPatternToPcm(kickOnly, BEAT_STYLES.trap, kit);
     const muted = renderPatternToPcm(kickOnly, {
@@ -87,6 +93,7 @@ describe("renderBeatWav", () => {
       openHat: [],
       clap: [],
       "808": [1],
+      melody: [],
     });
     const rootStyle = {
       ...BEAT_STYLES.trap,
@@ -101,6 +108,53 @@ describe("renderBeatWav", () => {
     const mutedPcm = renderPatternToPcm(bassOnly, {
       ...pitchedStyle,
       laneVolumes: { ...createDefaultLaneVolumes(), "808": 0 },
+    }, kit);
+
+    let rootEnergy = 0;
+    let pitchedEnergy = 0;
+    let mutedEnergy = 0;
+    for (let i = 0; i < rootPcm.length; i += 1) {
+      rootEnergy += Math.abs(rootPcm[i]);
+      pitchedEnergy += Math.abs(pitchedPcm[i]);
+      mutedEnergy += Math.abs(mutedPcm[i]);
+    }
+
+    expect(rootEnergy).toBeGreaterThan(0);
+    expect(pitchedEnergy).toBeGreaterThan(0);
+    expect(Array.from(rootPcm.slice(0, 64)).join(",")).not.toBe(
+      Array.from(pitchedPcm.slice(0, 64)).join(","),
+    );
+    expect(mutedEnergy).toBe(0);
+  });
+
+  it("includes in-key melody notes in the exported PCM and respects lane volume", () => {
+    const melodyOnly = patternFromSteps({
+      kick: [],
+      snare: [],
+      hat: [],
+      openHat: [],
+      clap: [],
+      "808": [],
+      melody: [1],
+    });
+    const rootStyle = {
+      ...BEAT_STYLES.trap,
+      melodyStepPitches: createDefaultMelodyStepPitches(),
+    };
+    const pitchedStyle = {
+      ...rootStyle,
+      melodyStepPitches: updateMelodyStepPitch(
+        createDefaultMelodyStepPitches(),
+        0,
+        2,
+        7,
+      ),
+    };
+    const rootPcm = renderPatternToPcm(melodyOnly, rootStyle, kit);
+    const pitchedPcm = renderPatternToPcm(melodyOnly, pitchedStyle, kit);
+    const mutedPcm = renderPatternToPcm(melodyOnly, {
+      ...pitchedStyle,
+      laneVolumes: { ...createDefaultLaneVolumes(), melody: 0 },
     }, kit);
 
     let rootEnergy = 0;

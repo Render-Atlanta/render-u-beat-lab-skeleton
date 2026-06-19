@@ -2,7 +2,7 @@ import { BEAT_STYLES, type BeatStyleId } from "./beatStyles";
 import { INSTRUMENT_ORDER, clonePattern, cloneSequencerState, type SequencerState } from "./patternState";
 import { type InstrumentId, type Pattern } from "./patterns";
 import { normalizeLaneVolumes } from "./laneVolumes";
-import { normalizeBassStepPitches } from "./stepPitch";
+import { normalizeBassStepPitches, normalizeMelodyStepPitches } from "./stepPitch";
 import {
   normalizeProducerTagConfig,
   type ProducerTagConfig,
@@ -253,8 +253,17 @@ function readSequencerState(value: unknown, errors: string[]): SequencerState | 
   const pattern = readPattern(value.pattern, errors, "Sequencer pattern");
   const laneVolumes = readLaneVolumes(value.laneVolumes, errors);
   const bassStepPitches = readBassStepPitches(value.bassStepPitches, errors);
+  const melodyStepPitches = readMelodyStepPitches(value.melodyStepPitches, errors);
 
-  if (!styleId || bpm === null || swing === null || !pattern || !laneVolumes || !bassStepPitches) {
+  if (
+    !styleId ||
+    bpm === null ||
+    swing === null ||
+    !pattern ||
+    !laneVolumes ||
+    !bassStepPitches ||
+    !melodyStepPitches
+  ) {
     return null;
   }
 
@@ -265,33 +274,52 @@ function readSequencerState(value: unknown, errors: string[]): SequencerState | 
     pattern,
     laneVolumes,
     bassStepPitches,
+    melodyStepPitches,
   };
 }
 
+function readMelodyStepPitches(value: unknown, errors: string[]) {
+  return readPitchArray(
+    value,
+    errors,
+    "melodyStepPitches",
+    normalizeMelodyStepPitches,
+  );
+}
+
 function readBassStepPitches(value: unknown, errors: string[]) {
+  return readPitchArray(value, errors, "bassStepPitches", normalizeBassStepPitches);
+}
+
+function readPitchArray(
+  value: unknown,
+  errors: string[],
+  fieldName: string,
+  normalize: (value: unknown) => number[],
+) {
   if (value === undefined) {
-    return normalizeBassStepPitches(undefined);
+    return normalize(undefined);
   }
 
   if (!Array.isArray(value)) {
-    errors.push("Sequencer bassStepPitches must be an array.");
+    errors.push(`Sequencer ${fieldName} must be an array.`);
     return null;
   }
 
   if (value.length !== 16) {
-    errors.push("Sequencer bassStepPitches must contain 16 entries.");
+    errors.push(`Sequencer ${fieldName} must contain 16 entries.`);
     return null;
   }
 
   for (let index = 0; index < value.length; index += 1) {
     const degree = value[index];
     if (typeof degree !== "number" || !Number.isInteger(degree) || degree < 0 || degree > 6) {
-      errors.push(`Sequencer bassStepPitches[${index}] must be an integer from 0 to 6.`);
+      errors.push(`Sequencer ${fieldName}[${index}] must be an integer from 0 to 6.`);
       return null;
     }
   }
 
-  return normalizeBassStepPitches(value);
+  return normalize(value);
 }
 
 function readLaneVolumes(value: unknown, errors: string[]) {
@@ -477,7 +505,7 @@ function readPattern(value: unknown, errors: string[], path: string): Pattern | 
   }
 
   const empty = () => Array.from({ length: 16 }, () => false);
-  const optionalLanes = new Set<InstrumentId>(["clap", "808"]);
+  const optionalLanes = new Set<InstrumentId>(["clap", "808", "melody"]);
   const entries = INSTRUMENT_ORDER.map((instrument) => {
     const row = value[instrument];
 

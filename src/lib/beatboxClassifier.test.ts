@@ -184,18 +184,19 @@ describe("beatbox classifier", () => {
   });
 });
 
-describe("capture supports the full six-lane set", () => {
-  it("builds a six-lane pattern from classified hits", () => {
+describe("capture supports the full lane set", () => {
+  it("builds a seven-lane pattern from classified hits", () => {
     const pattern = classifiedHitsToPattern([
       { instrument: "kick", stepIndex: 0 },
       { instrument: "808", stepIndex: 4 },
       { instrument: "clap", stepIndex: 8 },
     ]);
     expect(Object.keys(pattern).sort()).toEqual(
-      ["808", "clap", "hat", "kick", "openHat", "snare"],
+      ["808", "clap", "hat", "kick", "melody", "openHat", "snare"],
     );
     expect(pattern["808"][4]).toBe(true);
     expect(pattern.clap[8]).toBe(true);
+    expect(pattern.melody.some(Boolean)).toBe(false);
   });
 
   it("lets a user move an auto-classified hit onto the 808 lane", () => {

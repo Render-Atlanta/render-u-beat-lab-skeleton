@@ -27,8 +27,16 @@ describe("laneVolumes", () => {
     const volumes = updateLaneVolume(createDefaultLaneVolumes(), "snare", 0.5);
     const serialized = serializeLaneVolumes(volumes);
 
-    expect(serialized).toBe("1,0.5,1,1,1,1");
+    expect(serialized).toBe("1,0.5,1,1,1,1,1");
     expect(deserializeLaneVolumes(serialized)).toEqual(volumes);
+  });
+
+  it("loads legacy six-lane volume URLs with melody at the default volume", () => {
+    expect(deserializeLaneVolumes("1,0.5,1,1,1,0.75")).toEqual({
+      ...createDefaultLaneVolumes(),
+      snare: 0.5,
+      "808": 0.75,
+    });
   });
 
   it("rejects malformed serialized lane volumes", () => {

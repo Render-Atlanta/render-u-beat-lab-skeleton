@@ -3,7 +3,12 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { BEAT_STYLES } from "../lib/beatStyles";
 import { INSTRUMENTS } from "../lib/instruments";
 import { createDefaultLaneVolumes } from "../lib/laneVolumes";
-import { createDefaultBassStepPitches, getInKeyPalette } from "../lib/stepPitch";
+import {
+  createDefaultBassStepPitches,
+  createDefaultMelodyStepPitches,
+  getInKeyPalette,
+  getMelodyPalette,
+} from "../lib/stepPitch";
 import { SequencerPanel } from "./SequencerPanel";
 
 function noop() {}
@@ -20,6 +25,8 @@ function renderPanel(extra: Partial<Parameters<typeof SequencerPanel>[0]> = {}) 
       laneVolumes={createDefaultLaneVolumes()}
       bassStepPitches={createDefaultBassStepPitches()}
       bassPalette={getInKeyPalette(BEAT_STYLES.trap.musicalKey)}
+      melodyStepPitches={createDefaultMelodyStepPitches()}
+      melodyPalette={getMelodyPalette(BEAT_STYLES.trap.musicalKey)}
       activeStep={null}
       onBpmChange={noop}
       onSwingChange={noop}
@@ -29,6 +36,7 @@ function renderPanel(extra: Partial<Parameters<typeof SequencerPanel>[0]> = {}) 
       onReset={noop}
       onToggleStep={noop}
       onBassStepPitchChange={noop}
+      onMelodyStepPitchChange={noop}
       {...extra}
     />,
   );
@@ -53,12 +61,12 @@ describe("SequencerPanel role coaching", () => {
 });
 
 describe("SequencerPanel lane count and new lanes", () => {
-  it("renders exactly 6 instrument lanes", () => {
-    expect(INSTRUMENTS).toHaveLength(6);
+  it("renders exactly 7 instrument lanes", () => {
+    expect(INSTRUMENTS).toHaveLength(7);
     const html = renderPanel();
     // Each track row contains the instrument label; count occurrences of track-label__name spans
     const matches = html.match(/track-label__name/g);
-    expect(matches).toHaveLength(6);
+    expect(matches).toHaveLength(7);
   });
 
   it("renders the Clap lane label", () => {
@@ -71,10 +79,29 @@ describe("SequencerPanel lane count and new lanes", () => {
     expect(html).toContain("808");
   });
 
+  it("renders the Melody lane label", () => {
+    const html = renderPanel();
+    expect(html).toContain("Melody");
+  });
+
   it("renders a volume fader for each lane", () => {
     const html = renderPanel();
     const matches = html.match(/volume/gi);
     expect(matches?.length).toBeGreaterThanOrEqual(INSTRUMENTS.length);
+  });
+});
+
+describe("SequencerPanel melody pitch controls", () => {
+  it("shows an in-key note selector for active melody steps", () => {
+    const html = renderPanel({
+      pattern: {
+        ...BEAT_STYLES.trap.pattern,
+        melody: [true, ...Array.from({ length: 15 }, () => false)],
+      },
+    });
+
+    expect(html).toContain("Melody step 1 note");
+    expect(html).toContain("pitch-root");
   });
 });
 

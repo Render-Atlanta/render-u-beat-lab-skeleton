@@ -35,6 +35,29 @@ describe("audio transport helpers", () => {
     ]);
     expect(getStepEvents(BEAT_STYLES.trap, 1, 1.5)).toEqual([]);
   });
+
+  it("adds in-key pitch metadata for active melody steps", () => {
+    const [event] = getStepEvents(
+      {
+        ...BEAT_STYLES.trap,
+        pattern: {
+          ...BEAT_STYLES.trap.pattern,
+          kick: Array.from({ length: 16 }, () => false),
+          hat: Array.from({ length: 16 }, () => false),
+          "808": Array.from({ length: 16 }, () => false),
+          melody: [true, ...Array.from({ length: 15 }, () => false)],
+        },
+        melodyStepPitches: [2, ...Array.from({ length: 15 }, () => 0)],
+      },
+      0,
+      1.25,
+    );
+
+    expect(event.instrument).toBe("melody");
+    expect(event.pitch?.degree).toBe(2);
+    expect(event.pitch?.noteName).toMatch(/\d$/);
+    expect(event.pitch?.frequency).toBeGreaterThan(100);
+  });
 });
 
 describe("getActiveStep", () => {

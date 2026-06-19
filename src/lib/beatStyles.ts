@@ -1,6 +1,6 @@
 import type { LaneVolumes } from "./laneVolumes";
 import { patternFromSteps, type Pattern } from "./patterns";
-import type { BassStepPitches, NoteName, ScaleType } from "./stepPitch";
+import type { BassStepPitches, MelodyStepPitches, NoteName, ScaleType } from "./stepPitch";
 
 export interface MusicalKey {
   root: NoteName;
@@ -25,6 +25,7 @@ export interface BeatStyle {
   musicalKey: MusicalKey;
   laneVolumes?: LaneVolumes;
   bassStepPitches?: BassStepPitches;
+  melodyStepPitches?: MelodyStepPitches;
   lesson: string;
 }
 
@@ -41,6 +42,7 @@ export const BEAT_STYLES: Record<BeatStyleId, BeatStyle> = {
       openHat: [6, 14],
       clap: [9],
       "808": [1, 7, 11],
+      melody: [],
     }),
     musicalKey: { root: "A", scale: "minor" },
     lesson:
@@ -58,6 +60,7 @@ export const BEAT_STYLES: Record<BeatStyleId, BeatStyle> = {
       openHat: [16],
       clap: [5, 13],
       "808": [1, 7],
+      melody: [],
     }),
     musicalKey: { root: "E", scale: "minor" },
     lesson:
@@ -75,6 +78,7 @@ export const BEAT_STYLES: Record<BeatStyleId, BeatStyle> = {
       openHat: [4, 12],
       clap: [9],
       "808": [1, 10],
+      melody: [],
     }),
     musicalKey: { root: "F#", scale: "minor" },
     lesson:
@@ -92,6 +96,7 @@ export const BEAT_STYLES: Record<BeatStyleId, BeatStyle> = {
       openHat: [12],
       clap: [5, 13],
       "808": [1, 8],
+      melody: [],
     }),
     musicalKey: { root: "D", scale: "minor" },
     lesson:
@@ -109,6 +114,7 @@ export const BEAT_STYLES: Record<BeatStyleId, BeatStyle> = {
       openHat: [8, 16],
       clap: [5, 13],
       "808": [1, 11],
+      melody: [],
     }),
     musicalKey: { root: "C", scale: "major" },
     lesson:
@@ -126,6 +132,7 @@ export const BEAT_STYLES: Record<BeatStyleId, BeatStyle> = {
       openHat: [7, 15],
       clap: [5, 13],
       "808": [1, 7, 14],
+      melody: [],
     }),
     musicalKey: { root: "G", scale: "minor" },
     lesson:
@@ -143,6 +150,7 @@ export const BEAT_STYLES: Record<BeatStyleId, BeatStyle> = {
       openHat: [6, 11, 15],
       clap: [5, 13],
       "808": [1, 9, 12],
+      melody: [],
     }),
     musicalKey: { root: "F", scale: "minor" },
     lesson:

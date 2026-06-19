@@ -1,4 +1,4 @@
-export type InstrumentId = "kick" | "snare" | "hat" | "openHat" | "clap" | "808";
+export type InstrumentId = "kick" | "snare" | "hat" | "openHat" | "clap" | "808" | "melody";
 
 /** Canonical lane ordering — the single source of truth for lane iteration. */
 export const INSTRUMENT_IDS: InstrumentId[] = [
@@ -8,6 +8,7 @@ export const INSTRUMENT_IDS: InstrumentId[] = [
   "openHat",
   "clap",
   "808",
+  "melody",
 ];
 
 export type Pattern = Record<InstrumentId, boolean[]>;

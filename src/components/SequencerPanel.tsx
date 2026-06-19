@@ -3,7 +3,7 @@ import { DEFAULT_LANE_VOLUME } from "../lib/laneVolumes";
 import type { InstrumentId, Pattern } from "../lib/patterns";
 import type { LaneVolumes } from "../lib/laneVolumes";
 import type { AudioEngineKind } from "../audio/audioEngine";
-import type { BassStepPitches, PaletteEntry } from "../lib/stepPitch";
+import type { BassStepPitches, MelodyStepPitches, PaletteEntry } from "../lib/stepPitch";
 
 export interface SequencerPanelProps {
   styleName: string;
@@ -15,6 +15,8 @@ export interface SequencerPanelProps {
   laneVolumes: LaneVolumes;
   bassStepPitches: BassStepPitches;
   bassPalette: PaletteEntry[];
+  melodyStepPitches: MelodyStepPitches;
+  melodyPalette: PaletteEntry[];
   activeStep: number | null;
   onBpmChange: (bpm: number) => void;
   onSwingChange: (swingPercent: number) => void;
@@ -24,6 +26,7 @@ export interface SequencerPanelProps {
   onReset: () => void;
   onToggleStep: (instrument: InstrumentId, stepIndex: number) => void;
   onBassStepPitchChange: (stepIndex: number, degree: number) => void;
+  onMelodyStepPitchChange: (stepIndex: number, degree: number) => void;
 }
 
 export function SequencerPanel({
@@ -36,6 +39,8 @@ export function SequencerPanel({
   laneVolumes,
   bassStepPitches,
   bassPalette,
+  melodyStepPitches,
+  melodyPalette,
   activeStep,
   onBpmChange,
   onSwingChange,
@@ -45,6 +50,7 @@ export function SequencerPanel({
   onReset,
   onToggleStep,
   onBassStepPitchChange,
+  onMelodyStepPitchChange,
 }: SequencerPanelProps) {
   return (
     <section className="panel grid-panel">
@@ -135,8 +141,16 @@ export function SequencerPanel({
             </div>
             {pattern[instrument.id].map((step, index) => {
               const is808 = instrument.id === "808";
+              const isMelody = instrument.id === "melody";
               const bassDegree = bassStepPitches[index];
-              const bassEntry = is808 && step ? bassPalette[bassDegree] : null;
+              const melodyDegree = melodyStepPitches[index];
+              const pitchDegree = isMelody ? melodyDegree : bassDegree;
+              const pitchPalette = isMelody ? melodyPalette : bassPalette;
+              const pitchEntry =
+                (is808 || isMelody) && step ? pitchPalette[pitchDegree] : null;
+              const onPitchChange = isMelody
+                ? onMelodyStepPitchChange
+                : onBassStepPitchChange;
 
               return (
               <div
@@ -155,7 +169,7 @@ export function SequencerPanel({
                   className={[
                     "step-cell",
                     step ? "on" : "",
-                    bassEntry ? `pitch-${bassEntry.function}` : "",
+                    pitchEntry ? `pitch-${pitchEntry.function}` : "",
                     index % 4 === 0 ? "downbeat" : "",
                     index === activeStep ? "playhead" : "",
                     step && index === activeStep ? "firing" : "",
@@ -166,22 +180,22 @@ export function SequencerPanel({
                   aria-pressed={step}
                   aria-label={`${instrument.label} step ${index + 1} ${
                     step ? "on" : "off"
-                  }${bassEntry ? `, note ${bassEntry.label}` : ""}`}
+                  }${pitchEntry ? `, note ${pitchEntry.label}` : ""}`}
                   onClick={() => onToggleStep(instrument.id, index)}
                 />
-                {is808 && step ? (
+                {(is808 || isMelody) && step ? (
                   <label className="step-pitch">
                     <span className="sr-only">{`${instrument.label} step ${index + 1} note`}</span>
                     <select
-                      className={`step-pitch__select pitch-${bassEntry?.function ?? "root"}`}
-                      value={bassDegree}
+                      className={`step-pitch__select pitch-${pitchEntry?.function ?? "root"}`}
+                      value={pitchDegree}
                       aria-label={`${instrument.label} step ${index + 1} note`}
                       onClick={(event) => event.stopPropagation()}
                       onChange={(event) =>
-                        onBassStepPitchChange(index, Number(event.target.value))
+                        onPitchChange(index, Number(event.target.value))
                       }
                     >
-                      {bassPalette.map((entry) => (
+                      {pitchPalette.map((entry) => (
                         <option key={entry.degree} value={entry.degree}>
                           {entry.label}
                         </option>

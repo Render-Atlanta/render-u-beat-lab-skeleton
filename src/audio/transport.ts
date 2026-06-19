@@ -1,5 +1,10 @@
 import type { BeatStyle } from "../lib/beatStyles";
-import { getBassPitchForStep, midiToNoteName } from "../lib/stepPitch";
+import {
+  getBassPitchForStep,
+  getMelodyPitchForStep,
+  midiToNoteName,
+  type PaletteEntry,
+} from "../lib/stepPitch";
 import { INSTRUMENT_IDS, type InstrumentId } from "../lib/patterns";
 
 export const STEPS_PER_LOOP = 16;
@@ -77,16 +82,29 @@ export function getStepEvents(
           stepIndex,
           style.bassStepPitches,
         );
-        event.pitch = {
-          frequency: pitch.frequency,
-          noteName: midiToNoteName(pitch.midi),
-          degree: pitch.degree,
-          function: pitch.function,
-        };
+        event.pitch = toStepPitch(pitch);
+      }
+
+      if (instrument === "melody") {
+        const pitch = getMelodyPitchForStep(
+          style.musicalKey,
+          stepIndex,
+          style.melodyStepPitches,
+        );
+        event.pitch = toStepPitch(pitch);
       }
 
       return event;
     });
+}
+
+function toStepPitch(pitch: PaletteEntry): StepPitch {
+  return {
+    frequency: pitch.frequency,
+    noteName: midiToNoteName(pitch.midi),
+    degree: pitch.degree,
+    function: pitch.function,
+  };
 }
 
 export interface StepQueueEntry {

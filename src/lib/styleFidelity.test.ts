@@ -42,9 +42,9 @@ describe("extractRhythmFeatures", () => {
   });
 
   it("returns zero shares for an empty pattern without NaN", () => {
-    const empty = { kick: [], snare: [], hat: [], openHat: [], clap: [], "808": [] } as unknown as typeof BEAT_STYLES.trap.pattern;
+    const empty = { kick: [], snare: [], hat: [], openHat: [], clap: [], "808": [], melody: [] } as unknown as typeof BEAT_STYLES.trap.pattern;
     const f = extractRhythmFeatures(
-      { kick: new Array(16).fill(false), snare: new Array(16).fill(false), hat: new Array(16).fill(false), openHat: new Array(16).fill(false), clap: new Array(16).fill(false), "808": new Array(16).fill(false) },
+      { kick: new Array(16).fill(false), snare: new Array(16).fill(false), hat: new Array(16).fill(false), openHat: new Array(16).fill(false), clap: new Array(16).fill(false), "808": new Array(16).fill(false), melody: new Array(16).fill(false) },
       { ...BEAT_STYLES.trap, pattern: empty },
     );
     expect(f.onsetDensity).toBe(0);

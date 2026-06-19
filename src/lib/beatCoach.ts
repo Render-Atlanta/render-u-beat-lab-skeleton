@@ -67,6 +67,12 @@ export const INSTRUMENT_COACH: Record<InstrumentId, InstrumentCoachCopy> = {
     role: "The deep sub-bass that carries the low-end weight of the beat.",
     editTip: "Place it with the kick for power; leave space so it doesn't muddy.",
   },
+  melody: {
+    id: "melody",
+    label: "Melody",
+    role: "The simple in-key line that can become a hook without music theory.",
+    editTip: "Turn on just a few notes first; change pitches to make a motif.",
+  },
 };
 
 const STYLE_COACH_NOTES: Record<
@@ -117,9 +123,18 @@ const INSTRUMENT_LABELS: Record<InstrumentId, string> = {
   openHat: "Open hat",
   clap: "Clap",
   "808": "808",
+  melody: "Melody",
 };
 
-const INSTRUMENT_ORDER: InstrumentId[] = ["kick", "snare", "hat", "openHat", "clap", "808"];
+const INSTRUMENT_ORDER: InstrumentId[] = [
+  "kick",
+  "snare",
+  "hat",
+  "openHat",
+  "clap",
+  "808",
+  "melody",
+];
 
 export function getInstrumentCoach(instrument: InstrumentId): InstrumentCoachCopy {
   return INSTRUMENT_COACH[instrument];

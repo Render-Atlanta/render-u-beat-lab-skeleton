@@ -3,14 +3,23 @@ import { BEAT_STYLES } from "./beatStyles";
 import {
   bassStepPitchesAreDefault,
   createDefaultBassStepPitches,
+  createDefaultMelodyStepPitches,
   deserializeBassStepPitches,
+  deserializeMelodyStepPitches,
   getBassPitchForStep,
   getInKeyPalette,
+  getMelodyPitchForStep,
+  getMelodyPalette,
+  melodyStepPitchesAreDefault,
   normalizeBassDegree,
   normalizeBassStepPitches,
+  normalizeMelodyStepPitches,
   serializeBassStepPitches,
+  serializeMelodyStepPitches,
   synthesizeBassNotePcm,
+  synthesizeMelodyNotePcm,
   updateBassStepPitch,
+  updateMelodyStepPitch,
 } from "./stepPitch";
 
 describe("stepPitch", () => {
@@ -63,6 +72,40 @@ describe("stepPitch", () => {
 
     expect(Array.from(rootPcm.slice(0, 32)).join(",")).not.toBe(
       Array.from(thirdPcm.slice(0, 32)).join(","),
+    );
+  });
+
+  it("builds a higher-register in-key melody palette", () => {
+    const style = BEAT_STYLES.trap;
+    const bassRoot = getBassPitchForStep(style.musicalKey, 0);
+    const melodyRoot = getMelodyPitchForStep(style.musicalKey, 0);
+
+    expect(getMelodyPalette(style.musicalKey)).toHaveLength(7);
+    expect(melodyRoot.function).toBe("root");
+    expect(melodyRoot.midi).toBeGreaterThan(bassRoot.midi);
+  });
+
+  it("serializes and deserializes melody step pitches", () => {
+    const pitches = updateMelodyStepPitch(createDefaultMelodyStepPitches(), 4, 2, 7);
+    const serialized = serializeMelodyStepPitches(pitches);
+
+    expect(normalizeMelodyStepPitches(undefined)).toEqual(createDefaultMelodyStepPitches());
+    expect(melodyStepPitchesAreDefault(createDefaultMelodyStepPitches())).toBe(true);
+    expect(serialized.split(",")[4]).toBe("2");
+    expect(deserializeMelodyStepPitches(serialized)).toEqual(pitches);
+    expect(deserializeMelodyStepPitches("0,1,2")).toBeNull();
+  });
+
+  it("renders melody notes with a distinct deterministic timbre", () => {
+    const style = BEAT_STYLES.trap;
+    const melody = getMelodyPitchForStep(style.musicalKey, 0);
+    const bass = getBassPitchForStep(style.musicalKey, 0);
+    const melodyPcm = synthesizeMelodyNotePcm(melody.frequency, 22050);
+    const bassPcm = synthesizeBassNotePcm(bass.frequency, 22050);
+
+    expect(melodyPcm.length).toBeLessThan(bassPcm.length);
+    expect(Array.from(melodyPcm.slice(0, 32)).join(",")).not.toBe(
+      Array.from(bassPcm.slice(0, 32)).join(","),
     );
   });
 });

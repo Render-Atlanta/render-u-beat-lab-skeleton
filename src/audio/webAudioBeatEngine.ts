@@ -74,6 +74,7 @@ export function createWebAudioBeatEngine(
     openHat: playOpenHat,
     clap: playClap,
     "808": play808,
+    melody: playMelody,
   };
 
   async function ready() {
@@ -293,6 +294,19 @@ export function createWebAudioBeatEngine(
     osc.connect(filter).connect(gain).connect(laneBuses["808"]);
     osc.start(time);
     osc.stop(time + 0.4);
+  }
+
+  function playMelody(time: number, accent = 1, pitch?: StepPitch) {
+    const frequency = pitch?.frequency ?? 440;
+    const osc = context.createOscillator();
+    const gain = context.createGain();
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(frequency, time);
+    gain.gain.setValueAtTime(0.26 * accent, time);
+    gain.gain.exponentialRampToValueAtTime(0.001, time + 0.22);
+    osc.connect(gain).connect(laneBuses.melody);
+    osc.start(time);
+    osc.stop(time + 0.24);
   }
 
   function createNoiseBuffer(duration: number) {
