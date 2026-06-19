@@ -26,6 +26,7 @@ export interface SequencerPanelProps {
   onLaneVolumeChange: (instrument: InstrumentId, volume: number) => void;
   onLaneVolumeReset: (instrument: InstrumentId) => void;
   onReset: () => void;
+  onClear: () => void;
   onToggleStep: (instrument: InstrumentId, stepIndex: number) => void;
   onBassStepPitchChange: (stepIndex: number, degree: number) => void;
   onMelodyStepPitchChange: (stepIndex: number, degree: number) => void;
@@ -51,6 +52,7 @@ export function SequencerPanel({
   onLaneVolumeChange,
   onLaneVolumeReset,
   onReset,
+  onClear,
   onToggleStep,
   onBassStepPitchChange,
   onMelodyStepPitchChange,
@@ -79,6 +81,15 @@ export function SequencerPanel({
             onChange={(event) => onBpmChange(Number(event.target.value))}
           />
         </label>
+        {/* Tap tempo arrives in PR-36 — rendered inert so the control row is final. */}
+        <button
+          className="button secondary compact"
+          type="button"
+          disabled
+          title="Tap tempo arrives in a follow-up update"
+        >
+          Tap
+        </button>
         <label className="control-field wide">
           <span className="eyebrow">Swing {swingPercent}%</span>
           <input
@@ -101,9 +112,52 @@ export function SequencerPanel({
             <option value="tone-sample">Tone.js</option>
           </select>
         </label>
-        <button className="button secondary compact" type="button" onClick={onReset}>
-          Reset
-        </button>
+        {/* Undo/redo arrive in PR-34; rendered inert for now. Clear + Reset work. */}
+        <div className="control-buttons" aria-label="History">
+          <button
+            className="button secondary compact icon"
+            type="button"
+            disabled
+            aria-label="Undo"
+            title="Undo arrives in a follow-up update"
+          >
+            ↶
+          </button>
+          <button
+            className="button secondary compact icon"
+            type="button"
+            disabled
+            aria-label="Redo"
+            title="Redo arrives in a follow-up update"
+          >
+            ↷
+          </button>
+          <button className="button secondary compact" type="button" onClick={onClear}>
+            Clear
+          </button>
+          <button className="button secondary compact" type="button" onClick={onReset}>
+            Reset
+          </button>
+        </div>
+        {/* Count-in + metronome arrive in PR-35; rendered inert for now. */}
+        <div className="control-buttons" aria-label="Practice aids">
+          <button
+            className="button secondary compact"
+            type="button"
+            disabled
+            title="Count-in arrives in a follow-up update"
+          >
+            Count-in
+          </button>
+          <button
+            className="button secondary compact"
+            type="button"
+            disabled
+            title="Metronome arrives in a follow-up update"
+          >
+            Metronome
+          </button>
+        </div>
       </div>
 
       <div className="step-grid" aria-label={`${styleName} drum pattern`}>

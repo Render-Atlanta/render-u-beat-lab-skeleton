@@ -34,6 +34,7 @@ function renderPanel(extra: Partial<Parameters<typeof SequencerPanel>[0]> = {}) 
       onLaneVolumeChange={noop}
       onLaneVolumeReset={noop}
       onReset={noop}
+      onClear={noop}
       onToggleStep={noop}
       onBassStepPitchChange={noop}
       onMelodyStepPitchChange={noop}
@@ -88,6 +89,16 @@ describe("SequencerPanel lane count and new lanes", () => {
     const html = renderPanel();
     const matches = html.match(/volume/gi);
     expect(matches?.length).toBeGreaterThanOrEqual(INSTRUMENTS.length);
+  });
+});
+
+describe("SequencerPanel control row", () => {
+  it("wires Clear and Reset and leaves only the deferred controls inert", () => {
+    const html = renderPanel();
+    expect(html).toContain(">Clear</button>");
+    expect(html).toContain(">Reset</button>");
+    // Tap, Undo, Redo, Count-in, Metronome stay inert until their follow-up PRs.
+    expect(html.match(/disabled/g)).toHaveLength(5);
   });
 });
 

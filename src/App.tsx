@@ -46,7 +46,12 @@ import {
   writeSequencerStateToParams,
   type SequencerState,
 } from "./lib/patternState";
-import { countActiveSteps, type InstrumentId } from "./lib/patterns";
+import {
+  countActiveSteps,
+  INSTRUMENT_IDS,
+  type InstrumentId,
+  type Pattern,
+} from "./lib/patterns";
 import {
   DEFAULT_PRODUCER_TAG_TEXT,
   normalizeProducerTagConfig,
@@ -99,6 +104,39 @@ function audibleStyle(state: SequencerState, guided: GuidedModeState) {
   return createPlayableStyle({ ...state, pattern });
 }
 
+/**
+ * Presentational layout modes from the redesign:
+ * - rail: tool panel as a sticky right-hand sidebar (default)
+ * - focus: tool panel as a bottom sheet over the transport
+ * - pro: roomier desktop layout with a wider sidebar
+ */
+type LayoutMode = "rail" | "focus" | "pro";
+/** Which tool occupies the tabbed tool panel on desktop. */
+type ToolTab = "coach" | "tag" | "arrange" | "capture";
+/** Mobile view selector — "make" shows the sequencer, the rest mirror the tools. */
+type MobileTab = "make" | ToolTab;
+
+const LAYOUT_MODES: { id: LayoutMode; label: string }[] = [
+  { id: "rail", label: "Rail" },
+  { id: "focus", label: "Focus" },
+  { id: "pro", label: "Pro" },
+];
+
+const TOOL_TABS: { id: ToolTab; label: string }[] = [
+  { id: "coach", label: "Coach" },
+  { id: "tag", label: "Tag" },
+  { id: "arrange", label: "Arrange" },
+  { id: "capture", label: "Capture" },
+];
+
+const MOBILE_TABS: { id: MobileTab; label: string }[] = [
+  { id: "make", label: "Make" },
+  ...TOOL_TABS,
+];
+
+/** Viewport width at or below which the app switches to the single-column mobile shell. */
+const MOBILE_BREAKPOINT = 760;
+
 export function App() {
   const [sequencer, setSequencer] = useState<SequencerState>(() =>
     readSequencerStateFromParams(new URLSearchParams(window.location.search)),
@@ -113,6 +151,9 @@ export function App() {
   const [producerTagSource, setProducerTagSource] = useState<ProducerTagSource>("text");
   const [recordedPcm, setRecordedPcm] = useState<ProducerTagSample | null>(null);
   const [recordedState, setRecordedState] = useState<RecordedState>("none");
+  // Tag recording errors surface in the Tag tab itself — the CapturePanel that
+  // renders micState lives on a different tab in the redesigned shell.
+  const [tagRecordError, setTagRecordError] = useState<string | null>(null);
   const [arrangement, setArrangement] = useState<Arrangement>(() =>
     createDefaultArrangement(),
   );
@@ -130,6 +171,15 @@ export function App() {
     readGuidedPref() === "guided"
       ? startGuidedState()
       : { active: false, stepIndex: getGuidedSequence().length - 1 },
+  );
+  // Presentational shell state (redesign): layout mode, active tool tab, and the
+  // mobile view selector. None of this touches the beat — it only arranges UI.
+  const [layout, setLayout] = useState<LayoutMode>("rail");
+  const [tool, setTool] = useState<ToolTab>("coach");
+  const [mobileTab, setMobileTab] = useState<MobileTab>("make");
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [viewportWidth, setViewportWidth] = useState(() =>
+    typeof window === "undefined" ? 1280 : window.innerWidth,
   );
 
   const baseStyle = BEAT_STYLES[sequencer.styleId];
@@ -206,6 +256,12 @@ export function App() {
 
   useEffect(() => {
     void loadKitFromUrls().then(setKit).catch(() => { setKit(null); setKitError(true); });
+  }, []);
+
+  useEffect(() => {
+    const onResize = () => setViewportWidth(window.innerWidth);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
   }, []);
 
   useEffect(() => {
@@ -324,6 +380,16 @@ export function App() {
     applySequencerState(createDefaultSequencerState(styleId));
   }
 
+  // Clear empties every step while keeping the current BPM, swing, and mix —
+  // distinct from Reset, which restores the style's starter pattern.
+  function clearPattern() {
+    const emptyPattern = INSTRUMENT_IDS.reduce((pattern, id) => {
+      pattern[id] = Array.from({ length: 16 }, () => false);
+      return pattern;
+    }, {} as Pattern);
+    applySequencerState({ ...sequencer, pattern: emptyPattern });
+  }
+
   function updateBpm(bpm: number) {
     applySequencerState(updateSequencerBpm(sequencer, bpm));
   }
@@ -413,10 +479,11 @@ export function App() {
 
   async function recordTag() {
     if (!micSupport.supported) {
-      setMicState({ status: "error", message: micSupport.message });
+      setTagRecordError(micSupport.message);
       return;
     }
 
+    setTagRecordError(null);
     setRecordedState("recording");
 
     try {
@@ -432,16 +499,14 @@ export function App() {
       setRecordedState("none");
       setRecordedPcm(null);
       engineRef.current?.setProducerTagSample(null);
-      setMicState({
-        status: "error",
-        message: getMicCaptureErrorMessage(error),
-      });
+      setTagRecordError(getMicCaptureErrorMessage(error));
     }
   }
 
   function clearRecording() {
     setRecordedPcm(null);
     setRecordedState("none");
+    setTagRecordError(null);
     engineRef.current?.setProducerTagSample(null);
   }
 
@@ -527,139 +592,333 @@ export function App() {
     );
   }
 
+  function toggleGuided() {
+    if (guidedState.active) {
+      handleGuidedExit();
+    } else {
+      handleGuidedStart();
+    }
+  }
+
+  const isMobile = viewportWidth <= MOBILE_BREAKPOINT;
+
+  // Picking a tool tab also opens the Focus bottom sheet and keeps the mobile
+  // selector in sync, so the same control works in every layout.
+  function selectTool(next: ToolTab) {
+    setTool(next);
+    setMobileTab(next);
+    if (layout === "focus") {
+      setSheetOpen(true);
+    }
+  }
+
+  // Selecting a mobile tab also syncs the desktop `tool` so the Tools-button
+  // fallback and a resize back to desktop both reflect the last tool opened.
+  function selectMobileTab(next: MobileTab) {
+    setMobileTab(next);
+    if (next !== "make") {
+      setTool(next);
+    }
+  }
+
+  // Transport "Tag" shortcut: jump straight to the Tag tool in any layout.
+  function jumpToTag() {
+    if (isMobile) {
+      selectMobileTab("tag");
+    } else {
+      selectTool("tag");
+    }
+  }
+
+  function toggleToolSheet() {
+    if (isMobile) {
+      setMobileTab((current) => (current === "make" ? tool : "make"));
+    } else if (layout === "focus") {
+      setSheetOpen((open) => !open);
+    }
+  }
+
+  // On mobile the visible tool follows the tab bar; on desktop it follows `tool`.
+  const activeTool: ToolTab =
+    isMobile && mobileTab !== "make" ? mobileTab : tool;
+  const showSequencer = !isMobile || mobileTab === "make";
+  const showToolPanel = isMobile
+    ? mobileTab !== "make"
+    : layout === "focus"
+      ? sheetOpen
+      : true;
+  // The Tools button only appears where the tool panel can be shown/hidden:
+  // on mobile (toggles make ↔ tools) and in the Focus bottom-sheet layout.
+  const showToolsButton = isMobile || layout === "focus";
+
+  function renderActiveTool() {
+    switch (activeTool) {
+      case "tag":
+        return (
+          <div className="tool-body tag-tab">
+            <div className="tool-tab-head">
+              <p className="eyebrow">Producer tag</p>
+              <button
+                className="button secondary compact"
+                type="button"
+                onClick={playProducerTag}
+              >
+                ▶ Test tag
+              </button>
+            </div>
+            <ProducerTagControls
+              config={producerTagConfig}
+              text={producerTagText}
+              enabled={producerTagEnabled}
+              trigger={producerTagTrigger}
+              rate={producerTagRate}
+              pitch={producerTagPitch}
+              source={producerTagSource}
+              recordedState={recordedState}
+              onTextChange={setProducerTagText}
+              onEnabledChange={setProducerTagEnabled}
+              onTriggerChange={setProducerTagTrigger}
+              onRateChange={setProducerTagRate}
+              onPitchChange={setProducerTagPitch}
+              onSourceChange={setProducerTagSource}
+              onRecord={recordTag}
+              onClearRecording={clearRecording}
+            />
+            {tagRecordError ? (
+              <p className="status-copy" role="alert">
+                {tagRecordError}
+              </p>
+            ) : null}
+          </div>
+        );
+      case "arrange":
+        return (
+          <div className="tool-body">
+            <ArrangementPanel
+              arrangement={arrangement}
+              exportMessage={exportMessage}
+              projectJson={projectJson}
+              onToggleLaneMute={toggleArrangementLaneMute}
+              onExportProject={exportProject}
+              onDownloadWav={downloadWav}
+            />
+          </div>
+        );
+      case "capture":
+        return (
+          <div className="tool-body">
+            <CapturePanel
+              micState={micState}
+              sensitivity={captureSensitivity}
+              onSensitivityChange={setCaptureSensitivity}
+              onCapture={captureMicSample}
+              onHitLaneChange={updateCapturedHitLane}
+              onSendLanes={applyClassifiedHitsToPattern}
+            />
+          </div>
+        );
+      case "coach":
+      default:
+        return (
+          <div className="tool-body coach-panel">
+            <BeatCoachPanel
+              lesson={baseStyle.lesson}
+              styleCoach={styleCoach}
+              patternSummary={patternSummary}
+              references={styleReferences}
+            />
+          </div>
+        );
+    }
+  }
+
   return (
-    <main data-palette="atl" className="app-shell">
+    <main
+      data-palette="atl"
+      className="app-shell"
+      data-layout={layout}
+      data-mobile={isMobile}
+    >
       <nav className="site-nav" aria-label="Primary">
         <a className="brand-lockup" href="#top">
           <span aria-hidden="true">★</span>
           Render U Beat Lab
         </a>
         <div className="nav-actions">
-          <span className="eyebrow">Prototype 01</span>
+          {!isMobile ? (
+            <div className="layout-switch" role="group" aria-label="Layout mode">
+              {LAYOUT_MODES.map((mode) => (
+                <button
+                  key={mode.id}
+                  type="button"
+                  className={`layout-switch__btn ${layout === mode.id ? "active" : ""}`}
+                  aria-pressed={layout === mode.id}
+                  onClick={() => {
+                    setLayout(mode.id);
+                    setSheetOpen(false);
+                  }}
+                >
+                  {mode.label}
+                </button>
+              ))}
+            </div>
+          ) : null}
+          <button
+            type="button"
+            className={`button compact ${guidedState.active ? "" : "secondary"}`}
+            aria-pressed={guidedState.active}
+            onClick={toggleGuided}
+          >
+            {guidedState.active ? "Exit guided" : "Start guided"}
+          </button>
         </div>
       </nav>
 
-      <section id="top" className="hero">
-        <p className="eyebrow">★ From vibe coding to AI engineering</p>
-        <h1 className="display display-xl">
-          Turn table taps into a <span className="underline-accent">beat</span>
+      <header id="top" className="hero">
+        <p className="eyebrow">★ Make a beat in minutes</p>
+        <h1 className="display hero__title">
+          Tap out a <span className="underline-accent">beat</span>
         </h1>
-        <p className="hero-copy">
-          A workshop skeleton for learning reusable AI workflows through a real
-          browser music toy: patterns first, capture next, producer polish after.
-        </p>
-        <div className="hero-actions">
-          <button className="star-button" type="button" onClick={togglePlayback}>
-            <span aria-hidden="true">★</span>
-            {isPlaying ? "Stop loop" : "Run it"}
-            <span aria-hidden="true">★</span>
+      </header>
+
+      <StyleSelector
+        styles={Object.values(BEAT_STYLES)}
+        selectedStyleId={sequencer.styleId}
+        onSelectStyle={resetToStyle}
+      />
+
+      <section className="work-area" aria-label="Beat workbench">
+        {showSequencer ? (
+          <div className="work-main">
+            {guidedState.active ? (
+              <GuidedModeBanner
+                instrument={guidedInstrument}
+                stepIndex={guidedState.stepIndex}
+                stepCount={getGuidedSequence().length}
+                isLastStep={isLastGuidedStep(guidedState)}
+                onNext={handleGuidedNext}
+                onSkip={handleGuidedSkip}
+                onExit={handleGuidedExit}
+              />
+            ) : null}
+            <SequencerPanel
+              styleName={baseStyle.name}
+              activeSteps={activeSteps}
+              bpm={sequencer.bpm}
+              swingPercent={getSwingPercent(sequencer.swing)}
+              audioEngineKind={audioEngineKind}
+              pattern={sequencer.pattern}
+              laneVolumes={sequencer.laneVolumes}
+              bassStepPitches={sequencer.bassStepPitches}
+              bassPalette={bassPalette}
+              melodyStepPitches={sequencer.melodyStepPitches}
+              melodyPalette={melodyPalette}
+              activeStep={activeStep}
+              onBpmChange={updateBpm}
+              onSwingChange={updateSwing}
+              onAudioEngineKindChange={updateAudioEngineKind}
+              onLaneVolumeChange={updateLaneVolume}
+              onLaneVolumeReset={resetLaneVolume}
+              onReset={() => resetToStyle()}
+              onClear={clearPattern}
+              onToggleStep={toggleStep}
+              onBassStepPitchChange={updateBassStepPitch}
+              onMelodyStepPitchChange={updateMelodyStepPitch}
+              visibleInstruments={visibleInstruments}
+            />
+            <StyleFidelityMeter style={playableStyle} kit={kit} kitError={kitError} />
+          </div>
+        ) : null}
+
+        {showToolPanel ? (
+          <div className="tool-dock" data-sheet={!isMobile && layout === "focus"}>
+            <div className="tool-panel">
+              {!isMobile ? (
+                <div className="tool-tabs" role="tablist" aria-label="Tools">
+                  {TOOL_TABS.map((tab) => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={activeTool === tab.id}
+                      className={`tool-tab ${activeTool === tab.id ? "active" : ""}`}
+                      onClick={() => selectTool(tab.id)}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+              {renderActiveTool()}
+            </div>
+          </div>
+        ) : null}
+      </section>
+
+      <div className="transport" role="region" aria-label="Transport">
+        <div className="transport__inner">
+          <button
+            type="button"
+            className="transport__play"
+            aria-label={isPlaying ? "Stop" : "Play"}
+            aria-pressed={isPlaying}
+            onClick={togglePlayback}
+          >
+            {isPlaying ? "❚❚" : "▶"}
           </button>
-          <button className="button secondary" type="button" onClick={playProducerTag}>
-            Producer tag
+          <span
+            className={`transport__metro ${isPlaying ? "on" : ""}`}
+            aria-hidden="true"
+            title="Metronome"
+          />
+          <div className="transport__meter">
+            <div className="transport__beats" aria-hidden="true">
+              {Array.from({ length: 16 }, (_, index) => (
+                <span
+                  key={index}
+                  className={[
+                    "beat-dot",
+                    index === activeStep ? "active" : "",
+                    index % 4 === 0 ? "downbeat" : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                />
+              ))}
+            </div>
+            <EqVisualizer engine={engineRef.current} isPlaying={isPlaying} />
+          </div>
+          {showToolsButton ? (
+            <button
+              type="button"
+              className="button secondary compact"
+              onClick={toggleToolSheet}
+            >
+              Tools
+            </button>
+          ) : null}
+          <button type="button" className="star-button compact" onClick={jumpToTag}>
+            <span aria-hidden="true">★</span>
+            Tag
           </button>
         </div>
-      </section>
+      </div>
 
-      <section className="workbench" aria-label="Beat workbench">
-        <StyleSelector
-          styles={Object.values(BEAT_STYLES)}
-          selectedStyleId={sequencer.styleId}
-          onSelectStyle={resetToStyle}
-        />
-
-        {guidedState.active ? (
-          <GuidedModeBanner
-            instrument={guidedInstrument}
-            stepIndex={guidedState.stepIndex}
-            stepCount={getGuidedSequence().length}
-            isLastStep={isLastGuidedStep(guidedState)}
-            onNext={handleGuidedNext}
-            onSkip={handleGuidedSkip}
-            onExit={handleGuidedExit}
-          />
-        ) : (
-          <div className="guided-reentry">
+      {isMobile ? (
+        <nav className="mobile-tabs" aria-label="Sections">
+          {MOBILE_TABS.map((tab) => (
             <button
-              className="button secondary compact"
+              key={tab.id}
               type="button"
-              onClick={handleGuidedStart}
+              className={`mobile-tab ${mobileTab === tab.id ? "active" : ""}`}
+              aria-pressed={mobileTab === tab.id}
+              onClick={() => selectMobileTab(tab.id)}
             >
-              ▸ Start guided build
+              {tab.label}
             </button>
-          </div>
-        )}
-        <SequencerPanel
-          styleName={baseStyle.name}
-          activeSteps={activeSteps}
-          bpm={sequencer.bpm}
-          swingPercent={getSwingPercent(sequencer.swing)}
-          audioEngineKind={audioEngineKind}
-          pattern={sequencer.pattern}
-          laneVolumes={sequencer.laneVolumes}
-          bassStepPitches={sequencer.bassStepPitches}
-          bassPalette={bassPalette}
-          melodyStepPitches={sequencer.melodyStepPitches}
-          melodyPalette={melodyPalette}
-          activeStep={activeStep}
-          onBpmChange={updateBpm}
-          onSwingChange={updateSwing}
-          onAudioEngineKindChange={updateAudioEngineKind}
-          onLaneVolumeChange={updateLaneVolume}
-          onLaneVolumeReset={resetLaneVolume}
-          onReset={() => resetToStyle()}
-          onToggleStep={toggleStep}
-          onBassStepPitchChange={updateBassStepPitch}
-          onMelodyStepPitchChange={updateMelodyStepPitch}
-          visibleInstruments={visibleInstruments}
-        />
-
-        <StyleFidelityMeter style={playableStyle} kit={kit} kitError={kitError} />
-
-        <EqVisualizer engine={engineRef.current} isPlaying={isPlaying} />
-
-        <aside className="panel coach-panel">
-          <BeatCoachPanel
-            lesson={baseStyle.lesson}
-            styleCoach={styleCoach}
-            patternSummary={patternSummary}
-            references={styleReferences}
-          />
-          <ProducerTagControls
-            config={producerTagConfig}
-            text={producerTagText}
-            enabled={producerTagEnabled}
-            trigger={producerTagTrigger}
-            rate={producerTagRate}
-            pitch={producerTagPitch}
-            source={producerTagSource}
-            recordedState={recordedState}
-            onTextChange={setProducerTagText}
-            onEnabledChange={setProducerTagEnabled}
-            onTriggerChange={setProducerTagTrigger}
-            onRateChange={setProducerTagRate}
-            onPitchChange={setProducerTagPitch}
-            onSourceChange={setProducerTagSource}
-            onRecord={recordTag}
-            onClearRecording={clearRecording}
-          />
-          <ArrangementPanel
-            arrangement={arrangement}
-            exportMessage={exportMessage}
-            projectJson={projectJson}
-            onToggleLaneMute={toggleArrangementLaneMute}
-            onExportProject={exportProject}
-            onDownloadWav={downloadWav}
-          />
-          <CapturePanel
-            micState={micState}
-            sensitivity={captureSensitivity}
-            onSensitivityChange={setCaptureSensitivity}
-            onCapture={captureMicSample}
-            onHitLaneChange={updateCapturedHitLane}
-            onSendLanes={applyClassifiedHitsToPattern}
-          />
-        </aside>
-      </section>
+          ))}
+        </nav>
+      ) : null}
     </main>
   );
 }

@@ -95,8 +95,23 @@ button:disabled {
 }
 
 .hero {
-  max-width: 1120px;
-  padding: 72px clamp(18px, 4vw, 48px) 44px;
+  margin: 0 auto;
+  max-width: 1320px;
+  padding: 26px clamp(16px, 4vw, 40px) 6px;
+  width: 100%;
+}
+
+.hero__title {
+  font-family:
+    "Archivo Black",
+    Impact,
+    ui-sans-serif,
+    system-ui,
+    sans-serif;
+  font-size: clamp(2.1rem, 5.2vw, 3.6rem);
+  line-height: 0.92;
+  margin: 6px 0 0;
+  max-width: 18ch;
 }
 
 .display {
@@ -301,17 +316,41 @@ button:disabled {
 }
 
 .sequencer-controls {
-  align-items: end;
+  align-items: flex-end;
   border-bottom: 1px solid hsl(var(--border));
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
   gap: 12px;
-  grid-template-columns: 92px minmax(180px, 1fr) auto;
   padding: 14px 18px;
 }
 
+.control-buttons {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.control-buttons .icon {
+  min-width: 40px;
+  padding-inline: 10px;
+}
+
 .control-field {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 8px;
+}
+
+/* Fixed compact widths only apply in the sequencer control row; the Tag and
+   Capture panels reuse .control-field and need their controls full-width. */
+.sequencer-controls .control-field {
+  width: 84px;
+}
+
+.sequencer-controls .control-field.wide {
+  flex: 1;
+  min-width: 160px;
+  width: auto;
 }
 
 .control-field input,
@@ -991,4 +1030,323 @@ button:disabled {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+}
+
+/* ===========================================================================
+   Beat Lab redesign shell (PR-32)
+   Nav layout switch · style strip · two-column work area · tabbed tool panel ·
+   fixed transport · mobile tab bar. Reuses the existing design tokens above.
+   =========================================================================== */
+
+/* Layout switcher (nav) */
+.layout-switch {
+  display: flex;
+  gap: 4px;
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+  padding: 4px;
+}
+
+.layout-switch__btn {
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: hsl(var(--ink));
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  min-height: 32px;
+  opacity: 0.6;
+  padding: 0 12px;
+  text-transform: uppercase;
+}
+
+.layout-switch__btn.active {
+  background: hsl(var(--ink));
+  color: hsl(var(--cream));
+  opacity: 1;
+}
+
+/* Style strip */
+.style-strip {
+  margin: 0 auto;
+  max-width: 1320px;
+  padding: 12px clamp(16px, 4vw, 40px) 4px;
+  width: 100%;
+}
+
+.style-strip > .eyebrow {
+  margin-bottom: 10px;
+}
+
+.style-strip__track {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  scroll-snap-type: x mandatory;
+}
+
+.style-strip .style-card {
+  flex: none;
+  scroll-snap-align: start;
+  width: 184px;
+}
+
+/* Two-column work area */
+.work-area {
+  align-items: flex-start;
+  display: flex;
+  gap: 16px;
+  margin: 0 auto;
+  max-width: 1320px;
+  padding: 14px clamp(16px, 4vw, 40px) 132px;
+  width: 100%;
+}
+
+.work-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.tool-dock {
+  flex: none;
+  position: sticky;
+  top: 78px;
+  width: 340px;
+}
+
+/* Pro layout — roomier */
+[data-layout="pro"] .work-area {
+  gap: 24px;
+}
+
+[data-layout="pro"] .tool-dock {
+  width: 384px;
+}
+
+/* Focus layout — tool panel as a bottom sheet */
+[data-layout="focus"] .work-area {
+  flex-direction: column;
+}
+
+[data-layout="focus"]:not([data-mobile="true"]) .tool-dock {
+  bottom: 96px;
+  left: 0;
+  margin: 0 auto;
+  max-width: 560px;
+  padding: 0 16px;
+  position: fixed;
+  right: 0;
+  top: auto;
+  width: auto;
+  z-index: 40;
+}
+
+[data-layout="focus"]:not([data-mobile="true"]) .tool-dock .tool-panel {
+  box-shadow: 0 14px 44px hsl(var(--ink) / 0.22);
+  max-height: 62vh;
+  overflow-y: auto;
+}
+
+/* Tabbed tool panel */
+.tool-panel {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.tool-tabs {
+  border-bottom: 1px solid hsl(var(--border));
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  padding: 8px;
+}
+
+.tool-tab {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  color: hsl(var(--ink));
+  font-size: 0.74rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  min-height: 36px;
+  opacity: 0.62;
+  padding: 0 14px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.tool-tab.active {
+  background: hsl(var(--ink));
+  color: hsl(var(--cream));
+  opacity: 1;
+}
+
+.tool-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.tool-tab-head {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+/* Tag tab supplies its own padding; reset the legacy inner padding/borders. */
+.tag-tab {
+  gap: 12px;
+  padding: 18px;
+}
+
+.tag-tab .tag-controls,
+.tag-tab .tag-field {
+  border-top: 0;
+  padding: 0;
+}
+
+/* Fixed transport bar */
+.transport {
+  backdrop-filter: blur(8px);
+  background: hsl(var(--bg) / 0.96);
+  border-top: 1px solid hsl(var(--border));
+  bottom: 0;
+  left: 0;
+  padding: 10px clamp(12px, 4vw, 40px);
+  position: fixed;
+  right: 0;
+  z-index: 50;
+}
+
+.transport__inner {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  margin: 0 auto;
+  max-width: 1320px;
+}
+
+.transport__play {
+  background: hsl(var(--ink));
+  border: 1px solid hsl(var(--ink));
+  border-radius: 50%;
+  color: hsl(var(--cream));
+  flex: none;
+  font-size: 1.05rem;
+  height: 52px;
+  width: 52px;
+}
+
+.transport__metro {
+  background: hsl(var(--border));
+  border-radius: 50%;
+  flex: none;
+  height: 12px;
+  width: 12px;
+}
+
+.transport__metro.on {
+  background: hsl(var(--accent));
+}
+
+.transport__meter {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.transport__beats {
+  display: flex;
+  gap: 3px;
+}
+
+.beat-dot {
+  background: hsl(var(--border));
+  border-radius: 99px;
+  flex: 1;
+  height: 6px;
+}
+
+.beat-dot.downbeat {
+  background: hsl(var(--ink) / 0.32);
+}
+
+.beat-dot.active {
+  background: hsl(var(--accent));
+}
+
+.transport .eq-visualizer {
+  gap: 0;
+}
+
+.transport .eq-visualizer .eyebrow {
+  display: none;
+}
+
+.transport .eq-visualizer canvas {
+  background: transparent;
+  height: 30px;
+}
+
+/* Mobile tab bar */
+.mobile-tabs {
+  backdrop-filter: blur(8px);
+  background: hsl(var(--bg) / 0.97);
+  border-top: 1px solid hsl(var(--border));
+  bottom: 0;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  left: 0;
+  position: fixed;
+  right: 0;
+  z-index: 45;
+}
+
+.mobile-tab {
+  background: transparent;
+  border: none;
+  color: hsl(var(--ink));
+  font-size: 0.66rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  min-height: 52px;
+  opacity: 0.6;
+  text-transform: uppercase;
+}
+
+.mobile-tab.active {
+  box-shadow: inset 0 -3px 0 hsl(var(--accent));
+  opacity: 1;
+}
+
+/* Mobile single-column shell — transport sits above the tab bar */
+[data-mobile="true"] .work-area {
+  flex-direction: column;
+  padding-bottom: 172px;
+}
+
+[data-mobile="true"] .tool-dock {
+  position: static;
+  top: auto;
+  width: 100%;
+}
+
+[data-mobile="true"] .transport {
+  bottom: 52px;
+}
+
+[data-mobile="true"] .transport__play {
+  height: 46px;
+  width: 46px;
 }

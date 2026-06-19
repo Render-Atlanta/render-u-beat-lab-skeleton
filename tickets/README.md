@@ -59,3 +59,18 @@ shipped. Remaining Wave 3 work — extra instruments (PR-27 808/clap), in-key
 melody (PR-28), guided layering (PR-29), the per-lane volume mixer (PR-30), and
 the pitched "bass guitar" follow-up (PR-31). The bass progression is **PR-27
 (tuned 808 now) → PR-31 (per-step in-key notes later)**.
+
+## Beat Lab redesign roadmap (Wave 4)
+
+Imported from the `claude.ai/design` project "Drum app redesign cleanup"
+(`Beat Lab.dc.html`). The shell (PR-32) re-skins and restructures the app to the
+new design and ships first; PR-33…PR-36 add the net-new behaviors the design
+introduces. Each later ticket lands as its own tested PR.
+
+| ID | Title | Type | Wave | Depends on |
+| --- | --- | --- | --- | --- |
+| [PR-32](PR-32-beat-lab-redesign-shell.md) | Beat Lab visual redesign shell | Feature | 4 | PR-29, PR-30, PR-31 |
+| [PR-33](PR-33-per-step-velocity-and-paint.md) | Per-step velocity + drag-to-paint | Feature | 4 | PR-30, PR-32 |
+| [PR-34](PR-34-undo-redo-autosave-share.md) | Undo/redo, autosave & compact share | Feature | 4 | PR-32, PR-33 |
+| [PR-35](PR-35-count-in-and-metronome.md) | Count-in & metronome | Feature | 4 | PR-11, PR-32 |
+| [PR-36](PR-36-tap-tempo.md) | Tap tempo | Feature | 4 | PR-32 |

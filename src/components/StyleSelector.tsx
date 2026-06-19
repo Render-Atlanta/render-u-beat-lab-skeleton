@@ -14,12 +14,9 @@ export function StyleSelector({
   onSelectStyle,
 }: StyleSelectorProps) {
   return (
-    <aside className="panel style-panel">
-      <div className="panel-header">
-        <p className="eyebrow">Styles</p>
-        <h2 className="heading">Choose a starting pocket</h2>
-      </div>
-      <div className="style-list">
+    <section className="style-strip" aria-label="Beat styles">
+      <p className="eyebrow">Choose a starting pocket</p>
+      <div className="style-strip__track">
         {styles.map((beatStyle) => (
           <button
             aria-pressed={beatStyle.id === selectedStyleId}
@@ -37,6 +34,6 @@ export function StyleSelector({
           </button>
         ))}
       </div>
-    </aside>
+    </section>
   );
 }
