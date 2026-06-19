@@ -1,6 +1,7 @@
 import type { LaneVolumes } from "./laneVolumes";
 import { patternFromSteps, type Pattern } from "./patterns";
 import type { BassStepPitches, MelodyStepPitches, NoteName, ScaleType } from "./stepPitch";
+import type { StepVelocities } from "./stepVelocity";
 
 export interface MusicalKey {
   root: NoteName;
@@ -24,6 +25,7 @@ export interface BeatStyle {
   pattern: Pattern;
   musicalKey: MusicalKey;
   laneVolumes?: LaneVolumes;
+  stepVelocities?: StepVelocities;
   bassStepPitches?: BassStepPitches;
   melodyStepPitches?: MelodyStepPitches;
   lesson: string;

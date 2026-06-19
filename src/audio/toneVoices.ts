@@ -125,10 +125,10 @@ function createSampleVoiceWithFallback(
   let usePlayer = true;
 
   return {
-    start: (time) => {
+    start: (time, accent = FALLBACK_ACCENT) => {
       if (usePlayer) {
         try {
-          player.start?.(time);
+          player.start?.(time, accent);
           return;
         } catch {
           usePlayer = false;
@@ -137,7 +137,7 @@ function createSampleVoiceWithFallback(
       if (!synth) {
         synth = createSynthVoice(runtime, instrument, destination);
       }
-      triggerSynthVoice(synth, instrument, time, FALLBACK_ACCENT, undefined);
+      triggerSynthVoice(synth, instrument, time, accent, undefined);
     },
     dispose: () => {
       player.dispose?.();
@@ -154,7 +154,7 @@ export function playVoice(
   pitch?: StepPitch,
 ) {
   if (voice.start && instrument !== "808" && instrument !== "melody") {
-    voice.start(time);
+    voice.start(time, accent);
     return;
   }
 

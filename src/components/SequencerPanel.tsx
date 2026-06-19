@@ -4,6 +4,9 @@ import type { InstrumentId, Pattern } from "../lib/patterns";
 import type { LaneVolumes } from "../lib/laneVolumes";
 import type { AudioEngineKind } from "../audio/audioEngine";
 import type { BassStepPitches, MelodyStepPitches, PaletteEntry } from "../lib/stepPitch";
+import type { StepVelocity, StepVelocities } from "../lib/stepVelocity";
+import { SequencerControls } from "./SequencerControls";
+import { useStepPaint } from "./useStepPaint";
 
 export interface SequencerPanelProps {
   styleName: string;
@@ -13,6 +16,7 @@ export interface SequencerPanelProps {
   audioEngineKind: AudioEngineKind;
   pattern: Pattern;
   laneVolumes: LaneVolumes;
+  stepVelocities: StepVelocities;
   bassStepPitches: BassStepPitches;
   bassPalette: PaletteEntry[];
   melodyStepPitches: MelodyStepPitches;
@@ -28,6 +32,7 @@ export interface SequencerPanelProps {
   onReset: () => void;
   onClear: () => void;
   onToggleStep: (instrument: InstrumentId, stepIndex: number) => void;
+  onPaintStep: (instrument: InstrumentId, stepIndex: number) => void;
   onBassStepPitchChange: (stepIndex: number, degree: number) => void;
   onMelodyStepPitchChange: (stepIndex: number, degree: number) => void;
 }
@@ -40,6 +45,7 @@ export function SequencerPanel({
   audioEngineKind,
   pattern,
   laneVolumes,
+  stepVelocities,
   bassStepPitches,
   bassPalette,
   melodyStepPitches,
@@ -54,9 +60,20 @@ export function SequencerPanel({
   onReset,
   onClear,
   onToggleStep,
+  onPaintStep,
   onBassStepPitchChange,
   onMelodyStepPitchChange,
 }: SequencerPanelProps) {
+  const stepPaint = useStepPaint(onPaintStep);
+
+  function handleStepClick(instrument: InstrumentId, stepIndex: number) {
+    if (stepPaint.shouldSuppressClick()) {
+      return;
+    }
+
+    onToggleStep(instrument, stepIndex);
+  }
+
   return (
     <section className="panel grid-panel">
       <div className="panel-header split">
@@ -70,97 +87,24 @@ export function SequencerPanel({
         </div>
       </div>
 
-      <div className="sequencer-controls" aria-label="Sequencer controls">
-        <label className="control-field">
-          <span className="eyebrow">BPM</span>
-          <input
-            type="number"
-            min="60"
-            max="180"
-            value={bpm}
-            onChange={(event) => onBpmChange(Number(event.target.value))}
-          />
-        </label>
-        {/* Tap tempo arrives in PR-36 — rendered inert so the control row is final. */}
-        <button
-          className="button secondary compact"
-          type="button"
-          disabled
-          title="Tap tempo arrives in a follow-up update"
-        >
-          Tap
-        </button>
-        <label className="control-field wide">
-          <span className="eyebrow">Swing {swingPercent}%</span>
-          <input
-            type="range"
-            min="0"
-            max="30"
-            value={swingPercent}
-            onChange={(event) => onSwingChange(Number(event.target.value))}
-          />
-        </label>
-        <label className="control-field">
-          <span className="eyebrow">Engine</span>
-          <select
-            value={audioEngineKind}
-            onChange={(event) =>
-              onAudioEngineKindChange(event.target.value as AudioEngineKind)
-            }
-          >
-            <option value="web-audio">Web Audio</option>
-            <option value="tone-sample">Tone.js</option>
-          </select>
-        </label>
-        {/* Undo/redo arrive in PR-34; rendered inert for now. Clear + Reset work. */}
-        <div className="control-buttons" aria-label="History">
-          <button
-            className="button secondary compact icon"
-            type="button"
-            disabled
-            aria-label="Undo"
-            title="Undo arrives in a follow-up update"
-          >
-            ↶
-          </button>
-          <button
-            className="button secondary compact icon"
-            type="button"
-            disabled
-            aria-label="Redo"
-            title="Redo arrives in a follow-up update"
-          >
-            ↷
-          </button>
-          <button className="button secondary compact" type="button" onClick={onClear}>
-            Clear
-          </button>
-          <button className="button secondary compact" type="button" onClick={onReset}>
-            Reset
-          </button>
-        </div>
-        {/* Count-in + metronome arrive in PR-35; rendered inert for now. */}
-        <div className="control-buttons" aria-label="Practice aids">
-          <button
-            className="button secondary compact"
-            type="button"
-            disabled
-            title="Count-in arrives in a follow-up update"
-          >
-            Count-in
-          </button>
-          <button
-            className="button secondary compact"
-            type="button"
-            disabled
-            title="Metronome arrives in a follow-up update"
-          >
-            Metronome
-          </button>
-        </div>
-      </div>
+      <SequencerControls
+        bpm={bpm}
+        swingPercent={swingPercent}
+        audioEngineKind={audioEngineKind}
+        onBpmChange={onBpmChange}
+        onSwingChange={onSwingChange}
+        onAudioEngineKindChange={onAudioEngineKindChange}
+        onClear={onClear}
+        onReset={onReset}
+      />
 
-      <div className="step-grid" aria-label={`${styleName} drum pattern`}>
+      <div
+        className="step-grid"
+        aria-label={`${styleName} drum pattern`}
+        onPointerMove={stepPaint.paintFromPointer}
+        onPointerUp={stepPaint.endPaint}
+        onPointerCancel={stepPaint.endPaint}
+      >
         {visibleInstruments.map((instrument) => (
           <div className="track-row" key={instrument.id}>
             <div className="track-label-block">
@@ -208,12 +152,19 @@ export function SequencerPanel({
               const onPitchChange = isMelody
                 ? onMelodyStepPitchChange
                 : onBassStepPitchChange;
+              const velocity = stepVelocities[instrument.id][index];
+              const velocityName = getVelocityName(velocity);
+              const velocityClass =
+                step && velocityName !== "normal"
+                  ? `velocity-${velocityName}`
+                  : "";
 
               return (
               <div
                 className={[
                   "step-cell-wrap",
                   step ? "on" : "",
+                  velocityClass,
                   index % 4 === 0 ? "downbeat" : "",
                   index === activeStep ? "playhead" : "",
                   step && index === activeStep ? "firing" : "",
@@ -226,6 +177,7 @@ export function SequencerPanel({
                   className={[
                     "step-cell",
                     step ? "on" : "",
+                    velocityClass,
                     pitchEntry ? `pitch-${pitchEntry.function}` : "",
                     index % 4 === 0 ? "downbeat" : "",
                     index === activeStep ? "playhead" : "",
@@ -235,10 +187,18 @@ export function SequencerPanel({
                     .join(" ")}
                   type="button"
                   aria-pressed={step}
+                  data-step-cell="true"
+                  data-instrument={instrument.id}
+                  data-step-index={index}
                   aria-label={`${instrument.label} step ${index + 1} ${
                     step ? "on" : "off"
-                  }${pitchEntry ? `, note ${pitchEntry.label}` : ""}`}
-                  onClick={() => onToggleStep(instrument.id, index)}
+                  }${step ? `, ${velocityName}` : ""}${
+                    pitchEntry ? `, note ${pitchEntry.label}` : ""
+                  }`}
+                  onPointerDown={(event) =>
+                    stepPaint.beginPaint(instrument.id, index, event)
+                  }
+                  onClick={() => handleStepClick(instrument.id, index)}
                 />
                 {(is808 || isMelody) && step ? (
                   <label className="step-pitch">
@@ -268,4 +228,16 @@ export function SequencerPanel({
       </div>
     </section>
   );
+}
+
+function getVelocityName(velocity: StepVelocity): "ghost" | "normal" | "accent" {
+  if (velocity === 0) {
+    return "ghost";
+  }
+
+  if (velocity === 2) {
+    return "accent";
+  }
+
+  return "normal";
 }

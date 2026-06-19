@@ -1,6 +1,6 @@
 import { BEAT_STYLES, type BeatStyle } from "./beatStyles";
 import { updateLaneVolume } from "./laneVolumes";
-import { clonePattern, type SequencerState } from "./patternState";
+import { clonePattern, togglePatternStep, type SequencerState } from "./patternState";
 import type { InstrumentId } from "./patterns";
 import {
   updateBassStepPitch,
@@ -9,6 +9,11 @@ import {
   getMelodyPalette,
   type ScaleDegree,
 } from "./stepPitch";
+import {
+  cloneStepVelocities,
+  cycleStepVelocity,
+  DEFAULT_STEP_VELOCITY,
+} from "./stepVelocity";
 
 export const MIN_BPM = 60;
 export const MAX_BPM = 180;
@@ -25,8 +30,67 @@ export function createPlayableStyle(sequencer: SequencerState): BeatStyle {
     swing: sequencer.swing,
     pattern: clonePattern(sequencer.pattern),
     laneVolumes: { ...sequencer.laneVolumes },
+    stepVelocities: cloneStepVelocities(sequencer.stepVelocities),
     bassStepPitches: [...sequencer.bassStepPitches],
     melodyStepPitches: [...sequencer.melodyStepPitches],
+  };
+}
+
+export function updateSequencerStep(
+  sequencer: SequencerState,
+  instrument: InstrumentId,
+  stepIndex: number,
+): SequencerState {
+  if (isPitchedLane(instrument)) {
+    return {
+      ...sequencer,
+      pattern: togglePatternStep(sequencer.pattern, instrument, stepIndex),
+      stepVelocities: cloneStepVelocities(sequencer.stepVelocities),
+    };
+  }
+
+  const pattern = clonePattern(sequencer.pattern);
+  const stepVelocities = cloneStepVelocities(sequencer.stepVelocities);
+  const next = cycleStepVelocity(
+    pattern[instrument][stepIndex],
+    stepVelocities[instrument][stepIndex],
+  );
+
+  pattern[instrument][stepIndex] = next.on;
+  stepVelocities[instrument][stepIndex] = next.velocity;
+
+  return {
+    ...sequencer,
+    pattern,
+    stepVelocities,
+  };
+}
+
+export function paintSequencerStep(
+  sequencer: SequencerState,
+  instrument: InstrumentId,
+  stepIndex: number,
+): SequencerState {
+  if (isPitchedLane(instrument)) {
+    return sequencer;
+  }
+
+  if (
+    sequencer.pattern[instrument][stepIndex] &&
+    sequencer.stepVelocities[instrument][stepIndex] === DEFAULT_STEP_VELOCITY
+  ) {
+    return sequencer;
+  }
+
+  const pattern = clonePattern(sequencer.pattern);
+  const stepVelocities = cloneStepVelocities(sequencer.stepVelocities);
+  pattern[instrument][stepIndex] = true;
+  stepVelocities[instrument][stepIndex] = DEFAULT_STEP_VELOCITY;
+
+  return {
+    ...sequencer,
+    pattern,
+    stepVelocities,
   };
 }
 
@@ -131,4 +195,8 @@ export function getSequencerLoopDurationMs(bpm: number): number {
 
 function clampRoundedNumber(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, Math.round(value)));
+}
+
+function isPitchedLane(instrument: InstrumentId): boolean {
+  return instrument === "808" || instrument === "melody";
 }

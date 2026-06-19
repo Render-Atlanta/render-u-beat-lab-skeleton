@@ -7,6 +7,7 @@ import {
   synthesizeBassNotePcm,
   synthesizeMelodyNotePcm,
 } from "./stepPitch";
+import { getStepVelocities, getStepVelocityFactor } from "./stepVelocity";
 
 export const RENDER_SAMPLE_RATE = 22050;
 const STEPS = 16;
@@ -29,6 +30,7 @@ export function renderPatternToPcm(
   // Clamp swing to [0, 0.5] to match engine behavior and prevent negative sample start indices.
   const swing = Math.max(0, Math.min(0.5, style.swing));
   const laneVolumes = getLaneVolumes(style);
+  const stepVelocities = getStepVelocities(style);
 
   for (const lane of lanes) {
     const laneVolume = laneVolumes[lane];
@@ -43,8 +45,9 @@ export function renderPatternToPcm(
         const sample = synthesizeBassNotePcm(pitch.frequency, RENDER_SAMPLE_RATE);
         const swungSec = i * stepSec + (i % 2 === 1 ? swing * stepSec : 0);
         const start = Math.round(swungSec * RENDER_SAMPLE_RATE);
+        const hitGain = laneVolume * getStepVelocityFactor(stepVelocities[lane][i]);
         for (let s = 0; s < sample.length && start + s < length; s += 1) {
-          out[start + s] += sample[s] * laneVolume;
+          out[start + s] += sample[s] * hitGain;
         }
       });
       continue;
@@ -57,8 +60,9 @@ export function renderPatternToPcm(
         const sample = synthesizeMelodyNotePcm(pitch.frequency, RENDER_SAMPLE_RATE);
         const swungSec = i * stepSec + (i % 2 === 1 ? swing * stepSec : 0);
         const start = Math.round(swungSec * RENDER_SAMPLE_RATE);
+        const hitGain = laneVolume * getStepVelocityFactor(stepVelocities[lane][i]);
         for (let s = 0; s < sample.length && start + s < length; s += 1) {
-          out[start + s] += sample[s] * laneVolume;
+          out[start + s] += sample[s] * hitGain;
         }
       });
       continue;
@@ -73,8 +77,9 @@ export function renderPatternToPcm(
       // Swing: delay odd 16ths by a fraction of a step.
       const swungSec = i * stepSec + (i % 2 === 1 ? swing * stepSec : 0);
       const start = Math.round(swungSec * RENDER_SAMPLE_RATE);
+      const hitGain = laneVolume * getStepVelocityFactor(stepVelocities[lane][i]);
       for (let s = 0; s < sample.length && start + s < length; s += 1) {
-        out[start + s] += sample[s] * laneVolume;
+        out[start + s] += sample[s] * hitGain;
       }
     });
   }

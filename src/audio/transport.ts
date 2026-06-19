@@ -6,6 +6,7 @@ import {
   type PaletteEntry,
 } from "../lib/stepPitch";
 import { INSTRUMENT_IDS, type InstrumentId } from "../lib/patterns";
+import { getStepVelocities, getStepVelocityFactor } from "../lib/stepVelocity";
 
 export const STEPS_PER_LOOP = 16;
 export const START_DELAY_SECONDS = 0.08;
@@ -65,6 +66,7 @@ export function getStepEvents(
   }
 
   const accent = stepIndex % 4 === 0 ? 1.12 : 1;
+  const stepVelocities = getStepVelocities(style);
 
   return INSTRUMENT_IDS
     .filter((instrument) => style.pattern[instrument][stepIndex])
@@ -73,7 +75,7 @@ export function getStepEvents(
         instrument,
         stepIndex,
         time,
-        accent,
+        accent: accent * getStepVelocityFactor(stepVelocities[instrument][stepIndex]),
       };
 
       if (instrument === "808") {

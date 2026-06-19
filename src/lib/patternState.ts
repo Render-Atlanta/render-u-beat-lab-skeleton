@@ -22,6 +22,14 @@ import {
   type BassStepPitches,
   type MelodyStepPitches,
 } from "./stepPitch";
+import {
+  cloneStepVelocities,
+  createDefaultStepVelocities,
+  deserializeStepVelocities,
+  serializeStepVelocities,
+  stepVelocitiesAreDefault,
+  type StepVelocities,
+} from "./stepVelocity";
 
 export const INSTRUMENT_ORDER: InstrumentId[] = INSTRUMENT_IDS;
 
@@ -31,6 +39,7 @@ export interface SequencerState {
   swing: number;
   pattern: Pattern;
   laneVolumes: LaneVolumes;
+  stepVelocities: StepVelocities;
   bassStepPitches: BassStepPitches;
   melodyStepPitches: MelodyStepPitches;
 }
@@ -43,6 +52,7 @@ export function createDefaultSequencerState(styleId: BeatStyleId): SequencerStat
     swing: style.swing,
     pattern: clonePattern(style.pattern),
     laneVolumes: createDefaultLaneVolumes(),
+    stepVelocities: createDefaultStepVelocities(),
     bassStepPitches: createDefaultBassStepPitches(),
     melodyStepPitches: createDefaultMelodyStepPitches(),
   };
@@ -125,6 +135,8 @@ export function readSequencerStateFromParams(params: URLSearchParams): Sequencer
   const pattern = deserializePattern(params.get("pattern") ?? "") ?? defaults.pattern;
   const laneVolumes =
     deserializeLaneVolumes(params.get("vol")) ?? defaults.laneVolumes;
+  const stepVelocities =
+    deserializeStepVelocities(params.get("vel")) ?? defaults.stepVelocities;
   const bassStepPitches =
     deserializeBassStepPitches(params.get("bass")) ?? defaults.bassStepPitches;
   const melodyStepPitches =
@@ -136,6 +148,7 @@ export function readSequencerStateFromParams(params: URLSearchParams): Sequencer
     swing: swingPercent / 100,
     pattern,
     laneVolumes,
+    stepVelocities,
     bassStepPitches,
     melodyStepPitches,
   };
@@ -149,6 +162,9 @@ export function writeSequencerStateToParams(state: SequencerState): URLSearchPar
   params.set("pattern", serializePattern(state.pattern));
   if (!laneVolumesAreDefault(state.laneVolumes)) {
     params.set("vol", serializeLaneVolumes(state.laneVolumes));
+  }
+  if (!stepVelocitiesAreDefault(state.stepVelocities)) {
+    params.set("vel", serializeStepVelocities(state.stepVelocities));
   }
   if (!bassStepPitchesAreDefault(state.bassStepPitches)) {
     params.set("bass", serializeBassStepPitches(state.bassStepPitches));
@@ -166,6 +182,7 @@ export function cloneSequencerState(sequencer: SequencerState): SequencerState {
     swing: sequencer.swing,
     pattern: clonePattern(sequencer.pattern),
     laneVolumes: cloneLaneVolumes(sequencer.laneVolumes),
+    stepVelocities: cloneStepVelocities(sequencer.stepVelocities),
     bassStepPitches: cloneBassStepPitches(sequencer.bassStepPitches),
     melodyStepPitches: cloneMelodyStepPitches(sequencer.melodyStepPitches),
   };

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { BEAT_STYLES } from "../lib/beatStyles";
+import { createDefaultStepVelocities } from "../lib/stepVelocity";
 import { createWebAudioBeatEngine } from "./webAudioBeatEngine";
 
 describe("web audio beat engine adapter", () => {
@@ -42,6 +43,18 @@ describe("web audio beat engine adapter", () => {
 
     expect(runtime.contexts[0].oscillatorStarts.length).toBeGreaterThanOrEqual(1);
     expect(runtime.contexts[0].bufferSourceStarts.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("applies step velocity to scheduled voice gain", () => {
+    const runtime = createFakeRuntime();
+    const engine = createWebAudioBeatEngine(runtime);
+    const stepVelocities = createDefaultStepVelocities();
+    stepVelocities.kick[0] = 2;
+
+    engine.start({ ...BEAT_STYLES.trap, stepVelocities });
+    runtime.runTimer(1);
+
+    expect(runtime.contexts[0].gainSetValues).toContain(0.9 * 1.12 * 1.45);
   });
 
   it("reports the active step from the scheduled queue and clears on stop", () => {
@@ -140,6 +153,7 @@ class FakeAudioContext {
   closeCount = 0;
   oscillatorStarts: number[] = [];
   bufferSourceStarts: number[] = [];
+  gainSetValues: number[] = [];
 
   async resume() {
     this.resumeCount += 1;
@@ -152,7 +166,7 @@ class FakeAudioContext {
   }
 
   createGain() {
-    return new FakeGainNode();
+    return new FakeGainNode(this);
   }
 
   createOscillator() {
@@ -185,9 +199,15 @@ class FakeAudioNode {
 }
 
 class FakeGainNode extends FakeAudioNode {
+  constructor(private readonly context: FakeAudioContext) {
+    super();
+  }
+
   gain = {
     value: 0,
-    setValueAtTime: () => undefined,
+    setValueAtTime: (value: number) => {
+      this.context.gainSetValues.push(value);
+    },
     exponentialRampToValueAtTime: () => undefined,
   };
 }

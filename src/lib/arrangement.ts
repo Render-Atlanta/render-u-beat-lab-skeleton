@@ -3,6 +3,7 @@ import { INSTRUMENT_ORDER, clonePattern, cloneSequencerState, type SequencerStat
 import { type InstrumentId, type Pattern } from "./patterns";
 import { normalizeLaneVolumes } from "./laneVolumes";
 import { normalizeBassStepPitches, normalizeMelodyStepPitches } from "./stepPitch";
+import { normalizeStepVelocities } from "./stepVelocity";
 import {
   normalizeProducerTagConfig,
   type ProducerTagConfig,
@@ -252,6 +253,7 @@ function readSequencerState(value: unknown, errors: string[]): SequencerState | 
   const swing = readNumberInRange(value.swing, 0, 0.3, errors, "Sequencer swing");
   const pattern = readPattern(value.pattern, errors, "Sequencer pattern");
   const laneVolumes = readLaneVolumes(value.laneVolumes, errors);
+  const stepVelocities = readStepVelocities(value.stepVelocities, errors);
   const bassStepPitches = readBassStepPitches(value.bassStepPitches, errors);
   const melodyStepPitches = readMelodyStepPitches(value.melodyStepPitches, errors);
 
@@ -261,6 +263,7 @@ function readSequencerState(value: unknown, errors: string[]): SequencerState | 
     swing === null ||
     !pattern ||
     !laneVolumes ||
+    !stepVelocities ||
     !bassStepPitches ||
     !melodyStepPitches
   ) {
@@ -273,9 +276,54 @@ function readSequencerState(value: unknown, errors: string[]): SequencerState | 
     swing,
     pattern,
     laneVolumes,
+    stepVelocities,
     bassStepPitches,
     melodyStepPitches,
   };
+}
+
+function readStepVelocities(value: unknown, errors: string[]) {
+  if (value === undefined) {
+    return normalizeStepVelocities();
+  }
+
+  if (!isRecord(value)) {
+    errors.push("Sequencer stepVelocities must be an object.");
+    return null;
+  }
+
+  const rows = Object.fromEntries(
+    INSTRUMENT_ORDER.map((instrument) => [instrument, value[instrument]]),
+  );
+
+  for (const instrument of INSTRUMENT_ORDER) {
+    const row = rows[instrument];
+    if (row === undefined) {
+      continue;
+    }
+
+    if (!Array.isArray(row) || row.length !== 16) {
+      errors.push(`Sequencer stepVelocities.${instrument} must be an array of 16 entries.`);
+      return null;
+    }
+
+    for (let index = 0; index < row.length; index += 1) {
+      const velocity = row[index];
+      if (
+        typeof velocity !== "number" ||
+        !Number.isInteger(velocity) ||
+        velocity < 0 ||
+        velocity > 2
+      ) {
+        errors.push(
+          `Sequencer stepVelocities.${instrument}[${index}] must be an integer from 0 to 2.`,
+        );
+        return null;
+      }
+    }
+  }
+
+  return normalizeStepVelocities(rows);
 }
 
 function readMelodyStepPitches(value: unknown, errors: string[]) {

@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { BEAT_STYLES } from "../lib/beatStyles";
 import { INSTRUMENTS } from "../lib/instruments";
 import { createDefaultLaneVolumes } from "../lib/laneVolumes";
+import { createDefaultStepVelocities } from "../lib/stepVelocity";
 import {
   createDefaultBassStepPitches,
   createDefaultMelodyStepPitches,
@@ -23,6 +24,7 @@ function renderPanel(extra: Partial<Parameters<typeof SequencerPanel>[0]> = {}) 
       audioEngineKind="web-audio"
       pattern={BEAT_STYLES.trap.pattern}
       laneVolumes={createDefaultLaneVolumes()}
+      stepVelocities={createDefaultStepVelocities()}
       bassStepPitches={createDefaultBassStepPitches()}
       bassPalette={getInKeyPalette(BEAT_STYLES.trap.musicalKey)}
       melodyStepPitches={createDefaultMelodyStepPitches()}
@@ -36,6 +38,7 @@ function renderPanel(extra: Partial<Parameters<typeof SequencerPanel>[0]> = {}) 
       onReset={noop}
       onClear={noop}
       onToggleStep={noop}
+      onPaintStep={noop}
       onBassStepPitchChange={noop}
       onMelodyStepPitchChange={noop}
       {...extra}
@@ -113,6 +116,21 @@ describe("SequencerPanel melody pitch controls", () => {
 
     expect(html).toContain("Melody step 1 note");
     expect(html).toContain("pitch-root");
+  });
+});
+
+describe("SequencerPanel step velocity", () => {
+  it("renders ghost and accent states for active drum cells", () => {
+    const stepVelocities = createDefaultStepVelocities();
+    stepVelocities.kick[0] = 2;
+    stepVelocities.hat[2] = 0;
+
+    const html = renderPanel({ stepVelocities });
+
+    expect(html).toContain("velocity-accent");
+    expect(html).toContain("velocity-ghost");
+    expect(html).toContain("Kick step 1 on, accent");
+    expect(html).toContain("Hat step 3 on, ghost");
   });
 });
 

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { BEAT_STYLES } from "../lib/beatStyles";
+import { createDefaultStepVelocities } from "../lib/stepVelocity";
 import {
   getActiveStep,
   getNextStepIndex,
@@ -57,6 +58,28 @@ describe("audio transport helpers", () => {
     expect(event.pitch?.degree).toBe(2);
     expect(event.pitch?.noteName).toMatch(/\d$/);
     expect(event.pitch?.frequency).toBeGreaterThan(100);
+  });
+
+  it("multiplies scheduled hit gain by step velocity", () => {
+    const stepVelocities = createDefaultStepVelocities();
+    stepVelocities.kick[0] = 2;
+    stepVelocities.hat[0] = 0;
+
+    const events = getStepEvents(
+      {
+        ...BEAT_STYLES.trap,
+        stepVelocities,
+      },
+      0,
+      1.25,
+    );
+
+    expect(events.find((event) => event.instrument === "kick")?.accent).toBeCloseTo(
+      1.12 * 1.45,
+    );
+    expect(events.find((event) => event.instrument === "hat")?.accent).toBeCloseTo(
+      1.12 * 0.55,
+    );
   });
 });
 

@@ -42,7 +42,6 @@ import {
 import {
   createDefaultSequencerState,
   readSequencerStateFromParams,
-  togglePatternStep,
   writeSequencerStateToParams,
   type SequencerState,
 } from "./lib/patternState";
@@ -65,14 +64,17 @@ import {
   getSequencerLoopDurationMs,
   getSwingPercent,
   resetSequencerLaneVolume,
+  paintSequencerStep,
   updateSequencerBassStepPitch,
   updateSequencerBpm,
   updateSequencerLaneVolume,
   updateSequencerMelodyStepPitch,
+  updateSequencerStep,
   updateSequencerSwing,
 } from "./lib/sequencerDomain";
 import { getStyleReferences } from "./lib/styleReferences";
 import { getInKeyPalette, getMelodyPalette } from "./lib/stepPitch";
+import { createDefaultStepVelocities } from "./lib/stepVelocity";
 import { StyleFidelityMeter } from "./components/StyleFidelityMeter";
 import { EqVisualizer } from "./components/EqVisualizer";
 import type { DecodedKit } from "./lib/styleRender";
@@ -376,6 +378,19 @@ export function App() {
     }
   }
 
+  function applySequencerUpdate(updater: (current: SequencerState) => SequencerState) {
+    setSequencer((current) => {
+      const next = updater(current);
+      if (next === current) {
+        return current;
+      }
+      if (isPlaying && engineRef.current) {
+        engineRef.current.start(audibleStyle(next, guidedState));
+      }
+      return next;
+    });
+  }
+
   function resetToStyle(styleId = sequencer.styleId) {
     applySequencerState(createDefaultSequencerState(styleId));
   }
@@ -387,7 +402,11 @@ export function App() {
       pattern[id] = Array.from({ length: 16 }, () => false);
       return pattern;
     }, {} as Pattern);
-    applySequencerState({ ...sequencer, pattern: emptyPattern });
+    applySequencerState({
+      ...sequencer,
+      pattern: emptyPattern,
+      stepVelocities: createDefaultStepVelocities(),
+    });
   }
 
   function updateBpm(bpm: number) {
@@ -411,10 +430,13 @@ export function App() {
   }
 
   function toggleStep(instrument: InstrumentId, stepIndex: number) {
-    applySequencerState({
-      ...sequencer,
-      pattern: togglePatternStep(sequencer.pattern, instrument, stepIndex),
-    });
+    applySequencerState(updateSequencerStep(sequencer, instrument, stepIndex));
+  }
+
+  function paintStep(instrument: InstrumentId, stepIndex: number) {
+    applySequencerUpdate((current) =>
+      paintSequencerStep(current, instrument, stepIndex),
+    );
   }
 
   function updateLaneVolume(instrument: InstrumentId, volume: number) {
@@ -531,6 +553,7 @@ export function App() {
     applySequencerState({
       ...sequencer,
       pattern: classifiedHitsToPattern(micState.classifications),
+      stepVelocities: createDefaultStepVelocities(),
     });
   }
 
@@ -809,6 +832,7 @@ export function App() {
               audioEngineKind={audioEngineKind}
               pattern={sequencer.pattern}
               laneVolumes={sequencer.laneVolumes}
+              stepVelocities={sequencer.stepVelocities}
               bassStepPitches={sequencer.bassStepPitches}
               bassPalette={bassPalette}
               melodyStepPitches={sequencer.melodyStepPitches}
@@ -822,6 +846,7 @@ export function App() {
               onReset={() => resetToStyle()}
               onClear={clearPattern}
               onToggleStep={toggleStep}
+              onPaintStep={paintStep}
               onBassStepPitchChange={updateBassStepPitch}
               onMelodyStepPitchChange={updateMelodyStepPitch}
               visibleInstruments={visibleInstruments}

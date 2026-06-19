@@ -13,6 +13,7 @@ import {
   createDefaultBassStepPitches,
   createDefaultMelodyStepPitches,
 } from "./stepPitch";
+import { createDefaultStepVelocities } from "./stepVelocity";
 import { GOLDEN_BEAT_STYLE_FIXTURES } from "../test/beatStyleFixtures";
 
 describe("pattern state helpers", () => {
@@ -67,20 +68,28 @@ describe("pattern state helpers", () => {
 
   it("round-trips sequencer state through URL params", () => {
     const state = createDefaultSequencerState("afrobeats");
+    const stepVelocities = createDefaultStepVelocities();
+    stepVelocities.kick[0] = 2;
+    stepVelocities.hat[2] = 0;
     const params = writeSequencerStateToParams({
       ...state,
       bpm: 106,
       swing: 0.12,
       pattern: togglePatternStep(state.pattern, "snare", 3),
       laneVolumes: { ...state.laneVolumes, hat: 0.5 },
+      stepVelocities,
     });
 
+    expect(params.get("vel")).toBe(
+      "2111111111111111.1111111111111111.1101111111111111.1111111111111111.1111111111111111.1111111111111111.1111111111111111",
+    );
     expect(readSequencerStateFromParams(params)).toEqual({
       styleId: "afrobeats",
       bpm: 106,
       swing: 0.12,
       pattern: togglePatternStep(state.pattern, "snare", 3),
       laneVolumes: { ...createDefaultLaneVolumes(), hat: 0.5 },
+      stepVelocities,
       bassStepPitches: createDefaultBassStepPitches(),
       melodyStepPitches: createDefaultMelodyStepPitches(),
     });
@@ -124,6 +133,15 @@ describe("pattern state helpers", () => {
     ).toEqual(createDefaultLaneVolumes());
   });
 
+  it("defaults step velocities to normal when the vel param is missing or invalid", () => {
+    expect(
+      readSequencerStateFromParams(new URLSearchParams("style=trap")).stepVelocities,
+    ).toEqual(createDefaultStepVelocities());
+    expect(
+      readSequencerStateFromParams(new URLSearchParams("style=trap&vel=bad")).stepVelocities,
+    ).toEqual(createDefaultStepVelocities());
+  });
+
   it("falls back to the requested style defaults when URL data is invalid", () => {
     const state = readSequencerStateFromParams(
       new URLSearchParams("style=drill&bpm=400&swing=-4&pattern=nope"),
@@ -135,6 +153,7 @@ describe("pattern state helpers", () => {
       swing: 0,
       pattern: BEAT_STYLES.drill.pattern,
       laneVolumes: createDefaultLaneVolumes(),
+      stepVelocities: createDefaultStepVelocities(),
       bassStepPitches: createDefaultBassStepPitches(),
       melodyStepPitches: createDefaultMelodyStepPitches(),
     });

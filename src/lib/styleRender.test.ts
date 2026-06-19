@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { BEAT_STYLES } from "./beatStyles";
 import { loadKitFromDisk } from "./loadKit.node";
 import { RENDER_SAMPLE_RATE, renderPatternToPcm } from "./styleRender";
+import { patternFromSteps } from "./patterns";
+import { createDefaultStepVelocities } from "./stepVelocity";
 
 describe("renderPatternToPcm", () => {
   const kit = loadKitFromDisk();
@@ -41,5 +43,38 @@ describe("renderPatternToPcm", () => {
     expect(() =>
       renderPatternToPcm(BEAT_STYLES.trap.pattern, BEAT_STYLES.trap, kitWithoutKick as typeof kit),
     ).toThrow("Missing kit sample for kick");
+  });
+
+  it("scales each rendered hit by its step velocity", () => {
+    const kickSteps = patternFromSteps({
+      kick: [2, 3],
+      snare: [],
+      hat: [],
+      openHat: [],
+      clap: [],
+      "808": [],
+      melody: [],
+    });
+    const stepVelocities = createDefaultStepVelocities();
+    stepVelocities.kick[1] = 0;
+    stepVelocities.kick[2] = 2;
+    const simpleKit = {
+      kick: new Float32Array([1]),
+      snare: new Float32Array([1]),
+      hat: new Float32Array([1]),
+      openHat: new Float32Array([1]),
+      clap: new Float32Array([1]),
+      "808": new Float32Array([1]),
+    };
+
+    const pcm = renderPatternToPcm(
+      kickSteps,
+      { ...BEAT_STYLES.trap, swing: 0, stepVelocities },
+      simpleKit,
+      ["kick"],
+    );
+    const stepSamples = Math.round((60 / BEAT_STYLES.trap.bpm / 4) * RENDER_SAMPLE_RATE);
+
+    expect(pcm[stepSamples * 2] / pcm[stepSamples]).toBeCloseTo(1.45 / 0.55, 3);
   });
 });

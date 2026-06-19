@@ -1,13 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { BEAT_STYLES } from "../lib/beatStyles";
 import { createDefaultLaneVolumes } from "../lib/laneVolumes";
+import { createToneSampleBeatEngine } from "./toneSampleBeatEngine";
 import {
-  createToneSampleBeatEngine,
-  type LaneVolumePort,
-  type ToneRuntimePort,
-  type ToneTransportPort,
-  type ToneVoicePort,
-} from "./toneSampleBeatEngine";
+  createFakeToneRuntime,
+  createFakeVoice,
+} from "./toneSampleBeatEngine.testHelpers";
 
 describe("Tone.js sample beat engine", () => {
   it("starts Tone on ready and reports the tone-sample adapter kind", async () => {
@@ -87,6 +85,32 @@ describe("Tone.js sample beat engine", () => {
     // Step 0 fires kick via sample and 808 via the pitched synth fallback.
     expect(runtime.voices.kick.starts).toEqual([0.5]);
     expect(runtime.voices.kick.plays).toEqual([["A1", "8n", 0.5, 1.12]]);
+  });
+
+  it("passes step velocity gain into sample-player starts", () => {
+    const runtime = createFakeToneRuntime();
+    const engine = createToneSampleBeatEngine({
+      runtime,
+      sampleUrls: {
+        kick: "/samples/kick.wav",
+      },
+    });
+
+    engine.start({
+      ...BEAT_STYLES.trap,
+      stepVelocities: {
+        ...Object.fromEntries(
+          ["kick", "snare", "hat", "openHat", "clap", "808", "melody"].map((id) => [
+            id,
+            Array.from({ length: 16 }, () => 1),
+          ]),
+        ),
+        kick: [2, ...Array.from({ length: 15 }, () => 1)],
+      } as typeof BEAT_STYLES.trap.stepVelocities,
+    });
+    runtime.transport.run(0.5);
+
+    expect(runtime.voices.kick.startCalls).toEqual([[0.5, 1.12 * 1.45]]);
   });
 
   it("keeps the 808 lane pitched even when a default 808 sample URL exists", () => {
@@ -184,144 +208,3 @@ describe("Tone.js sample beat engine", () => {
     expect(kickSynth.plays.length).toBeGreaterThan(0);
   });
 });
-
-function createFakeToneRuntime() {
-  const transport = createFakeTransport();
-  const voices = {
-    kick: createFakeVoice(),
-    snare: createFakeVoice(),
-    hat: createFakeVoice(),
-    openHat: createFakeVoice(),
-  };
-  const sampleUrls: string[] = [];
-  let startCount = 0;
-  let loadedCount = 0;
-  const laneVolumeFactory = createFakeLaneVolumes();
-
-  const runtime: ToneRuntimePort & {
-    transport: ReturnType<typeof createFakeTransport>;
-    voices: typeof voices;
-    sampleUrls: string[];
-    startCount: number;
-    loadedCount: number;
-    laneVolumePorts: Array<LaneVolumePort & { linearVolume: number }>;
-  } = {
-    transport,
-    voices,
-    sampleUrls,
-    laneVolumePorts: laneVolumeFactory.ports,
-    get startCount() {
-      return startCount;
-    },
-    get loadedCount() {
-      return loadedCount;
-    },
-    async start() {
-      startCount += 1;
-    },
-    async loaded() {
-      loadedCount += 1;
-    },
-    getTransport: () => transport,
-    createLaneVolume: () => laneVolumeFactory.create(),
-    createSamplePlayer: (url) => {
-      sampleUrls.push(url);
-      voices.kick.start = (time) => {
-        voices.kick.starts.push(time ?? 0);
-      };
-      return voices.kick;
-    },
-    createKickSynth: () => voices.kick,
-    createNoiseSynth: () => {
-      if (voices.snare.created === false) {
-        voices.snare.created = true;
-        return voices.snare;
-      }
-
-      if (voices.hat.created === false) {
-        voices.hat.created = true;
-        return voices.hat;
-      }
-
-      voices.openHat.created = true;
-      return voices.openHat;
-    },
-  };
-
-  return runtime;
-}
-
-function createFakeTransport(): ToneTransportPort & {
-  callback: ((time: number) => void) | null;
-  clearedIds: Array<number | string>;
-  started: boolean;
-  run(time: number): void;
-} {
-  return {
-    bpm: { value: 0 },
-    swing: 0,
-    swingSubdivision: undefined,
-    callback: null,
-    clearedIds: [],
-    started: false,
-    scheduleRepeat(callback) {
-      this.callback = callback;
-      return 1;
-    },
-    clear(eventId) {
-      this.clearedIds.push(eventId);
-      this.callback = null;
-    },
-    start() {
-      this.started = true;
-    },
-    stop() {
-      this.started = false;
-    },
-    run(time) {
-      this.callback?.(time);
-    },
-  };
-}
-
-function createFakeVoice(): ToneVoicePort & {
-  created: boolean;
-  disposed: boolean;
-  plays: unknown[][];
-  starts: number[];
-} {
-  return {
-    created: false,
-    disposed: false,
-    plays: [],
-    starts: [],
-    triggerAttackRelease(...args) {
-      this.plays.push(args);
-    },
-    dispose() {
-      this.disposed = true;
-    },
-  };
-}
-
-function createFakeLaneVolumes() {
-  const ports: Array<LaneVolumePort & { linearVolume: number }> = [];
-
-  return {
-    create(): LaneVolumePort {
-      const port = {
-        node: {} as LaneVolumePort["node"],
-        linearVolume: 1,
-        setLinearVolume(volume: number) {
-          port.linearVolume = volume;
-        },
-        dispose() {
-          // no-op
-        },
-      };
-      ports.push(port);
-      return port;
-    },
-    ports,
-  };
-}

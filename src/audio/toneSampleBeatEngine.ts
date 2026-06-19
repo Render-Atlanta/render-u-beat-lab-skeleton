@@ -1,4 +1,4 @@
-import * as Tone from "tone";
+import type * as Tone from "tone";
 import type { BeatStyle } from "../lib/beatStyles";
 import { getLaneVolumes } from "../lib/laneVolumes";
 import type { InstrumentId } from "../lib/patterns";
@@ -6,6 +6,7 @@ import type { ProducerTagConfigInput } from "../lib/producerTag";
 import type { AudioEngine, ProducerTagSample } from "./audioEngine";
 import { getStepEvents } from "./transport";
 import { createToneVoices, playVoice } from "./toneVoices";
+import { getDefaultToneRuntime } from "./toneRuntime";
 
 export interface LaneVolumePort {
   readonly node: Tone.Volume;
@@ -27,7 +28,7 @@ export interface ToneTransportPort {
 }
 
 export interface ToneVoicePort {
-  start?: (time?: number) => void;
+  start?: (time?: number, accent?: number) => void;
   triggerAttackRelease?: (...args: unknown[]) => unknown;
   dispose?: () => void;
 }
@@ -163,137 +164,5 @@ export function createToneSampleBeatEngine(
     getFrequencyData: () => false,
     setProducerTagSample,
     setProducerTagConfig,
-  };
-}
-
-function getDefaultToneRuntime(): ToneRuntimePort {
-  return {
-    start: Tone.start,
-    loaded: Tone.loaded,
-    getTransport: Tone.getTransport,
-    createLaneVolume: () => {
-      const node = new Tone.Volume(0).toDestination();
-      return {
-        node,
-        setLinearVolume: (volume: number) => {
-          node.volume.value = volume <= 0 ? -Infinity : 20 * Math.log10(volume);
-        },
-        dispose: () => {
-          node.dispose();
-        },
-      };
-    },
-    createSamplePlayer: (url, destination) => {
-      try {
-        let failed = false;
-        const player = new Tone.Player({
-          url,
-          onerror: () => {
-            failed = true;
-          },
-        });
-        if (destination) {
-          player.connect(destination.node);
-        } else {
-          player.toDestination();
-        }
-        return {
-          start: (time) => {
-            if (failed) {
-              throw new Error(`tone sample failed to load: ${url}`);
-            }
-            try {
-              player.start(time);
-            } catch (error) {
-              failed = true;
-              throw error;
-            }
-          },
-          dispose: () => {
-            player.dispose();
-          },
-        };
-      } catch {
-        return null;
-      }
-    },
-    createKickSynth: (destination) => {
-      const synth = new Tone.MembraneSynth();
-      if (destination) synth.connect(destination.node);
-      else synth.toDestination();
-      return {
-        triggerAttackRelease: (...args) => {
-          (
-            synth.triggerAttackRelease as unknown as (
-              ...triggerArgs: unknown[]
-            ) => unknown
-          )(...args);
-        },
-        dispose: () => synth.dispose(),
-      };
-    },
-    createBassSynth: (destination) => {
-      const synth = new Tone.Synth({
-        oscillator: { type: "sawtooth" },
-        envelope: { attack: 0.005, decay: 0.22, sustain: 0.08, release: 0.12 },
-      });
-      if (destination) {
-        synth.connect(destination.node);
-      } else {
-        synth.toDestination();
-      }
-      return {
-        triggerAttackRelease: (...args) => {
-          (
-            synth.triggerAttackRelease as unknown as (
-              ...triggerArgs: unknown[]
-            ) => unknown
-          )(...args);
-        },
-        dispose: () => {
-          synth.dispose();
-        },
-      };
-    },
-    createMelodySynth: (destination) => {
-      const synth = new Tone.Synth({
-        oscillator: { type: "triangle" },
-        envelope: { attack: 0.003, decay: 0.16, sustain: 0.05, release: 0.08 },
-      });
-      if (destination) synth.connect(destination.node);
-      else synth.toDestination();
-      return {
-        triggerAttackRelease: (...args) => {
-          (
-            synth.triggerAttackRelease as unknown as (
-              ...triggerArgs: unknown[]
-            ) => unknown
-          )(...args);
-        },
-        dispose: () => synth.dispose(),
-      };
-    },
-    createNoiseSynth: (options, destination) => {
-      const synth = new Tone.NoiseSynth(
-        options as ConstructorParameters<typeof Tone.NoiseSynth>[0],
-      );
-      if (destination) {
-        synth.connect(destination.node);
-      } else {
-        synth.toDestination();
-      }
-      return {
-        triggerAttackRelease: (...args) => {
-          (
-            synth.triggerAttackRelease as unknown as (
-              ...triggerArgs: unknown[]
-            ) => unknown
-          )(...args);
-        },
-        dispose: () => {
-          synth.dispose();
-        },
-      };
-    },
   };
 }
