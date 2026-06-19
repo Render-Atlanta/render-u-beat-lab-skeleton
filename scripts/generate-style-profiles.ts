@@ -6,6 +6,7 @@ import { renderPatternToPcm } from "../src/lib/styleRender";
 import {
   computeNormalizationStats,
   extractStyleFeatures,
+  FIDELITY_DRUM_LANES,
   type StyleFeatureVector,
 } from "../src/lib/styleFidelity";
 
@@ -16,7 +17,7 @@ function main(): void {
   for (const id of ids) {
     const style = BEAT_STYLES[id];
     goldens[id] = extractStyleFeatures(
-      style.pattern, style, renderPatternToPcm(style.pattern, style, kit),
+      style.pattern, style, renderPatternToPcm(style.pattern, style, kit, FIDELITY_DRUM_LANES),
     );
   }
   const stats = computeNormalizationStats(ids.map((id) => goldens[id]));

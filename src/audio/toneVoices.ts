@@ -19,6 +19,8 @@ export function createToneVoices(
     snare: createVoice(runtime, "snare", sampleUrls.snare),
     hat: createVoice(runtime, "hat", sampleUrls.hat),
     openHat: createVoice(runtime, "openHat", sampleUrls.openHat),
+    clap: createVoice(runtime, "clap", sampleUrls.clap),
+    "808": createVoice(runtime, "808", sampleUrls["808"]),
   };
 }
 
@@ -48,16 +50,17 @@ function createSynthVoice(
   runtime: ToneRuntimePort,
   instrument: InstrumentId,
 ): ToneVoicePort {
-  if (instrument === "kick") {
+  if (instrument === "kick" || instrument === "808") {
     return runtime.createKickSynth();
   }
 
+  const isLong = instrument === "openHat" || instrument === "clap";
   return runtime.createNoiseSynth({
     envelope: {
       attack: 0.001,
-      decay: instrument === "openHat" ? 0.18 : 0.045,
+      decay: isLong ? 0.18 : 0.045,
       sustain: 0,
-      release: instrument === "openHat" ? 0.12 : 0.03,
+      release: isLong ? 0.12 : 0.03,
     },
   });
 }
@@ -120,10 +123,11 @@ function triggerSynthVoice(
   time: number | undefined,
   accent: number,
 ) {
-  if (instrument === "kick") {
-    voice.triggerAttackRelease?.("C1", "8n", time, accent);
+  if (instrument === "kick" || instrument === "808") {
+    voice.triggerAttackRelease?.(instrument === "808" ? "A0" : "C1", "8n", time, accent);
     return;
   }
 
-  voice.triggerAttackRelease?.(instrument === "openHat" ? "8n" : "32n", time, accent);
+  const isLong = instrument === "openHat" || instrument === "clap";
+  voice.triggerAttackRelease?.(isLong ? "8n" : "32n", time, accent);
 }

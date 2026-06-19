@@ -32,8 +32,11 @@ describe("Tone.js sample beat engine", () => {
 
     runtime.transport.run(1.25);
 
+    // Step 0 of trap fires both 808 (A0) and kick (C1); both share the same
+    // fake kick synth voice, so plays collects both in instrument-key order.
     expect(runtime.voices.kick.plays).toEqual([
       ["C1", "8n", 1.25, 1.12],
+      ["A0", "8n", 1.25, 1.12],
     ]);
     expect(runtime.voices.hat.plays).toEqual([
       ["32n", 1.25, 1.12],
@@ -66,7 +69,10 @@ describe("Tone.js sample beat engine", () => {
     runtime.transport.run(0.5);
 
     expect(runtime.sampleUrls).toEqual(["/samples/kick.wav"]);
-    expect(runtime.voices.kick.starts).toEqual([0.5]);
+    // Step 0 of trap fires both 808 and kick; the 808 synth voice shares the
+    // same fake kick voice (createKickSynth returns voices.kick), which has
+    // start() set via the sample-player path, so both land in starts.
+    expect(runtime.voices.kick.starts).toEqual([0.5, 0.5]);
   });
 
   it("falls back to the synth voice when a sample player fails to load", () => {

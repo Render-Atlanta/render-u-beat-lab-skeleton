@@ -1,5 +1,5 @@
 import type { BeatStyle, BeatStyleId } from "./beatStyles";
-import { countActiveSteps, type InstrumentId, type Pattern } from "./patterns";
+import { type InstrumentId, type Pattern } from "./patterns";
 import type { DecodedKit } from "./styleRender";
 import { renderPatternToPcm, RENDER_SAMPLE_RATE } from "./styleRender";
 import { STYLE_GOLDENS, STYLE_PROFILE_STATS } from "./styleProfiles.generated";
@@ -26,7 +26,9 @@ export const FEATURE_KEYS: (keyof StyleFeatureVector)[] = [
 ];
 
 const STEPS = 16;
-const LANES: InstrumentId[] = ["kick", "snare", "hat", "openHat"];
+/** Style-fidelity intentionally measures only the core drum signature. */
+export const FIDELITY_DRUM_LANES: InstrumentId[] = ["kick", "snare", "hat", "openHat"];
+const LANES = FIDELITY_DRUM_LANES;
 // Strong 16th positions = the four quarter-note downbeats (0-based indices).
 const STRONG_POSITIONS = new Set([0, 4, 8, 12]);
 // Backbeat slots = beats 2 and 4 (0-based indices).
@@ -44,7 +46,7 @@ export function extractRhythmFeatures(pattern: Pattern, style: BeatStyle) {
       );
     }
   }
-  const total = countActiveSteps(pattern);
+  const total = LANES.reduce((sum, lane) => sum + laneHits(pattern[lane]), 0);
   const share = (row: boolean[]) => (total === 0 ? 0 : laneHits(row) / total);
 
   let weakHits = 0;
@@ -163,7 +165,11 @@ export function scoreStyleFidelity(
   style: BeatStyle,
   kit: DecodedKit,
 ): { score: number; nearestGenre: BeatStyleId } {
-  const features = extractStyleFeatures(style.pattern, style, renderPatternToPcm(style.pattern, style, kit));
+  const features = extractStyleFeatures(
+    style.pattern,
+    style,
+    renderPatternToPcm(style.pattern, style, kit, FIDELITY_DRUM_LANES),
+  );
   const ids = Object.keys(STYLE_GOLDENS) as BeatStyleId[];
   let nearestGenre = style.id;
   let best = -Infinity;

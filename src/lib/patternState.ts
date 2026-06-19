@@ -1,7 +1,7 @@
 import { BEAT_STYLES, type BeatStyleId } from "./beatStyles";
-import { type InstrumentId, type Pattern } from "./patterns";
+import { INSTRUMENT_IDS, type InstrumentId, type Pattern } from "./patterns";
 
-export const INSTRUMENT_ORDER: InstrumentId[] = ["kick", "snare", "hat", "openHat"];
+export const INSTRUMENT_ORDER: InstrumentId[] = INSTRUMENT_IDS;
 
 export interface SequencerState {
   styleId: BeatStyleId;
@@ -21,12 +21,9 @@ export function createDefaultSequencerState(styleId: BeatStyleId): SequencerStat
 }
 
 export function clonePattern(pattern: Pattern): Pattern {
-  return {
-    kick: [...pattern.kick],
-    snare: [...pattern.snare],
-    hat: [...pattern.hat],
-    openHat: [...pattern.openHat],
-  };
+  return Object.fromEntries(
+    INSTRUMENT_ORDER.map((id) => [id, [...pattern[id]]]),
+  ) as Pattern;
 }
 
 export function togglePatternStep(
@@ -49,26 +46,34 @@ export function serializePattern(pattern: Pattern): string {
   ).join(".");
 }
 
+const LEGACY_LANE_ORDER: InstrumentId[] = ["kick", "snare", "hat", "openHat"];
+
 export function deserializePattern(value: string): Pattern | null {
   const rows = value.split(".");
-  if (rows.length !== INSTRUMENT_ORDER.length) {
+  const order =
+    rows.length === INSTRUMENT_ORDER.length
+      ? INSTRUMENT_ORDER
+      : rows.length === LEGACY_LANE_ORDER.length
+        ? LEGACY_LANE_ORDER
+        : null;
+  if (!order) {
     return null;
   }
 
-  const entries = INSTRUMENT_ORDER.map((instrument, index) => {
-    const row = rows[index];
+  const empty = () => Array.from({ length: 16 }, () => false);
+  const pattern = Object.fromEntries(
+    INSTRUMENT_ORDER.map((id) => [id, empty()]),
+  ) as Pattern;
+
+  for (let i = 0; i < order.length; i += 1) {
+    const row = rows[i];
     if (!/^[01]{16}$/.test(row)) {
       return null;
     }
-
-    return [instrument, row.split("").map((cell) => cell === "1")] as const;
-  });
-
-  if (entries.some((entry) => entry === null)) {
-    return null;
+    pattern[order[i]] = row.split("").map((cell) => cell === "1");
   }
 
-  return Object.fromEntries(entries as Array<readonly [InstrumentId, boolean[]]>) as Pattern;
+  return pattern;
 }
 
 export function readSequencerStateFromParams(params: URLSearchParams): SequencerState {

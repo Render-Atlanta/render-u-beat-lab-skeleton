@@ -183,3 +183,35 @@ describe("beatbox classifier", () => {
     expect(pattern.openHat.some(Boolean)).toBe(false);
   });
 });
+
+describe("capture supports the full six-lane set", () => {
+  it("builds a six-lane pattern from classified hits", () => {
+    const pattern = classifiedHitsToPattern([
+      { instrument: "kick", stepIndex: 0 },
+      { instrument: "808", stepIndex: 4 },
+      { instrument: "clap", stepIndex: 8 },
+    ]);
+    expect(Object.keys(pattern).sort()).toEqual(
+      ["808", "clap", "hat", "kick", "openHat", "snare"],
+    );
+    expect(pattern["808"][4]).toBe(true);
+    expect(pattern.clap[8]).toBe(true);
+  });
+
+  it("lets a user move an auto-classified hit onto the 808 lane", () => {
+    const hits = [
+      {
+        id: "h1", atMs: 0, stepIndex: 0, stepNumber: 1,
+        instrument: "kick" as const, confidence: 0.9, needsCorrection: false,
+        source: "auto" as const,
+        features: {
+          atMs: 0, stepIndex: 0, stepNumber: 1, energy: 0.5, brightness: 0.2,
+          peakToRms: 0.3, sustainMs: 40, strength: 0.5,
+        },
+      },
+    ];
+    const moved = moveBeatboxHitToLane(hits, "h1", "808");
+    expect(moved[0].instrument).toBe("808");
+    expect(moved[0].source).toBe("manual");
+  });
+});

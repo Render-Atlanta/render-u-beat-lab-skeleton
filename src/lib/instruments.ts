@@ -34,4 +34,16 @@ export const INSTRUMENTS: InstrumentOption[] = [
     role: "Accent",
     explainer: "A longer, sizzling hat that adds lift and movement.",
   },
+  {
+    id: "clap",
+    label: "Clap",
+    role: "Layer",
+    explainer: "A wide hand-clap that thickens the snare on the backbeat.",
+  },
+  {
+    id: "808",
+    label: "808",
+    role: "Bass",
+    explainer: "The deep sub-bass boom that gives the beat its low-end weight.",
+  },
 ];

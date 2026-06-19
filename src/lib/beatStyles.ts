@@ -29,6 +29,8 @@ export const BEAT_STYLES: Record<BeatStyleId, BeatStyle> = {
       snare: [9],
       hat: [1, 3, 5, 7, 9, 10, 11, 12, 13, 15, 16],
       openHat: [6, 14],
+      clap: [9],
+      "808": [1, 7, 11],
     }),
     lesson:
       "Atlanta trap often feels fast on top and slow in the body: rapid hats move around a half-time snare while the kick and 808 create the bounce.",
@@ -43,6 +45,8 @@ export const BEAT_STYLES: Record<BeatStyleId, BeatStyle> = {
       snare: [5, 13],
       hat: [1, 3, 5, 7, 9, 11, 13, 15],
       openHat: [16],
+      clap: [5, 13],
+      "808": [1, 7],
     }),
     lesson:
       "Crunk patterns leave space for chants and crowd response. The pocket is direct: heavy kick, clear snare, no overthinking.",
@@ -57,6 +61,8 @@ export const BEAT_STYLES: Record<BeatStyleId, BeatStyle> = {
       snare: [9],
       hat: [1, 3, 5, 6, 7, 9, 11, 13, 14, 15],
       openHat: [4, 12],
+      clap: [9],
+      "808": [1, 10],
     }),
     lesson:
       "Drill can put the snare in a less expected place. The offset backbeat makes the groove feel like it is leaning sideways.",
@@ -71,6 +77,8 @@ export const BEAT_STYLES: Record<BeatStyleId, BeatStyle> = {
       snare: [5, 13],
       hat: [1, 4, 7, 10, 13, 16],
       openHat: [12],
+      clap: [5, 13],
+      "808": [1, 8],
     }),
     lesson:
       "R&B gives the groove room to breathe. Fewer hits plus more swing can feel more human than filling every step.",
@@ -85,6 +93,8 @@ export const BEAT_STYLES: Record<BeatStyleId, BeatStyle> = {
       snare: [5, 13],
       hat: [1, 3, 5, 7, 9, 11, 13, 15],
       openHat: [8, 16],
+      clap: [5, 13],
+      "808": [1, 11],
     }),
     lesson:
       "Pop patterns are built to read quickly. Keep the backbeat familiar, then use texture and arrangement to make it yours.",
@@ -99,6 +109,8 @@ export const BEAT_STYLES: Record<BeatStyleId, BeatStyle> = {
       snare: [5, 13],
       hat: [1, 3, 6, 8, 10, 12, 15, 16],
       openHat: [7, 15],
+      clap: [5, 13],
+      "808": [1, 7, 14],
     }),
     lesson:
       "Afrobeats lives in syncopation: the groove feels relaxed, but the kick and hats keep nudging you forward between the obvious beats.",
@@ -113,6 +125,8 @@ export const BEAT_STYLES: Record<BeatStyleId, BeatStyle> = {
       snare: [5, 13],
       hat: [1, 4, 7, 10, 13, 16],
       openHat: [6, 11, 15],
+      clap: [5, 13],
+      "808": [1, 9, 12],
     }),
     lesson:
       "Amapiano leaves air around the drums so the bass/log-drum idea can talk. Keep the pulse hypnotic and let accents answer each other.",

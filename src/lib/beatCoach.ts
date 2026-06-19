@@ -55,6 +55,18 @@ export const INSTRUMENT_COACH: Record<InstrumentId, InstrumentCoachCopy> = {
     role: "The longer sizzle that points to a turn, lift, or transition.",
     editTip: "Use it sparingly so the accent still feels special.",
   },
+  clap: {
+    id: "clap",
+    label: "Clap",
+    role: "The wide hand-clap that fattens the backbeat alongside the snare.",
+    editTip: "Stack it on the snare for thickness; thin it out for a drier hit.",
+  },
+  "808": {
+    id: "808",
+    label: "808",
+    role: "The deep sub-bass that carries the low-end weight of the beat.",
+    editTip: "Place it with the kick for power; leave space so it doesn't muddy.",
+  },
 };
 
 const STYLE_COACH_NOTES: Record<
@@ -103,9 +115,11 @@ const INSTRUMENT_LABELS: Record<InstrumentId, string> = {
   snare: "Snare",
   hat: "Hat",
   openHat: "Open hat",
+  clap: "Clap",
+  "808": "808",
 };
 
-const INSTRUMENT_ORDER: InstrumentId[] = ["kick", "snare", "hat", "openHat"];
+const INSTRUMENT_ORDER: InstrumentId[] = ["kick", "snare", "hat", "openHat", "clap", "808"];
 
 export function getInstrumentCoach(instrument: InstrumentId): InstrumentCoachCopy {
   return INSTRUMENT_COACH[instrument];

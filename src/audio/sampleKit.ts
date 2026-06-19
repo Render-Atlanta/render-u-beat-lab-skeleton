@@ -20,6 +20,8 @@ export const REQUIRED_LANES: readonly InstrumentId[] = [
   "snare",
   "hat",
   "openHat",
+  "clap",
+  "808",
 ];
 
 export interface KitPiece {
@@ -37,6 +39,8 @@ export const DEFAULT_KIT: Record<InstrumentId, KitPiece> = {
   snare: { lane: "snare", name: "Kit Snare", url: "/kit/snare.wav" },
   hat: { lane: "hat", name: "Kit Closed Hat", url: "/kit/hat.wav" },
   openHat: { lane: "openHat", name: "Kit Open Hat", url: "/kit/openHat.wav" },
+  clap: { lane: "clap", name: "Kit Clap", url: "/kit/clap.wav" },
+  "808": { lane: "808", name: "Kit 808", url: "/kit/808.wav" },
 };
 
 /**
@@ -61,6 +65,8 @@ export function getKitPieces(
     snare: overrides.snare ?? DEFAULT_KIT.snare,
     hat: overrides.hat ?? DEFAULT_KIT.hat,
     openHat: overrides.openHat ?? DEFAULT_KIT.openHat,
+    clap: overrides.clap ?? DEFAULT_KIT.clap,
+    "808": overrides["808"] ?? DEFAULT_KIT["808"],
   };
 }
 
@@ -75,6 +81,8 @@ export function getKitSampleUrls(styleId?: BeatStyleId): ToneSampleUrls {
     snare: pieces.snare.url,
     hat: pieces.hat.url,
     openHat: pieces.openHat.url,
+    clap: pieces.clap.url,
+    "808": pieces["808"].url,
   };
 }
 

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { BEAT_STYLES, type BeatStyleId } from "./beatStyles";
 import { loadKitFromDisk } from "./loadKit.node";
 import { renderPatternToPcm } from "./styleRender";
-import { extractStyleFeatures, scoreStyleFidelity, styleSimilarity } from "./styleFidelity";
+import { extractStyleFeatures, FIDELITY_DRUM_LANES, scoreStyleFidelity, styleSimilarity } from "./styleFidelity";
 import { STYLE_GOLDENS, STYLE_PROFILE_STATS } from "./styleProfiles.generated";
 
 const kit = loadKitFromDisk();
@@ -20,7 +20,7 @@ describe("style-fidelity harness", () => {
   it("genre distinction: each genre is most similar to its own golden", () => {
     for (const id of ids) {
       const f = extractStyleFeatures(
-        BEAT_STYLES[id].pattern, BEAT_STYLES[id], renderPatternToPcm(BEAT_STYLES[id].pattern, BEAT_STYLES[id], kit),
+        BEAT_STYLES[id].pattern, BEAT_STYLES[id], renderPatternToPcm(BEAT_STYLES[id].pattern, BEAT_STYLES[id], kit, FIDELITY_DRUM_LANES),
       );
       const ranked = ids
         .map((h) => ({ h, sim: styleSimilarity(f, STYLE_GOLDENS[h], STYLE_PROFILE_STATS) }))

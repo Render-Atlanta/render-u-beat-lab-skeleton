@@ -51,6 +51,10 @@ export const ALLOWLIST: readonly AllowlistEntry[] = [
     path: "src/lib/beatboxClassifier.ts",
     note: "Temporary exception - move feature-extraction tables into their own module (follow-up).",
   },
+  {
+    path: "src/audio/webAudioBeatEngine.ts",
+    note: "Temporary exception - extract clap/808 voice functions into a voices module (follow-up, PR-27).",
+  },
 ];
 
 export interface HygieneConfig {

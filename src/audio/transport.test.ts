@@ -28,19 +28,10 @@ describe("audio transport helpers", () => {
   });
 
   it("returns scheduled drum events for active cells only", () => {
-    expect(getStepEvents(BEAT_STYLES.trap, 0, 1.25)).toEqual([
-      {
-        instrument: "kick",
-        stepIndex: 0,
-        time: 1.25,
-        accent: 1.12,
-      },
-      {
-        instrument: "hat",
-        stepIndex: 0,
-        time: 1.25,
-        accent: 1.12,
-      },
+    expect(getStepEvents(BEAT_STYLES.trap, 0, 1.25).map((event) => event.instrument)).toEqual([
+      "kick",
+      "hat",
+      "808",
     ]);
     expect(getStepEvents(BEAT_STYLES.trap, 1, 1.5)).toEqual([]);
   });

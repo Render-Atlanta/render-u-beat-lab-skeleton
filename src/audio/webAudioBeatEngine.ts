@@ -62,6 +62,8 @@ export function createWebAudioBeatEngine(
     snare: playSnare,
     hat: playHat,
     openHat: playOpenHat,
+    clap: playClap,
+    "808": play808,
   };
 
   async function ready() {
@@ -236,6 +238,40 @@ export function createWebAudioBeatEngine(
     gain.gain.exponentialRampToValueAtTime(0.001, time + 0.2);
     source.connect(filter).connect(gain).connect(master);
     source.start(time);
+  }
+
+  function playClap(time: number, accent = 1) {
+    // Three quick band-passed noise bursts — the classic clap stagger.
+    const offsets = [0, 0.011, 0.022];
+    for (const offset of offsets) {
+      const noise = createNoiseBuffer(0.09);
+      const source = context.createBufferSource();
+      const filter = context.createBiquadFilter();
+      const gain = context.createGain();
+      source.buffer = noise;
+      filter.type = "bandpass";
+      filter.frequency.value = 1600;
+      filter.Q.value = 0.7;
+      const at = time + offset;
+      gain.gain.setValueAtTime(0.4 * accent, at);
+      gain.gain.exponentialRampToValueAtTime(0.001, at + 0.09);
+      source.connect(filter).connect(gain).connect(master);
+      source.start(at);
+    }
+  }
+
+  function play808(time: number, accent = 1) {
+    // Tuned sub-sine with a short downward glide and long decay — the bass.
+    const osc = context.createOscillator();
+    const gain = context.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(80, time);
+    osc.frequency.exponentialRampToValueAtTime(55, time + 0.08);
+    gain.gain.setValueAtTime(0.7 * accent, time);
+    gain.gain.exponentialRampToValueAtTime(0.001, time + 0.5);
+    osc.connect(gain).connect(master);
+    osc.start(time);
+    osc.stop(time + 0.55);
   }
 
   function createNoiseBuffer(duration: number) {

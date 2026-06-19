@@ -11,7 +11,7 @@ import {
 import { GOLDEN_BEAT_STYLE_FIXTURES } from "../test/beatStyleFixtures";
 
 describe("pattern state helpers", () => {
-  it("serializes and deserializes a 4-lane pattern", () => {
+  it("serializes and deserializes a six-lane pattern", () => {
     const pattern = BEAT_STYLES.trap.pattern;
     const serialized = serializePattern(pattern);
 
@@ -21,10 +21,18 @@ describe("pattern state helpers", () => {
 
   it("rejects malformed serialized patterns", () => {
     expect(deserializePattern("1010")).toBeNull();
-    expect(deserializePattern("0000000000000000.0000000000000000")).toBeNull();
     expect(
-      deserializePattern("000000000000000x.0000000000000000.0000000000000000.0000000000000000"),
+      deserializePattern("000000000000000x.0000000000000000.0000000000000000.0000000000000000.0000000000000000.0000000000000000"),
     ).toBeNull();
+  });
+
+  it("loads a legacy four-lane serialized pattern with empty new lanes", () => {
+    const legacy = "1000000000000000.0000000000000000.1010101010101010.0000000000000000";
+    const pattern = deserializePattern(legacy);
+    expect(pattern).not.toBeNull();
+    expect(pattern!.kick[0]).toBe(true);
+    expect(pattern!.clap.every((s) => s === false)).toBe(true);
+    expect(pattern!["808"].every((s) => s === false)).toBe(true);
   });
 
   it("toggles one grid cell without mutating the original pattern", () => {

@@ -45,9 +45,9 @@ describe("sample kit manifest", () => {
     }
   });
 
-  it("lists exactly the four required lanes", () => {
+  it("lists all six required lanes", () => {
     expect([...REQUIRED_LANES].sort()).toEqual(
-      ["hat", "kick", "openHat", "snare"].sort(),
+      ["808", "clap", "hat", "kick", "openHat", "snare"].sort(),
     );
   });
 });

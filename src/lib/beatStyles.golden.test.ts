@@ -5,6 +5,14 @@ import { serializePattern } from "./patternState";
 import { countActiveSteps } from "./patterns";
 import { GOLDEN_BEAT_STYLE_FIXTURES } from "../test/beatStyleFixtures";
 
+it("ships a tasteful clap and 808 default in every style", () => {
+  for (const styleId of Object.keys(BEAT_STYLES) as BeatStyleId[]) {
+    const pattern = BEAT_STYLES[styleId].pattern;
+    expect(pattern.clap.some(Boolean), `${styleId} clap`).toBe(true);
+    expect(pattern["808"].some(Boolean), `${styleId} 808`).toBe(true);
+  }
+});
+
 describe("golden beat style fixtures", () => {
   it("covers every production style with one expected fixture", () => {
     expect(Object.keys(GOLDEN_BEAT_STYLE_FIXTURES).sort()).toEqual(

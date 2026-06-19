@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { BEAT_STYLES } from "./beatStyles";
 import {
   FEATURE_KEYS,
+  FIDELITY_DRUM_LANES,
   extractRhythmFeatures,
   extractStyleFeatures,
   computeNormalizationStats,
@@ -41,9 +42,9 @@ describe("extractRhythmFeatures", () => {
   });
 
   it("returns zero shares for an empty pattern without NaN", () => {
-    const empty = { kick: [], snare: [], hat: [], openHat: [] } as unknown as typeof BEAT_STYLES.trap.pattern;
+    const empty = { kick: [], snare: [], hat: [], openHat: [], clap: [], "808": [] } as unknown as typeof BEAT_STYLES.trap.pattern;
     const f = extractRhythmFeatures(
-      { kick: new Array(16).fill(false), snare: new Array(16).fill(false), hat: new Array(16).fill(false), openHat: new Array(16).fill(false) },
+      { kick: new Array(16).fill(false), snare: new Array(16).fill(false), hat: new Array(16).fill(false), openHat: new Array(16).fill(false), clap: new Array(16).fill(false), "808": new Array(16).fill(false) },
       { ...BEAT_STYLES.trap, pattern: empty },
     );
     expect(f.onsetDensity).toBe(0);
@@ -57,7 +58,7 @@ describe("extractStyleFeatures", () => {
 
   it("returns all feature keys, finite and bounded", () => {
     const style = BEAT_STYLES.trap;
-    const pcm = renderPatternToPcm(style.pattern, style, kit);
+    const pcm = renderPatternToPcm(style.pattern, style, kit, FIDELITY_DRUM_LANES);
     const f = extractStyleFeatures(style.pattern, style, pcm);
     for (const key of ["rmsNorm", "lowEnergyShare", "zcr"] as const) {
       expect(Number.isFinite(f[key])).toBe(true);
@@ -75,7 +76,7 @@ describe("extractStyleFeatures", () => {
 describe("styleSimilarity", () => {
   const kit = loadKitFromDisk();
   const vectors = Object.values(BEAT_STYLES).map((s) =>
-    extractStyleFeatures(s.pattern, s, renderPatternToPcm(s.pattern, s, kit)),
+    extractStyleFeatures(s.pattern, s, renderPatternToPcm(s.pattern, s, kit, FIDELITY_DRUM_LANES)),
   );
   const stats = computeNormalizationStats(vectors);
 

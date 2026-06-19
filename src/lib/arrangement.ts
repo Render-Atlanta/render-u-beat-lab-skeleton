@@ -414,8 +414,18 @@ function readPattern(value: unknown, errors: string[], path: string): Pattern | 
     return null;
   }
 
+  const empty = () => Array.from({ length: 16 }, () => false);
+  const optionalLanes = new Set<InstrumentId>(["clap", "808"]);
   const entries = INSTRUMENT_ORDER.map((instrument) => {
     const row = value[instrument];
+
+    if (row === undefined) {
+      if (optionalLanes.has(instrument)) {
+        return [instrument, empty()] as const;
+      }
+      errors.push(`${path}.${instrument} is required.`);
+      return null;
+    }
 
     if (!Array.isArray(row) || row.length !== 16) {
       errors.push(`${path}.${instrument} must be an array of 16 booleans.`);

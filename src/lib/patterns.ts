@@ -1,14 +1,21 @@
-export type InstrumentId = "kick" | "snare" | "hat" | "openHat";
+export type InstrumentId = "kick" | "snare" | "hat" | "openHat" | "clap" | "808";
+
+/** Canonical lane ordering — the single source of truth for lane iteration. */
+export const INSTRUMENT_IDS: InstrumentId[] = [
+  "kick",
+  "snare",
+  "hat",
+  "openHat",
+  "clap",
+  "808",
+];
 
 export type Pattern = Record<InstrumentId, boolean[]>;
 
 export function patternFromSteps(steps: Record<InstrumentId, number[]>): Pattern {
-  return {
-    kick: toStepArray(steps.kick),
-    snare: toStepArray(steps.snare),
-    hat: toStepArray(steps.hat),
-    openHat: toStepArray(steps.openHat),
-  };
+  return Object.fromEntries(
+    INSTRUMENT_IDS.map((id) => [id, toStepArray(steps[id])]),
+  ) as Pattern;
 }
 
 export function toStepArray(activeSteps: number[], length = 16): boolean[] {

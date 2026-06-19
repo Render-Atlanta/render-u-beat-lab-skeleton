@@ -1,5 +1,5 @@
 import type { BeatStyle } from "../lib/beatStyles";
-import type { InstrumentId } from "../lib/patterns";
+import { INSTRUMENT_IDS, type InstrumentId } from "../lib/patterns";
 
 export const STEPS_PER_LOOP = 16;
 export const START_DELAY_SECONDS = 0.08;
@@ -52,7 +52,7 @@ export function getStepEvents(
 
   const accent = stepIndex % 4 === 0 ? 1.12 : 1;
 
-  return (Object.keys(style.pattern) as InstrumentId[])
+  return INSTRUMENT_IDS
     .filter((instrument) => style.pattern[instrument][stepIndex])
     .map((instrument) => ({
       instrument,

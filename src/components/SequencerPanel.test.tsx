@@ -44,6 +44,26 @@ describe("SequencerPanel role coaching", () => {
   });
 });
 
+describe("SequencerPanel lane count and new lanes", () => {
+  it("renders exactly 6 instrument lanes", () => {
+    expect(INSTRUMENTS).toHaveLength(6);
+    const html = renderPanel();
+    // Each track row contains the instrument label; count occurrences of track-label__name spans
+    const matches = html.match(/track-label__name/g);
+    expect(matches).toHaveLength(6);
+  });
+
+  it("renders the Clap lane label", () => {
+    const html = renderPanel();
+    expect(html).toContain("Clap");
+  });
+
+  it("renders the 808 lane label", () => {
+    const html = renderPanel();
+    expect(html).toContain("808");
+  });
+});
+
 describe("SequencerPanel playhead", () => {
   it("marks the active step column", () => {
     const html = renderPanel({ activeStep: 0 });
