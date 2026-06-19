@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { BEAT_STYLES } from "../lib/beatStyles";
 import {
+  getActiveStep,
   getNextStepIndex,
   getSixteenthDurationSeconds,
   getStepEvents,
   getSwingStepDurationSeconds,
+  type StepQueueEntry,
 } from "./transport";
 
 describe("audio transport helpers", () => {
@@ -41,5 +43,27 @@ describe("audio transport helpers", () => {
       },
     ]);
     expect(getStepEvents(BEAT_STYLES.trap, 1, 1.5)).toEqual([]);
+  });
+});
+
+describe("getActiveStep", () => {
+  const queue: StepQueueEntry[] = [
+    { stepIndex: 0, time: 0.08 },
+    { stepIndex: 1, time: 0.19 },
+    { stepIndex: 2, time: 0.30 },
+  ];
+
+  it("returns null when nothing has sounded yet", () => {
+    expect(getActiveStep(queue, 0.0)).toBeNull();
+  });
+
+  it("returns the latest step whose time has passed", () => {
+    expect(getActiveStep(queue, 0.08)).toBe(0);
+    expect(getActiveStep(queue, 0.2)).toBe(1);
+    expect(getActiveStep(queue, 5.0)).toBe(2);
+  });
+
+  it("returns null for an empty queue", () => {
+    expect(getActiveStep([], 1.0)).toBeNull();
   });
 });

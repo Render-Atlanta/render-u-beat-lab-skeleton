@@ -34,7 +34,7 @@
 
 - Add producer tag.
 - Save/share pattern.
-- Deploy to Render.
+- Deploy to Vercel.
 
 ## Reusable AI workflow demonstrated
 

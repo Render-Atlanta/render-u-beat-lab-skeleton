@@ -9,6 +9,7 @@ export interface SequencerPanelProps {
   swingPercent: number;
   audioEngineKind: AudioEngineKind;
   pattern: Pattern;
+  activeStep: number | null;
   onBpmChange: (bpm: number) => void;
   onSwingChange: (swingPercent: number) => void;
   onAudioEngineKindChange: (kind: AudioEngineKind) => void;
@@ -23,6 +24,7 @@ export function SequencerPanel({
   swingPercent,
   audioEngineKind,
   pattern,
+  activeStep,
   onBpmChange,
   onSwingChange,
   onAudioEngineKindChange,
@@ -83,12 +85,22 @@ export function SequencerPanel({
       <div className="step-grid" aria-label={`${styleName} drum pattern`}>
         {INSTRUMENTS.map((instrument) => (
           <div className="track-row" key={instrument.id}>
-            <div className="track-label">{instrument.label}</div>
+            <div className="track-label">
+              <span className="track-label__name">{instrument.label}</span>
+              <span className="track-label__role">{instrument.role}</span>
+              <span className="track-label__explainer">{instrument.explainer}</span>
+            </div>
             {pattern[instrument.id].map((step, index) => (
               <button
-                className={`step-cell ${step ? "on" : ""} ${
-                  index % 4 === 0 ? "downbeat" : ""
-                }`}
+                className={[
+                  "step-cell",
+                  step ? "on" : "",
+                  index % 4 === 0 ? "downbeat" : "",
+                  index === activeStep ? "playhead" : "",
+                  step && index === activeStep ? "firing" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
                 key={`${instrument.id}-${index}`}
                 type="button"
                 aria-pressed={step}

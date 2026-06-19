@@ -32,7 +32,7 @@ Own AI Workflows**. The app is fun, but the point is the workflow:
 - Vite + React + TypeScript
 - Native Web Audio API for the first playable prototype
 - Vitest for deterministic pattern/quantization tests
-- Render Static Site deployment via `render.yaml`
+- Vercel static deployment via `vercel.json`
 
 Tone.js and Meyda are intentionally deferred until the capture prototype needs
 them. The first version should teach rhythm and ship quickly without heavy
@@ -76,12 +76,13 @@ genre signature using rhythm, tempo, and spectral-balance features. See
 [docs/STYLE_FIDELITY.md](docs/STYLE_FIDELITY.md) for what the score means,
 how the golden-snapshot oracle works, and when to regenerate style profiles.
 
-## Deploy to Render
+## Deploy to Vercel
 
-This repo is configured as a Render Static Site through [`render.yaml`](render.yaml):
+This repo deploys as a static Vite build on Vercel, configured by [`vercel.json`](vercel.json):
 
-- build command: `npm ci && npm run build`
-- publish directory: `./dist`
+- framework: `vite`
+- build command: `npm run build`
+- output directory: `dist`
 
 Before deploy, run:
 
@@ -90,17 +91,19 @@ npm test
 npm run build
 ```
 
-Then create the service from the Render Dashboard:
+Then deploy with the Vercel CLI (or import the repo in the Vercel dashboard,
+which auto-detects the Vite preset):
 
-1. New > Blueprint.
-2. Connect `William-Hill/render-u-beat-lab`.
-3. Confirm the `render-u-beat-lab` static service from `render.yaml`.
-4. Deploy from `main`.
+```bash
+vercel login   # one-time
+vercel link    # connect this repo to a project
+vercel --prod  # deploy main to production
+```
 
-The hosted app must run on HTTPS for future microphone capture work. Render
-provides HTTPS on the `onrender.com` URL and managed TLS for custom domains.
+Vercel serves every deployment over HTTPS automatically, which the future
+microphone-capture work requires.
 
-See [docs/DEPLOY_RENDER.md](docs/DEPLOY_RENDER.md) for the workshop runbook.
+See [docs/DEPLOY_VERCEL.md](docs/DEPLOY_VERCEL.md) for the workshop runbook.
 
 ## Design system notes
 

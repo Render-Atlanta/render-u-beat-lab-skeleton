@@ -61,3 +61,28 @@ export function getStepEvents(
       accent,
     }));
 }
+
+export interface StepQueueEntry {
+  stepIndex: number;
+  time: number;
+}
+
+/**
+ * Given steps scheduled with future audio times and the current audio clock,
+ * return the step that should currently be highlighted — the most recently
+ * scheduled entry whose `time` has been reached — or `null` if none has.
+ */
+export function getActiveStep(
+  queue: readonly StepQueueEntry[],
+  currentTime: number,
+): number | null {
+  let active: number | null = null;
+  let bestTime = -Infinity;
+  for (const entry of queue) {
+    if (entry.time <= currentTime && entry.time >= bestTime) {
+      bestTime = entry.time;
+      active = entry.stepIndex;
+    }
+  }
+  return active;
+}

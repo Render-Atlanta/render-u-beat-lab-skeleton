@@ -54,6 +54,7 @@ export function createToneSampleBeatEngine(
   const voices = createToneVoices(runtime, options.sampleUrls ?? {});
   let eventId: number | string | null = null;
   let stepIndex = 0;
+  let visualStep: number | null = null;
 
   async function ready() {
     await runtime.start();
@@ -68,6 +69,7 @@ export function createToneSampleBeatEngine(
     transport.swingSubdivision = "16n";
     eventId = transport.scheduleRepeat((time) => {
       scheduleStep(style, stepIndex, time);
+      visualStep = stepIndex;
       stepIndex = (stepIndex + 1) % 16;
     }, "16n");
     transport.start();
@@ -79,6 +81,7 @@ export function createToneSampleBeatEngine(
       eventId = null;
     }
     transport.stop();
+    visualStep = null;
   }
 
   function dispose() {
@@ -112,6 +115,8 @@ export function createToneSampleBeatEngine(
     stop,
     dispose,
     playProducerTag,
+    getActiveStep: () => visualStep,
+    getFrequencyData: () => false,
   };
 }
 

@@ -84,5 +84,6 @@ the demo teaches music concepts while teaching engineering process.
 
 ## Deployment
 
-Deploy as a Render Static Site. Mic capture requires HTTPS in browsers; Render's
-managed TLS makes the hosted demo viable without extra certificate work.
+Deploy as a static Vite build on Vercel. Mic capture requires HTTPS in browsers;
+Vercel serves every deployment over HTTPS automatically, making the hosted demo
+viable without extra certificate work.

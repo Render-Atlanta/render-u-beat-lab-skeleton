@@ -34,3 +34,20 @@ Suggested sequence for fastest testable prototypes:
 | [PR-19](PR-19-code-size-and-module-hygiene.md) | Code size and module hygiene | Quality | PR-16, PR-17 |
 | [PR-20](PR-20-test-fixtures-and-golden-patterns.md) | Test fixtures and golden patterns | Quality | PR-03, PR-06 |
 | [PR-21](PR-21-open-licensed-reference-examples.md) | Open-licensed reference examples | Content | PR-13, PR-15 |
+
+## Beginner-experience roadmap
+
+Research-backed features to help an absolute beginner (a software builder, not a
+musician) learn production. Sequenced in three waves by learning-impact ÷
+effort. See `docs/superpowers/specs/` for the per-wave design.
+
+| ID | Title | Type | Wave | Depends on |
+| --- | --- | --- | --- | --- |
+| [PR-22](PR-22-playhead-step-highlighting.md) | Playhead step highlighting | Feature | 1 | PR-11 |
+| [PR-23](PR-23-instrument-role-coaching.md) | Instrument role coaching | Feature | 1 | PR-01 |
+| [PR-24](PR-24-eq-spectrum-visualizer.md) | EQ / spectrum visualizer | Feature | 1 | PR-11 |
+| [PR-25](PR-25-producer-tag-set-and-record.md) | Producer tag: set and record | Feature | 2 | PR-04, PR-07 |
+| [PR-26](PR-26-producer-tag-in-the-beat.md) | Producer tag in the beat | Feature | 2 | PR-22, PR-25, PR-08 |
+| [PR-27](PR-27-curated-extra-instruments.md) | Curated extra instruments (clap + 808) | Feature | 3 | PR-02, PR-11 |
+| [PR-28](PR-28-in-key-melody-lane.md) | In-key melody lane | Feature | 3 | PR-27 |
+| [PR-29](PR-29-guided-layering-mode.md) | Guided layering mode | Teaching | 3 | PR-23, PR-27 |

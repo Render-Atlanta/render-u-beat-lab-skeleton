@@ -43,6 +43,24 @@ describe("web audio beat engine adapter", () => {
     expect(runtime.contexts[0].oscillatorStarts.length).toBeGreaterThanOrEqual(1);
     expect(runtime.contexts[0].bufferSourceStarts.length).toBeGreaterThanOrEqual(1);
   });
+
+  it("reports the active step from the scheduled queue and clears on stop", () => {
+    const runtime = createFakeRuntime();
+    const engine = createWebAudioBeatEngine(runtime);
+
+    expect(engine.getActiveStep()).toBeNull();
+
+    engine.start(BEAT_STYLES.trap);
+    runtime.runTimer(1);
+
+    // The first step is scheduled at START_DELAY_SECONDS (0.08). Advance the
+    // mocked audio clock past it and the active step is 0.
+    runtime.contexts[0].currentTime = 0.08;
+    expect(engine.getActiveStep()).toBe(0);
+
+    engine.stop();
+    expect(engine.getActiveStep()).toBeNull();
+  });
 });
 
 function createFakeRuntime() {
@@ -120,6 +138,10 @@ class FakeAudioContext {
       getChannelData: () => new Float32Array(length),
     };
   }
+
+  createAnalyser() {
+    return new FakeAnalyserNode();
+  }
 }
 
 class FakeAudioNode {
@@ -172,4 +194,12 @@ class FakeBiquadFilterNode extends FakeAudioNode {
   type: BiquadFilterType = "lowpass";
   frequency = { value: 0 };
   Q = { value: 0 };
+}
+
+class FakeAnalyserNode extends FakeAudioNode {
+  fftSize = 2048;
+  frequencyBinCount = 128;
+  getByteFrequencyData(_array: Uint8Array) {
+    return undefined;
+  }
 }

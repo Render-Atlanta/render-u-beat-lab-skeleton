@@ -17,6 +17,8 @@ import type { AudioEngine } from "./audioEngine";
  */
 export interface FakeAudioEngine extends AudioEngine {
   readonly kind: AudioEngine["kind"];
+  /** Test hook: set the value returned by getActiveStep(). */
+  setActiveStepForTest(step: number | null): void;
   /** True between a `start()` and the next `stop()`/`dispose()`. */
   readonly running: boolean;
   /** True once `dispose()` has been called. */
@@ -37,6 +39,7 @@ export function createFakeAudioEngine(): FakeAudioEngine {
   let running = false;
   let disposed = false;
   let readyCount = 0;
+  let activeStep: number | null = null;
 
   return {
     // Cast keeps the fake distinguishable in tests without widening the public
@@ -69,13 +72,24 @@ export function createFakeAudioEngine(): FakeAudioEngine {
     },
     stop() {
       running = false;
+      activeStep = null;
     },
     dispose() {
       running = false;
       disposed = true;
+      activeStep = null;
     },
     playProducerTag(input: ProducerTagConfigInput | string) {
       producerTags.push(input);
+    },
+    getActiveStep() {
+      return activeStep;
+    },
+    getFrequencyData() {
+      return false;
+    },
+    setActiveStepForTest(step: number | null) {
+      activeStep = step;
     },
   };
 }

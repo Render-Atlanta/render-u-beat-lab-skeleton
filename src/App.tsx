@@ -61,6 +61,7 @@ import {
 } from "./lib/sequencerDomain";
 import { getStyleReferences } from "./lib/styleReferences";
 import { StyleFidelityMeter } from "./components/StyleFidelityMeter";
+import { EqVisualizer } from "./components/EqVisualizer";
 import type { DecodedKit } from "./lib/styleRender";
 import { loadKitFromUrls } from "./lib/loadKit.browser";
 
@@ -87,6 +88,7 @@ export function App() {
   const engineRef = useRef<BeatEngine | null>(null);
   const [kit, setKit] = useState<DecodedKit | null>(null);
   const [kitError, setKitError] = useState(false);
+  const [activeStep, setActiveStep] = useState<number | null>(null);
 
   const baseStyle = BEAT_STYLES[sequencer.styleId];
   const styleCoach = useMemo(
@@ -145,6 +147,26 @@ export function App() {
   useEffect(() => {
     void loadKitFromUrls().then(setKit).catch(() => { setKit(null); setKitError(true); });
   }, []);
+
+  useEffect(() => {
+    if (!isPlaying) {
+      setActiveStep(null);
+      return;
+    }
+
+    let frame = 0;
+    let last: number | null = null;
+    const tick = () => {
+      const next = engineRef.current?.getActiveStep() ?? null;
+      if (next !== last) {
+        last = next;
+        setActiveStep(next);
+      }
+      frame = window.requestAnimationFrame(tick);
+    };
+    frame = window.requestAnimationFrame(tick);
+    return () => window.cancelAnimationFrame(frame);
+  }, [isPlaying]);
 
   useEffect(() => {
     setMicState((current) => {
@@ -369,6 +391,7 @@ export function App() {
           swingPercent={getSwingPercent(sequencer.swing)}
           audioEngineKind={audioEngineKind}
           pattern={sequencer.pattern}
+          activeStep={activeStep}
           onBpmChange={updateBpm}
           onSwingChange={updateSwing}
           onAudioEngineKindChange={updateAudioEngineKind}
@@ -377,6 +400,8 @@ export function App() {
         />
 
         <StyleFidelityMeter style={playableStyle} kit={kit} kitError={kitError} />
+
+        <EqVisualizer engine={engineRef.current} isPlaying={isPlaying} />
 
         <aside className="panel coach-panel">
           <BeatCoachPanel

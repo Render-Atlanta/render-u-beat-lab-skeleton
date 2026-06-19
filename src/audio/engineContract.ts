@@ -140,5 +140,22 @@ export function runAudioEngineContract(
       expect(probe.isScheduling()).toBe(false);
       expect(probe.disposeCount()).toBe(1);
     });
+
+    it("reports no active step before playback and after stop", () => {
+      const { engine } = makeHarness();
+
+      expect(engine.getActiveStep()).toBeNull();
+
+      engine.start(BEAT_STYLES.trap);
+      engine.stop();
+
+      expect(engine.getActiveStep()).toBeNull();
+    });
+
+    it("exposes frequency data without throwing", () => {
+      const { engine } = makeHarness();
+      const filled = engine.getFrequencyData(new Uint8Array(32));
+      expect(typeof filled).toBe("boolean");
+    });
   });
 }

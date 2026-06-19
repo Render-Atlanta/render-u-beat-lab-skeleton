@@ -177,6 +177,10 @@ class WebAudioFakeContext {
       getChannelData: () => new Float32Array(length),
     };
   }
+
+  createAnalyser() {
+    return new WebAudioFakeAnalyser();
+  }
 }
 
 class WebAudioFakeNode {
@@ -229,6 +233,14 @@ class WebAudioFakeBiquad extends WebAudioFakeNode {
   type: BiquadFilterType = "lowpass";
   frequency = { value: 0 };
   Q = { value: 0 };
+}
+
+class WebAudioFakeAnalyser extends WebAudioFakeNode {
+  fftSize = 2048;
+  frequencyBinCount = 128;
+  getByteFrequencyData(_array: Uint8Array) {
+    return undefined;
+  }
 }
 
 // ---------------------------------------------------------------------------

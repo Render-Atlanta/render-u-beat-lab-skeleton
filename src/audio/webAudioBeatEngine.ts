@@ -8,12 +8,14 @@ import {
 } from "../lib/producerTag";
 import type { AudioEngine } from "./audioEngine";
 import {
+  getActiveStep,
   getNextStepIndex,
   getStepEvents,
   getSwingStepDurationSeconds,
   SCHEDULE_AHEAD_SECONDS,
   SCHEDULER_TICK_MS,
   START_DELAY_SECONDS,
+  type StepQueueEntry,
 } from "./transport";
 
 type DrumVoice = (time: number, accent?: number) => void;
@@ -40,10 +42,18 @@ export function createWebAudioBeatEngine(
   let timer: ReturnType<typeof setRuntimeInterval> | null = null;
   let nextStepTime = 0;
   let step = 0;
+  let stepQueue: StepQueueEntry[] = [];
 
   const master = context.createGain();
   master.gain.value = 0.65;
-  master.connect(context.destination);
+  const analyser = context.createAnalyser?.() ?? null;
+  if (analyser) {
+    analyser.fftSize = 256;
+    master.connect(analyser);
+    analyser.connect(context.destination);
+  } else {
+    master.connect(context.destination);
+  }
 
   const voices: Record<InstrumentId, DrumVoice> = {
     kick: playKick,
@@ -62,10 +72,15 @@ export function createWebAudioBeatEngine(
     stop();
     step = 0;
     nextStepTime = context.currentTime + START_DELAY_SECONDS;
+    stepQueue = [];
 
     timer = setRuntimeInterval(() => {
       while (nextStepTime < context.currentTime + SCHEDULE_AHEAD_SECONDS) {
         scheduleStep(style, step, nextStepTime);
+        stepQueue.push({ stepIndex: step, time: nextStepTime });
+        if (stepQueue.length > 64) {
+          stepQueue = stepQueue.slice(-32);
+        }
         nextStepTime += getSwingStepDurationSeconds(style.bpm, style.swing, step);
         step = getNextStepIndex(step);
       }
@@ -77,6 +92,7 @@ export function createWebAudioBeatEngine(
       clearRuntimeInterval(timer);
       timer = null;
     }
+    stepQueue = [];
   }
 
   function dispose() {
@@ -88,6 +104,18 @@ export function createWebAudioBeatEngine(
     for (const event of getStepEvents(style, stepIndex, time)) {
       voices[event.instrument](event.time, event.accent);
     }
+  }
+
+  function getActiveStepIndex(): number | null {
+    return getActiveStep(stepQueue, context.currentTime);
+  }
+
+  function getFrequencyData(target: Uint8Array): boolean {
+    if (!analyser) {
+      return false;
+    }
+    analyser.getByteFrequencyData(target as Uint8Array<ArrayBuffer>);
+    return true;
   }
 
   function playProducerTag(input: ProducerTagConfigInput | string) {
@@ -186,7 +214,16 @@ export function createWebAudioBeatEngine(
     return buffer;
   }
 
-  return { kind: "web-audio", ready, start, stop, dispose, playProducerTag };
+  return {
+    kind: "web-audio",
+    ready,
+    start,
+    stop,
+    dispose,
+    playProducerTag,
+    getActiveStep: getActiveStepIndex,
+    getFrequencyData,
+  };
 }
 
 function getDefaultWebAudioRuntime(): WebAudioBeatEngineRuntime {

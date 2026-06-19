@@ -19,6 +19,13 @@ export interface AudioEngine {
   stop(): void;
   dispose(): void | Promise<void>;
   playProducerTag(input: ProducerTagConfigInput | string): void;
+  /** The step index that should currently be highlighted, or null when idle. */
+  getActiveStep(): number | null;
+  /**
+   * Fill `target` with the current frequency spectrum (0..255 per bin).
+   * Returns false when no analyser is available (idle/unsupported engine).
+   */
+  getFrequencyData(target: Uint8Array): boolean;
 }
 
 export interface AudioEngineOptions {
