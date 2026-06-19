@@ -1,4 +1,5 @@
 import type { BeatStyle } from "../lib/beatStyles";
+import { getBassPitchForStep, midiToNoteName } from "../lib/stepPitch";
 import { INSTRUMENT_IDS, type InstrumentId } from "../lib/patterns";
 
 export const STEPS_PER_LOOP = 16;
@@ -6,11 +7,19 @@ export const START_DELAY_SECONDS = 0.08;
 export const SCHEDULE_AHEAD_SECONDS = 0.14;
 export const SCHEDULER_TICK_MS = 25;
 
+export interface StepPitch {
+  frequency: number;
+  noteName: string;
+  degree: number;
+  function: "root" | "third" | "fifth" | "other";
+}
+
 export interface ScheduledStepEvent {
   instrument: InstrumentId;
   stepIndex: number;
   time: number;
   accent: number;
+  pitch?: StepPitch;
 }
 
 export function getSixteenthDurationSeconds(bpm: number): number {
@@ -54,12 +63,30 @@ export function getStepEvents(
 
   return INSTRUMENT_IDS
     .filter((instrument) => style.pattern[instrument][stepIndex])
-    .map((instrument) => ({
-      instrument,
-      stepIndex,
-      time,
-      accent,
-    }));
+    .map((instrument) => {
+      const event: ScheduledStepEvent = {
+        instrument,
+        stepIndex,
+        time,
+        accent,
+      };
+
+      if (instrument === "808") {
+        const pitch = getBassPitchForStep(
+          style.musicalKey,
+          stepIndex,
+          style.bassStepPitches,
+        );
+        event.pitch = {
+          frequency: pitch.frequency,
+          noteName: midiToNoteName(pitch.midi),
+          degree: pitch.degree,
+          function: pitch.function,
+        };
+      }
+
+      return event;
+    });
 }
 
 export interface StepQueueEntry {

@@ -1,5 +1,11 @@
 import type { LaneVolumes } from "./laneVolumes";
 import { patternFromSteps, type Pattern } from "./patterns";
+import type { BassStepPitches, NoteName, ScaleType } from "./stepPitch";
+
+export interface MusicalKey {
+  root: NoteName;
+  scale: ScaleType;
+}
 
 export type BeatStyleId =
   | "trap"
@@ -16,7 +22,9 @@ export interface BeatStyle {
   bpm: number;
   swing: number;
   pattern: Pattern;
+  musicalKey: MusicalKey;
   laneVolumes?: LaneVolumes;
+  bassStepPitches?: BassStepPitches;
   lesson: string;
 }
 
@@ -34,6 +42,7 @@ export const BEAT_STYLES: Record<BeatStyleId, BeatStyle> = {
       clap: [9],
       "808": [1, 7, 11],
     }),
+    musicalKey: { root: "A", scale: "minor" },
     lesson:
       "Atlanta trap often feels fast on top and slow in the body: rapid hats move around a half-time snare while the kick and 808 create the bounce.",
   },
@@ -50,6 +59,7 @@ export const BEAT_STYLES: Record<BeatStyleId, BeatStyle> = {
       clap: [5, 13],
       "808": [1, 7],
     }),
+    musicalKey: { root: "E", scale: "minor" },
     lesson:
       "Crunk patterns leave space for chants and crowd response. The pocket is direct: heavy kick, clear snare, no overthinking.",
   },
@@ -66,6 +76,7 @@ export const BEAT_STYLES: Record<BeatStyleId, BeatStyle> = {
       clap: [9],
       "808": [1, 10],
     }),
+    musicalKey: { root: "F#", scale: "minor" },
     lesson:
       "Drill can put the snare in a less expected place. The offset backbeat makes the groove feel like it is leaning sideways.",
   },
@@ -82,6 +93,7 @@ export const BEAT_STYLES: Record<BeatStyleId, BeatStyle> = {
       clap: [5, 13],
       "808": [1, 8],
     }),
+    musicalKey: { root: "D", scale: "minor" },
     lesson:
       "R&B gives the groove room to breathe. Fewer hits plus more swing can feel more human than filling every step.",
   },
@@ -98,6 +110,7 @@ export const BEAT_STYLES: Record<BeatStyleId, BeatStyle> = {
       clap: [5, 13],
       "808": [1, 11],
     }),
+    musicalKey: { root: "C", scale: "major" },
     lesson:
       "Pop patterns are built to read quickly. Keep the backbeat familiar, then use texture and arrangement to make it yours.",
   },
@@ -114,6 +127,7 @@ export const BEAT_STYLES: Record<BeatStyleId, BeatStyle> = {
       clap: [5, 13],
       "808": [1, 7, 14],
     }),
+    musicalKey: { root: "G", scale: "minor" },
     lesson:
       "Afrobeats lives in syncopation: the groove feels relaxed, but the kick and hats keep nudging you forward between the obvious beats.",
   },
@@ -130,6 +144,7 @@ export const BEAT_STYLES: Record<BeatStyleId, BeatStyle> = {
       clap: [5, 13],
       "808": [1, 9, 12],
     }),
+    musicalKey: { root: "F", scale: "minor" },
     lesson:
       "Amapiano leaves air around the drums so the bass/log-drum idea can talk. Keep the pulse hypnotic and let accents answer each other.",
   },

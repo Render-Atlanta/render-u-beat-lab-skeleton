@@ -6,6 +6,7 @@ import type {
   ToneSampleUrls,
   ToneVoicePort,
 } from "./toneSampleBeatEngine";
+import type { StepPitch } from "./transport";
 
 // Accent used when a sample lane degrades to its synth fallback mid-playback.
 // The per-step accent isn't threaded into the sample path (samples are
@@ -64,6 +65,10 @@ function createVoice(
   sampleUrl: string | undefined,
   destination: LaneVolumePort,
 ): ToneVoicePort {
+  if (instrument === "808") {
+    return createSynthVoice(runtime, instrument, destination);
+  }
+
   if (sampleUrl && runtime.createSamplePlayer) {
     let player: ToneVoicePort | null = null;
     try {
@@ -84,7 +89,11 @@ function createSynthVoice(
   instrument: InstrumentId,
   destination: LaneVolumePort,
 ): ToneVoicePort {
-  if (instrument === "kick" || instrument === "808") {
+  if (instrument === "808") {
+    return runtime.createBassSynth?.(destination) ?? runtime.createKickSynth(destination);
+  }
+
+  if (instrument === "kick") {
     return runtime.createKickSynth(destination);
   }
 
@@ -124,7 +133,7 @@ function createSampleVoiceWithFallback(
       if (!synth) {
         synth = createSynthVoice(runtime, instrument, destination);
       }
-      triggerSynthVoice(synth, instrument, time, FALLBACK_ACCENT);
+      triggerSynthVoice(synth, instrument, time, FALLBACK_ACCENT, undefined);
     },
     dispose: () => {
       player.dispose?.();
@@ -138,13 +147,14 @@ export function playVoice(
   instrument: InstrumentId,
   time: number,
   accent: number,
+  pitch?: StepPitch,
 ) {
-  if (voice.start) {
+  if (voice.start && instrument !== "808") {
     voice.start(time);
     return;
   }
 
-  triggerSynthVoice(voice, instrument, time, accent);
+  triggerSynthVoice(voice, instrument, time, accent, pitch);
 }
 
 function triggerSynthVoice(
@@ -152,9 +162,15 @@ function triggerSynthVoice(
   instrument: InstrumentId,
   time: number | undefined,
   accent: number,
+  pitch?: StepPitch,
 ) {
-  if (instrument === "kick" || instrument === "808") {
-    voice.triggerAttackRelease?.(instrument === "808" ? "A0" : "C1", "8n", time, accent);
+  if (instrument === "808") {
+    voice.triggerAttackRelease?.(pitch?.noteName ?? "A1", "8n", time, accent);
+    return;
+  }
+
+  if (instrument === "kick") {
+    voice.triggerAttackRelease?.("C1", "8n", time, accent);
     return;
   }
 

@@ -9,6 +9,7 @@ import {
   writeSequencerStateToParams,
 } from "./patternState";
 import { createDefaultLaneVolumes } from "./laneVolumes";
+import { createDefaultBassStepPitches } from "./stepPitch";
 import { GOLDEN_BEAT_STYLE_FIXTURES } from "../test/beatStyleFixtures";
 
 describe("pattern state helpers", () => {
@@ -60,7 +61,22 @@ describe("pattern state helpers", () => {
       swing: 0.12,
       pattern: togglePatternStep(state.pattern, "snare", 3),
       laneVolumes: { ...createDefaultLaneVolumes(), hat: 0.5 },
+      bassStepPitches: createDefaultBassStepPitches(),
     });
+  });
+
+  it("round-trips bass pitch data through URL params", () => {
+    const state = createDefaultSequencerState("trap");
+    const bassStepPitches = [...state.bassStepPitches];
+    bassStepPitches[0] = 2;
+    bassStepPitches[7] = 4;
+
+    const params = writeSequencerStateToParams({
+      ...state,
+      bassStepPitches,
+    });
+
+    expect(readSequencerStateFromParams(params).bassStepPitches).toEqual(bassStepPitches);
   });
 
   it("defaults lane volumes when the vol param is missing or invalid", () => {
@@ -83,6 +99,7 @@ describe("pattern state helpers", () => {
       swing: 0,
       pattern: BEAT_STYLES.drill.pattern,
       laneVolumes: createDefaultLaneVolumes(),
+      bassStepPitches: createDefaultBassStepPitches(),
     });
   });
 

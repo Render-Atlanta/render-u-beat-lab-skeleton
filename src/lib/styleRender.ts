@@ -1,6 +1,7 @@
 import type { BeatStyle } from "./beatStyles";
 import { getLaneVolumes } from "./laneVolumes";
 import { INSTRUMENT_IDS, type InstrumentId, type Pattern } from "./patterns";
+import { getBassPitchForStep, synthesizeBassNotePcm } from "./stepPitch";
 
 export const RENDER_SAMPLE_RATE = 22050;
 const STEPS = 16;
@@ -24,11 +25,26 @@ export function renderPatternToPcm(
   const laneVolumes = getLaneVolumes(style);
 
   for (const lane of lanes) {
-    const sample = kit[lane];
     const laneVolume = laneVolumes[lane];
     if (laneVolume === 0) {
       continue;
     }
+
+    if (lane === "808") {
+      pattern[lane].forEach((on, i) => {
+        if (!on) return;
+        const pitch = getBassPitchForStep(style.musicalKey, i, style.bassStepPitches);
+        const sample = synthesizeBassNotePcm(pitch.frequency, RENDER_SAMPLE_RATE);
+        const swungSec = i * stepSec + (i % 2 === 1 ? swing * stepSec : 0);
+        const start = Math.round(swungSec * RENDER_SAMPLE_RATE);
+        for (let s = 0; s < sample.length && start + s < length; s += 1) {
+          out[start + s] += sample[s] * laneVolume;
+        }
+      });
+      continue;
+    }
+
+    const sample = kit[lane];
     pattern[lane].forEach((on, i) => {
       if (!on) return;
       // Swing: delay odd 16ths by a fraction of a step.

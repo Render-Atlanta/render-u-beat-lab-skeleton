@@ -2,6 +2,7 @@ import { BEAT_STYLES, type BeatStyle } from "./beatStyles";
 import { updateLaneVolume } from "./laneVolumes";
 import { clonePattern, type SequencerState } from "./patternState";
 import type { InstrumentId } from "./patterns";
+import { updateBassStepPitch, getInKeyPalette, type ScaleDegree } from "./stepPitch";
 
 export const MIN_BPM = 60;
 export const MAX_BPM = 180;
@@ -18,6 +19,7 @@ export function createPlayableStyle(sequencer: SequencerState): BeatStyle {
     swing: sequencer.swing,
     pattern: clonePattern(sequencer.pattern),
     laneVolumes: { ...sequencer.laneVolumes },
+    bassStepPitches: [...sequencer.bassStepPitches],
   };
 }
 
@@ -38,6 +40,25 @@ export function resetSequencerLaneVolume(
   instrument: InstrumentId,
 ): SequencerState {
   return updateSequencerLaneVolume(sequencer, instrument, 1);
+}
+
+export function updateSequencerBassStepPitch(
+  sequencer: SequencerState,
+  stepIndex: number,
+  degree: ScaleDegree,
+): SequencerState {
+  const paletteSize = getInKeyPalette(BEAT_STYLES[sequencer.styleId].musicalKey).length;
+
+  return {
+    ...sequencer,
+    bassStepPitches: updateBassStepPitch(
+      sequencer.bassStepPitches,
+      stepIndex,
+      degree,
+      paletteSize,
+    ),
+    pattern: clonePattern(sequencer.pattern),
+  };
 }
 
 export function updateSequencerBpm(

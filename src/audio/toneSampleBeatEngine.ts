@@ -44,6 +44,7 @@ export interface ToneRuntimePort {
    */
   createSamplePlayer?(url: string, destination?: LaneVolumePort): ToneVoicePort | null;
   createKickSynth(destination?: LaneVolumePort): ToneVoicePort;
+  createBassSynth?(destination?: LaneVolumePort): ToneVoicePort;
   createNoiseSynth(options?: unknown, destination?: LaneVolumePort): ToneVoicePort;
 }
 
@@ -140,7 +141,13 @@ export function createToneSampleBeatEngine(
 
   function scheduleStep(style: BeatStyle, step: number, time: number) {
     for (const event of getStepEvents(style, step, time)) {
-      playVoice(voices[event.instrument], event.instrument, event.time, event.accent);
+      playVoice(
+        voices[event.instrument],
+        event.instrument,
+        event.time,
+        event.accent,
+        event.pitch,
+      );
     }
   }
 
@@ -211,6 +218,29 @@ function getDefaultToneRuntime(): ToneRuntimePort {
     },
     createKickSynth: (destination) => {
       const synth = new Tone.MembraneSynth();
+      if (destination) {
+        synth.connect(destination.node);
+      } else {
+        synth.toDestination();
+      }
+      return {
+        triggerAttackRelease: (...args) => {
+          (
+            synth.triggerAttackRelease as unknown as (
+              ...triggerArgs: unknown[]
+            ) => unknown
+          )(...args);
+        },
+        dispose: () => {
+          synth.dispose();
+        },
+      };
+    },
+    createBassSynth: (destination) => {
+      const synth = new Tone.Synth({
+        oscillator: { type: "sawtooth" },
+        envelope: { attack: 0.005, decay: 0.22, sustain: 0.08, release: 0.12 },
+      });
       if (destination) {
         synth.connect(destination.node);
       } else {

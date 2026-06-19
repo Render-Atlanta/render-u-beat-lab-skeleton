@@ -60,11 +60,13 @@ import {
   getSequencerLoopDurationMs,
   getSwingPercent,
   resetSequencerLaneVolume,
+  updateSequencerBassStepPitch,
   updateSequencerBpm,
   updateSequencerLaneVolume,
   updateSequencerSwing,
 } from "./lib/sequencerDomain";
 import { getStyleReferences } from "./lib/styleReferences";
+import { getInKeyPalette } from "./lib/stepPitch";
 import { StyleFidelityMeter } from "./components/StyleFidelityMeter";
 import { EqVisualizer } from "./components/EqVisualizer";
 import type { DecodedKit } from "./lib/styleRender";
@@ -137,6 +139,10 @@ export function App() {
   const playableStyle = useMemo(
     () => createPlayableStyle(sequencer),
     [sequencer],
+  );
+  const bassPalette = useMemo(
+    () => getInKeyPalette(baseStyle.musicalKey),
+    [baseStyle.musicalKey],
   );
 
   useEffect(() => {
@@ -306,6 +312,10 @@ export function App() {
 
   function resetLaneVolume(instrument: InstrumentId) {
     applySequencerState(resetSequencerLaneVolume(sequencer, instrument));
+  }
+
+  function updateBassStepPitch(stepIndex: number, degree: number) {
+    applySequencerState(updateSequencerBassStepPitch(sequencer, stepIndex, degree));
   }
 
   async function captureMicSample() {
@@ -490,6 +500,8 @@ export function App() {
           audioEngineKind={audioEngineKind}
           pattern={sequencer.pattern}
           laneVolumes={sequencer.laneVolumes}
+          bassStepPitches={sequencer.bassStepPitches}
+          bassPalette={bassPalette}
           activeStep={activeStep}
           onBpmChange={updateBpm}
           onSwingChange={updateSwing}
@@ -498,6 +510,7 @@ export function App() {
           onLaneVolumeReset={resetLaneVolume}
           onReset={() => resetToStyle()}
           onToggleStep={toggleStep}
+          onBassStepPitchChange={updateBassStepPitch}
         />
 
         <StyleFidelityMeter style={playableStyle} kit={kit} kitError={kitError} />

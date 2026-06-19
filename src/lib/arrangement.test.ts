@@ -12,6 +12,7 @@ import {
   validateProjectExport,
 } from "./arrangement";
 import { createDefaultSequencerState, togglePatternStep } from "./patternState";
+import { updateBassStepPitch } from "./stepPitch";
 
 describe("arrangement helpers", () => {
   it("creates the four workshop arrangement sections in playback order", () => {
@@ -261,5 +262,47 @@ describe("arrangement helpers", () => {
     expect(result.project.sequencer.laneVolumes).toEqual(
       createDefaultSequencerState("trap").laneVolumes,
     );
+  });
+
+  it("defaults missing sequencer.bassStepPitches to the root degree for backward-compat", () => {
+    const project = createBeatLabProject({
+      sequencer: createDefaultSequencerState("trap"),
+      producerTag: { text: "Render U made this" },
+    });
+    const parsed = JSON.parse(exportProjectJson(project, { pretty: false }));
+    delete parsed.sequencer.bassStepPitches;
+    const result = importProjectJson(JSON.stringify(parsed));
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      throw new Error(result.errors.join("\n"));
+    }
+    expect(result.project.sequencer.bassStepPitches).toEqual(
+      createDefaultSequencerState("trap").bassStepPitches,
+    );
+  });
+
+  it("round-trips non-default bass step pitches through project JSON", () => {
+    const baseSequencer = createDefaultSequencerState("trap");
+    const bassStepPitches = updateBassStepPitch(
+      updateBassStepPitch(baseSequencer.bassStepPitches, 0, 2, 7),
+      6,
+      4,
+      7,
+    );
+    const project = createBeatLabProject({
+      sequencer: {
+        ...baseSequencer,
+        bassStepPitches,
+      },
+    });
+
+    const result = importProjectJson(exportProjectJson(project, { pretty: false }));
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      throw new Error(result.errors.join("\n"));
+    }
+    expect(result.project.sequencer.bassStepPitches).toEqual(bassStepPitches);
   });
 });

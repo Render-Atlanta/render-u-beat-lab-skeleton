@@ -8,6 +8,14 @@ import {
   type LaneVolumes,
 } from "./laneVolumes";
 import { INSTRUMENT_IDS, type InstrumentId, type Pattern } from "./patterns";
+import {
+  bassStepPitchesAreDefault,
+  cloneBassStepPitches,
+  createDefaultBassStepPitches,
+  deserializeBassStepPitches,
+  serializeBassStepPitches,
+  type BassStepPitches,
+} from "./stepPitch";
 
 export const INSTRUMENT_ORDER: InstrumentId[] = INSTRUMENT_IDS;
 
@@ -17,6 +25,7 @@ export interface SequencerState {
   swing: number;
   pattern: Pattern;
   laneVolumes: LaneVolumes;
+  bassStepPitches: BassStepPitches;
 }
 
 export function createDefaultSequencerState(styleId: BeatStyleId): SequencerState {
@@ -27,6 +36,7 @@ export function createDefaultSequencerState(styleId: BeatStyleId): SequencerStat
     swing: style.swing,
     pattern: clonePattern(style.pattern),
     laneVolumes: createDefaultLaneVolumes(),
+    bassStepPitches: createDefaultBassStepPitches(),
   };
 }
 
@@ -104,6 +114,8 @@ export function readSequencerStateFromParams(params: URLSearchParams): Sequencer
   const pattern = deserializePattern(params.get("pattern") ?? "") ?? defaults.pattern;
   const laneVolumes =
     deserializeLaneVolumes(params.get("vol")) ?? defaults.laneVolumes;
+  const bassStepPitches =
+    deserializeBassStepPitches(params.get("bass")) ?? defaults.bassStepPitches;
 
   return {
     styleId,
@@ -111,6 +123,7 @@ export function readSequencerStateFromParams(params: URLSearchParams): Sequencer
     swing: swingPercent / 100,
     pattern,
     laneVolumes,
+    bassStepPitches,
   };
 }
 
@@ -123,6 +136,9 @@ export function writeSequencerStateToParams(state: SequencerState): URLSearchPar
   if (!laneVolumesAreDefault(state.laneVolumes)) {
     params.set("vol", serializeLaneVolumes(state.laneVolumes));
   }
+  if (!bassStepPitchesAreDefault(state.bassStepPitches)) {
+    params.set("bass", serializeBassStepPitches(state.bassStepPitches));
+  }
   return params;
 }
 
@@ -133,6 +149,7 @@ export function cloneSequencerState(sequencer: SequencerState): SequencerState {
     swing: sequencer.swing,
     pattern: clonePattern(sequencer.pattern),
     laneVolumes: cloneLaneVolumes(sequencer.laneVolumes),
+    bassStepPitches: cloneBassStepPitches(sequencer.bassStepPitches),
   };
 }
 

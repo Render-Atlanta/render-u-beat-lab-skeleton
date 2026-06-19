@@ -16,10 +16,11 @@ import {
   SCHEDULE_AHEAD_SECONDS,
   SCHEDULER_TICK_MS,
   START_DELAY_SECONDS,
+  type StepPitch,
   type StepQueueEntry,
 } from "./transport";
 
-type DrumVoice = (time: number, accent?: number) => void;
+type DrumVoice = (time: number, accent?: number, pitch?: StepPitch) => void;
 
 export interface WebAudioBeatEngineRuntime {
   AudioContext?: typeof AudioContext;
@@ -126,7 +127,7 @@ export function createWebAudioBeatEngine(
 
   function scheduleStep(style: BeatStyle, stepIndex: number, time: number) {
     for (const event of getStepEvents(style, stepIndex, time)) {
-      voices[event.instrument](event.time, event.accent);
+      voices[event.instrument](event.time, event.accent, event.pitch);
     }
   }
 
@@ -277,18 +278,21 @@ export function createWebAudioBeatEngine(
     }
   }
 
-  function play808(time: number, accent = 1) {
-    // Tuned sub-sine with a short downward glide and long decay — the bass.
+  function play808(time: number, accent = 1, pitch?: StepPitch) {
+    const frequency = pitch?.frequency ?? 55;
     const osc = context.createOscillator();
+    const filter = context.createBiquadFilter();
     const gain = context.createGain();
-    osc.type = "sine";
-    osc.frequency.setValueAtTime(80, time);
-    osc.frequency.exponentialRampToValueAtTime(55, time + 0.08);
-    gain.gain.setValueAtTime(0.7 * accent, time);
-    gain.gain.exponentialRampToValueAtTime(0.001, time + 0.5);
-    osc.connect(gain).connect(laneBuses["808"]);
+    osc.type = "sawtooth";
+    osc.frequency.setValueAtTime(frequency * 1.45, time);
+    osc.frequency.exponentialRampToValueAtTime(frequency, time + 0.04);
+    filter.type = "lowpass";
+    filter.frequency.value = 900;
+    gain.gain.setValueAtTime(0.55 * accent, time);
+    gain.gain.exponentialRampToValueAtTime(0.001, time + 0.35);
+    osc.connect(filter).connect(gain).connect(laneBuses["808"]);
     osc.start(time);
-    osc.stop(time + 0.55);
+    osc.stop(time + 0.4);
   }
 
   function createNoiseBuffer(duration: number) {

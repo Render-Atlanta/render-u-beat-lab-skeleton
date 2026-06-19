@@ -2,6 +2,7 @@ import { BEAT_STYLES, type BeatStyleId } from "./beatStyles";
 import { INSTRUMENT_ORDER, clonePattern, cloneSequencerState, type SequencerState } from "./patternState";
 import { type InstrumentId, type Pattern } from "./patterns";
 import { normalizeLaneVolumes } from "./laneVolumes";
+import { normalizeBassStepPitches } from "./stepPitch";
 import {
   normalizeProducerTagConfig,
   type ProducerTagConfig,
@@ -251,8 +252,9 @@ function readSequencerState(value: unknown, errors: string[]): SequencerState | 
   const swing = readNumberInRange(value.swing, 0, 0.3, errors, "Sequencer swing");
   const pattern = readPattern(value.pattern, errors, "Sequencer pattern");
   const laneVolumes = readLaneVolumes(value.laneVolumes, errors);
+  const bassStepPitches = readBassStepPitches(value.bassStepPitches, errors);
 
-  if (!styleId || bpm === null || swing === null || !pattern || !laneVolumes) {
+  if (!styleId || bpm === null || swing === null || !pattern || !laneVolumes || !bassStepPitches) {
     return null;
   }
 
@@ -262,7 +264,34 @@ function readSequencerState(value: unknown, errors: string[]): SequencerState | 
     swing,
     pattern,
     laneVolumes,
+    bassStepPitches,
   };
+}
+
+function readBassStepPitches(value: unknown, errors: string[]) {
+  if (value === undefined) {
+    return normalizeBassStepPitches(undefined);
+  }
+
+  if (!Array.isArray(value)) {
+    errors.push("Sequencer bassStepPitches must be an array.");
+    return null;
+  }
+
+  if (value.length !== 16) {
+    errors.push("Sequencer bassStepPitches must contain 16 entries.");
+    return null;
+  }
+
+  for (let index = 0; index < value.length; index += 1) {
+    const degree = value[index];
+    if (typeof degree !== "number" || !Number.isInteger(degree) || degree < 0 || degree > 6) {
+      errors.push(`Sequencer bassStepPitches[${index}] must be an integer from 0 to 6.`);
+      return null;
+    }
+  }
+
+  return normalizeBassStepPitches(value);
 }
 
 function readLaneVolumes(value: unknown, errors: string[]) {

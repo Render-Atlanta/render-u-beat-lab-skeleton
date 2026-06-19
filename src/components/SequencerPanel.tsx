@@ -3,6 +3,7 @@ import { DEFAULT_LANE_VOLUME } from "../lib/laneVolumes";
 import type { InstrumentId, Pattern } from "../lib/patterns";
 import type { LaneVolumes } from "../lib/laneVolumes";
 import type { AudioEngineKind } from "../audio/audioEngine";
+import type { BassStepPitches, PaletteEntry } from "../lib/stepPitch";
 
 export interface SequencerPanelProps {
   styleName: string;
@@ -12,6 +13,8 @@ export interface SequencerPanelProps {
   audioEngineKind: AudioEngineKind;
   pattern: Pattern;
   laneVolumes: LaneVolumes;
+  bassStepPitches: BassStepPitches;
+  bassPalette: PaletteEntry[];
   activeStep: number | null;
   onBpmChange: (bpm: number) => void;
   onSwingChange: (swingPercent: number) => void;
@@ -20,6 +23,7 @@ export interface SequencerPanelProps {
   onLaneVolumeReset: (instrument: InstrumentId) => void;
   onReset: () => void;
   onToggleStep: (instrument: InstrumentId, stepIndex: number) => void;
+  onBassStepPitchChange: (stepIndex: number, degree: number) => void;
 }
 
 export function SequencerPanel({
@@ -30,6 +34,8 @@ export function SequencerPanel({
   audioEngineKind,
   pattern,
   laneVolumes,
+  bassStepPitches,
+  bassPalette,
   activeStep,
   onBpmChange,
   onSwingChange,
@@ -38,6 +44,7 @@ export function SequencerPanel({
   onLaneVolumeReset,
   onReset,
   onToggleStep,
+  onBassStepPitchChange,
 }: SequencerPanelProps) {
   return (
     <section className="panel grid-panel">
@@ -126,10 +133,15 @@ export function SequencerPanel({
                 ) : null}
               </div>
             </div>
-            {pattern[instrument.id].map((step, index) => (
-              <button
+            {pattern[instrument.id].map((step, index) => {
+              const is808 = instrument.id === "808";
+              const bassDegree = bassStepPitches[index];
+              const bassEntry = is808 && step ? bassPalette[bassDegree] : null;
+
+              return (
+              <div
                 className={[
-                  "step-cell",
+                  "step-cell-wrap",
                   step ? "on" : "",
                   index % 4 === 0 ? "downbeat" : "",
                   index === activeStep ? "playhead" : "",
@@ -138,14 +150,48 @@ export function SequencerPanel({
                   .filter(Boolean)
                   .join(" ")}
                 key={`${instrument.id}-${index}`}
-                type="button"
-                aria-pressed={step}
-                aria-label={`${instrument.label} step ${index + 1} ${
-                  step ? "on" : "off"
-                }`}
-                onClick={() => onToggleStep(instrument.id, index)}
-              />
-            ))}
+              >
+                <button
+                  className={[
+                    "step-cell",
+                    step ? "on" : "",
+                    bassEntry ? `pitch-${bassEntry.function}` : "",
+                    index % 4 === 0 ? "downbeat" : "",
+                    index === activeStep ? "playhead" : "",
+                    step && index === activeStep ? "firing" : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                  type="button"
+                  aria-pressed={step}
+                  aria-label={`${instrument.label} step ${index + 1} ${
+                    step ? "on" : "off"
+                  }${bassEntry ? `, note ${bassEntry.label}` : ""}`}
+                  onClick={() => onToggleStep(instrument.id, index)}
+                />
+                {is808 && step ? (
+                  <label className="step-pitch">
+                    <span className="sr-only">{`${instrument.label} step ${index + 1} note`}</span>
+                    <select
+                      className={`step-pitch__select pitch-${bassEntry?.function ?? "root"}`}
+                      value={bassDegree}
+                      aria-label={`${instrument.label} step ${index + 1} note`}
+                      onClick={(event) => event.stopPropagation()}
+                      onChange={(event) =>
+                        onBassStepPitchChange(index, Number(event.target.value))
+                      }
+                    >
+                      {bassPalette.map((entry) => (
+                        <option key={entry.degree} value={entry.degree}>
+                          {entry.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ) : null}
+              </div>
+              );
+            })}
           </div>
         ))}
       </div>

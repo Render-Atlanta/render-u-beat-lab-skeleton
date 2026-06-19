@@ -378,6 +378,70 @@ button:disabled {
   text-transform: uppercase;
 }
 
+.step-cell-wrap {
+  display: grid;
+  gap: 4px;
+}
+
+.step-cell-wrap.on .step-cell.on.pitch-root {
+  box-shadow: inset 0 0 0 4px hsl(42 96% 56%);
+}
+
+.step-cell-wrap.on .step-cell.on.pitch-third {
+  box-shadow: inset 0 0 0 4px hsl(198 82% 52%);
+}
+
+.step-cell-wrap.on .step-cell.on.pitch-fifth {
+  box-shadow: inset 0 0 0 4px hsl(142 58% 46%);
+}
+
+.step-cell-wrap.on .step-cell.on.pitch-other {
+  box-shadow: inset 0 0 0 4px hsl(280 58% 62%);
+}
+
+.step-pitch {
+  display: grid;
+}
+
+.step-pitch__select {
+  background: hsl(var(--surface));
+  border: 1px solid hsl(var(--border));
+  border-radius: 4px;
+  color: hsl(var(--ink));
+  font: inherit;
+  font-size: 0.62rem;
+  padding: 2px 0;
+  width: 100%;
+}
+
+.step-pitch__select.pitch-root {
+  border-color: hsl(42 96% 56%);
+}
+
+.step-pitch__select.pitch-third {
+  border-color: hsl(198 82% 52%);
+}
+
+.step-pitch__select.pitch-fifth {
+  border-color: hsl(142 58% 46%);
+}
+
+.step-pitch__select.pitch-other {
+  border-color: hsl(280 58% 62%);
+}
+
+.sr-only {
+  border: 0;
+  clip: rect(0, 0, 0, 0);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
 .step-cell {
   aspect-ratio: 1;
   background: hsl(var(--bg));
