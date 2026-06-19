@@ -116,3 +116,25 @@ describe("SequencerPanel playhead", () => {
     expect(html).not.toContain("playhead");
   });
 });
+
+describe("SequencerPanel guided filtering", () => {
+  it("renders every lane when visibleInstruments is omitted", () => {
+    const html = renderPanel();
+    for (const instrument of INSTRUMENTS) {
+      expect(html).toContain(`>${instrument.label}</span>`);
+    }
+  });
+
+  it("renders only the lanes passed in visibleInstruments", () => {
+    const visible = INSTRUMENTS.filter((instrument) =>
+      ["kick", "snare"].includes(instrument.id),
+    );
+    const html = renderPanel({ visibleInstruments: visible });
+
+    expect(html).toContain(">Kick</span>");
+    expect(html).toContain(">Snare</span>");
+    expect(html).not.toContain(">Hat</span>");
+    expect(html).not.toContain(">808</span>");
+    expect(html).not.toContain(">Melody</span>");
+  });
+});

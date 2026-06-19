@@ -963,3 +963,32 @@ button:disabled {
   font-size: 0.8rem;
   opacity: 0.75;
 }
+
+.guided-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.guided-banner__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.guided-banner__role {
+  font-weight: 600;
+}
+
+.guided-banner__explainer {
+  opacity: 0.8;
+  max-width: 48ch;
+}
+
+.guided-banner__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}

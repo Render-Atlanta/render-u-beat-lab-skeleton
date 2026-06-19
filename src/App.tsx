@@ -72,6 +72,32 @@ import { StyleFidelityMeter } from "./components/StyleFidelityMeter";
 import { EqVisualizer } from "./components/EqVisualizer";
 import type { DecodedKit } from "./lib/styleRender";
 import { loadKitFromUrls } from "./lib/loadKit.browser";
+import { GuidedModeBanner } from "./components/GuidedModeBanner";
+import { INSTRUMENTS } from "./lib/instruments";
+import {
+  advanceGuidedStep,
+  exitGuided,
+  getGuidedSequence,
+  getRevealedLaneIds,
+  isLastGuidedStep,
+  maskPatternToLanes,
+  skipGuided,
+  startGuidedState,
+  type GuidedModeState,
+} from "./lib/guidedMode";
+import { readGuidedPref, writeGuidedPref } from "./lib/guidedModePrefs";
+
+/**
+ * Playable style whose pattern is the *audible* one: while guided mode is active
+ * the pattern is masked to the revealed lanes; otherwise it is the full pattern.
+ * Pure — it closes over nothing, so callers always pass fresh state/guided values.
+ */
+function audibleStyle(state: SequencerState, guided: GuidedModeState) {
+  const pattern = guided.active
+    ? maskPatternToLanes(state.pattern, getRevealedLaneIds(guided))
+    : state.pattern;
+  return createPlayableStyle({ ...state, pattern });
+}
 
 export function App() {
   const [sequencer, setSequencer] = useState<SequencerState>(() =>
@@ -100,6 +126,11 @@ export function App() {
   const [kit, setKit] = useState<DecodedKit | null>(null);
   const [kitError, setKitError] = useState(false);
   const [activeStep, setActiveStep] = useState<number | null>(null);
+  const [guidedState, setGuidedState] = useState<GuidedModeState>(() =>
+    readGuidedPref() === "guided"
+      ? startGuidedState()
+      : { active: false, stepIndex: getGuidedSequence().length - 1 },
+  );
 
   const baseStyle = BEAT_STYLES[sequencer.styleId];
   const styleCoach = useMemo(
@@ -137,9 +168,18 @@ export function App() {
     () => getSequencerLoopDurationMs(sequencer.bpm),
     [sequencer.bpm],
   );
+  const revealedLaneIds = useMemo(
+    () => getRevealedLaneIds(guidedState),
+    [guidedState],
+  );
+  const visibleInstruments = useMemo(
+    () => INSTRUMENTS.filter((instrument) => revealedLaneIds.includes(instrument.id)),
+    [revealedLaneIds],
+  );
+  const guidedInstrument = INSTRUMENTS[guidedState.stepIndex] ?? INSTRUMENTS[0];
   const playableStyle = useMemo(
-    () => createPlayableStyle(sequencer),
-    [sequencer],
+    () => audibleStyle(sequencer, guidedState),
+    [sequencer, guidedState],
   );
   const bassPalette = useMemo(
     () => getInKeyPalette(baseStyle.musicalKey),
@@ -276,7 +316,7 @@ export function App() {
   function applySequencerState(next: SequencerState) {
     setSequencer(next);
     if (isPlaying && engineRef.current) {
-      engineRef.current.start(createPlayableStyle(next));
+      engineRef.current.start(audibleStyle(next, guidedState));
     }
   }
 
@@ -325,6 +365,30 @@ export function App() {
 
   function updateMelodyStepPitch(stepIndex: number, degree: number) {
     applySequencerState(updateSequencerMelodyStepPitch(sequencer, stepIndex, degree));
+  }
+
+  function changeGuidedState(next: GuidedModeState) {
+    setGuidedState(next);
+    writeGuidedPref(next.active ? "guided" : "free");
+    if (isPlaying && engineRef.current) {
+      engineRef.current.start(audibleStyle(sequencer, next));
+    }
+  }
+
+  function handleGuidedNext() {
+    changeGuidedState(advanceGuidedStep(guidedState));
+  }
+
+  function handleGuidedSkip() {
+    changeGuidedState(skipGuided(guidedState));
+  }
+
+  function handleGuidedExit() {
+    changeGuidedState(exitGuided(guidedState));
+  }
+
+  function handleGuidedStart() {
+    changeGuidedState(startGuidedState());
   }
 
   async function captureMicSample() {
@@ -428,8 +492,10 @@ export function App() {
           : undefined;
 
       const bytes = renderBeatWav({
+        // Export always renders the full stored beat, never the guided-mode mask:
+        // build the style from `sequencer` directly so `style.pattern` is unmasked too.
         pattern: sequencer.pattern,
-        style: playableStyle,
+        style: createPlayableStyle(sequencer),
         kit,
         loops: 2,
         tag,
@@ -501,6 +567,27 @@ export function App() {
           onSelectStyle={resetToStyle}
         />
 
+        {guidedState.active ? (
+          <GuidedModeBanner
+            instrument={guidedInstrument}
+            stepIndex={guidedState.stepIndex}
+            stepCount={getGuidedSequence().length}
+            isLastStep={isLastGuidedStep(guidedState)}
+            onNext={handleGuidedNext}
+            onSkip={handleGuidedSkip}
+            onExit={handleGuidedExit}
+          />
+        ) : (
+          <div className="guided-reentry">
+            <button
+              className="button secondary compact"
+              type="button"
+              onClick={handleGuidedStart}
+            >
+              ▸ Start guided build
+            </button>
+          </div>
+        )}
         <SequencerPanel
           styleName={baseStyle.name}
           activeSteps={activeSteps}
@@ -523,6 +610,7 @@ export function App() {
           onToggleStep={toggleStep}
           onBassStepPitchChange={updateBassStepPitch}
           onMelodyStepPitchChange={updateMelodyStepPitch}
+          visibleInstruments={visibleInstruments}
         />
 
         <StyleFidelityMeter style={playableStyle} kit={kit} kitError={kitError} />

@@ -1,4 +1,4 @@
-import { INSTRUMENTS } from "../lib/instruments";
+import { INSTRUMENTS, type InstrumentOption } from "../lib/instruments";
 import { DEFAULT_LANE_VOLUME } from "../lib/laneVolumes";
 import type { InstrumentId, Pattern } from "../lib/patterns";
 import type { LaneVolumes } from "../lib/laneVolumes";
@@ -18,6 +18,8 @@ export interface SequencerPanelProps {
   melodyStepPitches: MelodyStepPitches;
   melodyPalette: PaletteEntry[];
   activeStep: number | null;
+  /** Lanes to render, in order. Defaults to all instruments (free-form grid). */
+  visibleInstruments?: InstrumentOption[];
   onBpmChange: (bpm: number) => void;
   onSwingChange: (swingPercent: number) => void;
   onAudioEngineKindChange: (kind: AudioEngineKind) => void;
@@ -42,6 +44,7 @@ export function SequencerPanel({
   melodyStepPitches,
   melodyPalette,
   activeStep,
+  visibleInstruments = INSTRUMENTS,
   onBpmChange,
   onSwingChange,
   onAudioEngineKindChange,
@@ -104,7 +107,7 @@ export function SequencerPanel({
       </div>
 
       <div className="step-grid" aria-label={`${styleName} drum pattern`}>
-        {INSTRUMENTS.map((instrument) => (
+        {visibleInstruments.map((instrument) => (
           <div className="track-row" key={instrument.id}>
             <div className="track-label-block">
               <div className="track-label">
