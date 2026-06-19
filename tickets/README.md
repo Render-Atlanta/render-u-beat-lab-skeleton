@@ -51,3 +51,11 @@ effort. See `docs/superpowers/specs/` for the per-wave design.
 | [PR-27](PR-27-curated-extra-instruments.md) | Curated extra instruments (clap + 808) | Feature | 3 | PR-02, PR-11 |
 | [PR-28](PR-28-in-key-melody-lane.md) | In-key melody lane | Feature | 3 | PR-27 |
 | [PR-29](PR-29-guided-layering-mode.md) | Guided layering mode | Teaching | 3 | PR-23, PR-27 |
+| [PR-30](PR-30-per-lane-volume-mixer.md) | Per-lane volume mixer | Feature | 3 | PR-02, PR-11 |
+| [PR-31](PR-31-pitched-bass.md) | Pitched bass (notes on 808) | Feature | 3 | PR-27, PR-28 |
+
+Waves 1 (visual feedback: PR-22/23/24) and 2 (producer tag: PR-25/26) are
+shipped. Remaining Wave 3 work — extra instruments (PR-27 808/clap), in-key
+melody (PR-28), guided layering (PR-29), the per-lane volume mixer (PR-30), and
+the pitched "bass guitar" follow-up (PR-31). The bass progression is **PR-27
+(tuned 808 now) → PR-31 (per-step in-key notes later)**.

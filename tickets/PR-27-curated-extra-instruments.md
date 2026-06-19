@@ -16,8 +16,10 @@ low-end melody/weight.
 
 - Add two new lanes with synthesized (and, where available, sampled) voices:
   - Clap — layered noise burst, typically doubling the snare backbeat.
-  - 808 — a tuned sub-bass hit (single default pitch in this ticket; pitched
-    melody is PR-28).
+  - 808 — a tuned sub-bass hit; this is the app's **bass** for now (single
+    default pitch in this ticket). Per-step pitch selection — turning it into a
+    playable "bass guitar" line — is the follow-up PR-31, which reuses PR-28's
+    in-key pitch mechanism.
 - Extend the instrument metadata so the new lanes carry their role copy
   (PR-23 pattern) and appear in the grid, patterns, style presets, and pattern
   state / URL serialization.
