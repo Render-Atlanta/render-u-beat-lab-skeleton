@@ -1,5 +1,7 @@
 import { INSTRUMENTS } from "../lib/instruments";
+import { DEFAULT_LANE_VOLUME } from "../lib/laneVolumes";
 import type { InstrumentId, Pattern } from "../lib/patterns";
+import type { LaneVolumes } from "../lib/laneVolumes";
 import type { AudioEngineKind } from "../audio/audioEngine";
 
 export interface SequencerPanelProps {
@@ -9,10 +11,13 @@ export interface SequencerPanelProps {
   swingPercent: number;
   audioEngineKind: AudioEngineKind;
   pattern: Pattern;
+  laneVolumes: LaneVolumes;
   activeStep: number | null;
   onBpmChange: (bpm: number) => void;
   onSwingChange: (swingPercent: number) => void;
   onAudioEngineKindChange: (kind: AudioEngineKind) => void;
+  onLaneVolumeChange: (instrument: InstrumentId, volume: number) => void;
+  onLaneVolumeReset: (instrument: InstrumentId) => void;
   onReset: () => void;
   onToggleStep: (instrument: InstrumentId, stepIndex: number) => void;
 }
@@ -24,10 +29,13 @@ export function SequencerPanel({
   swingPercent,
   audioEngineKind,
   pattern,
+  laneVolumes,
   activeStep,
   onBpmChange,
   onSwingChange,
   onAudioEngineKindChange,
+  onLaneVolumeChange,
+  onLaneVolumeReset,
   onReset,
   onToggleStep,
 }: SequencerPanelProps) {
@@ -85,10 +93,38 @@ export function SequencerPanel({
       <div className="step-grid" aria-label={`${styleName} drum pattern`}>
         {INSTRUMENTS.map((instrument) => (
           <div className="track-row" key={instrument.id}>
-            <div className="track-label">
-              <span className="track-label__name">{instrument.label}</span>
-              <span className="track-label__role">{instrument.role}</span>
-              <span className="track-label__explainer">{instrument.explainer}</span>
+            <div className="track-label-block">
+              <div className="track-label">
+                <span className="track-label__name">{instrument.label}</span>
+                <span className="track-label__role">{instrument.role}</span>
+                <span className="track-label__explainer">{instrument.explainer}</span>
+              </div>
+              <div className="track-volume">
+                <label className="track-volume__control">
+                  <span className="eyebrow">{instrument.label} volume</span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="150"
+                    step="1"
+                    value={Math.round(laneVolumes[instrument.id] * 100)}
+                    aria-label={`${instrument.label} volume`}
+                    onChange={(event) =>
+                      onLaneVolumeChange(instrument.id, Number(event.target.value) / 100)
+                    }
+                  />
+                </label>
+                {laneVolumes[instrument.id] !== DEFAULT_LANE_VOLUME ? (
+                  <button
+                    className="button secondary compact track-volume__reset"
+                    type="button"
+                    aria-label={`Reset ${instrument.label} volume`}
+                    onClick={() => onLaneVolumeReset(instrument.id)}
+                  >
+                    Reset
+                  </button>
+                ) : null}
+              </div>
             </div>
             {pattern[instrument.id].map((step, index) => (
               <button

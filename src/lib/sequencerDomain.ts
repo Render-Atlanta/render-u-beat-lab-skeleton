@@ -1,5 +1,7 @@
 import { BEAT_STYLES, type BeatStyle } from "./beatStyles";
+import { updateLaneVolume } from "./laneVolumes";
 import { clonePattern, type SequencerState } from "./patternState";
+import type { InstrumentId } from "./patterns";
 
 export const MIN_BPM = 60;
 export const MAX_BPM = 180;
@@ -15,7 +17,27 @@ export function createPlayableStyle(sequencer: SequencerState): BeatStyle {
     bpm: sequencer.bpm,
     swing: sequencer.swing,
     pattern: clonePattern(sequencer.pattern),
+    laneVolumes: { ...sequencer.laneVolumes },
   };
+}
+
+export function updateSequencerLaneVolume(
+  sequencer: SequencerState,
+  instrument: InstrumentId,
+  volume: number,
+): SequencerState {
+  return {
+    ...sequencer,
+    laneVolumes: updateLaneVolume(sequencer.laneVolumes, instrument, volume),
+    pattern: clonePattern(sequencer.pattern),
+  };
+}
+
+export function resetSequencerLaneVolume(
+  sequencer: SequencerState,
+  instrument: InstrumentId,
+): SequencerState {
+  return updateSequencerLaneVolume(sequencer, instrument, 1);
 }
 
 export function updateSequencerBpm(

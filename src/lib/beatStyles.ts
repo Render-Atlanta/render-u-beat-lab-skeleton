@@ -1,3 +1,4 @@
+import type { LaneVolumes } from "./laneVolumes";
 import { patternFromSteps, type Pattern } from "./patterns";
 
 export type BeatStyleId =
@@ -15,6 +16,7 @@ export interface BeatStyle {
   bpm: number;
   swing: number;
   pattern: Pattern;
+  laneVolumes?: LaneVolumes;
   lesson: string;
 }
 

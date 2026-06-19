@@ -244,4 +244,22 @@ describe("arrangement helpers", () => {
     }
     expect(result.errors).toContain("Producer tag source must be text or recorded.");
   });
+
+  it("defaults missing sequencer.laneVolumes to 1 for backward-compat with older project JSON", () => {
+    const project = createBeatLabProject({
+      sequencer: createDefaultSequencerState("trap"),
+      producerTag: { text: "Render U made this" },
+    });
+    const parsed = JSON.parse(exportProjectJson(project, { pretty: false }));
+    delete parsed.sequencer.laneVolumes;
+    const result = importProjectJson(JSON.stringify(parsed));
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      throw new Error(result.errors.join("\n"));
+    }
+    expect(result.project.sequencer.laneVolumes).toEqual(
+      createDefaultSequencerState("trap").laneVolumes,
+    );
+  });
 });

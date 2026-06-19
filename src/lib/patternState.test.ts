@@ -8,6 +8,7 @@ import {
   togglePatternStep,
   writeSequencerStateToParams,
 } from "./patternState";
+import { createDefaultLaneVolumes } from "./laneVolumes";
 import { GOLDEN_BEAT_STYLE_FIXTURES } from "../test/beatStyleFixtures";
 
 describe("pattern state helpers", () => {
@@ -50,6 +51,7 @@ describe("pattern state helpers", () => {
       bpm: 106,
       swing: 0.12,
       pattern: togglePatternStep(state.pattern, "snare", 3),
+      laneVolumes: { ...state.laneVolumes, hat: 0.5 },
     });
 
     expect(readSequencerStateFromParams(params)).toEqual({
@@ -57,7 +59,17 @@ describe("pattern state helpers", () => {
       bpm: 106,
       swing: 0.12,
       pattern: togglePatternStep(state.pattern, "snare", 3),
+      laneVolumes: { ...createDefaultLaneVolumes(), hat: 0.5 },
     });
+  });
+
+  it("defaults lane volumes when the vol param is missing or invalid", () => {
+    expect(
+      readSequencerStateFromParams(new URLSearchParams("style=trap")).laneVolumes,
+    ).toEqual(createDefaultLaneVolumes());
+    expect(
+      readSequencerStateFromParams(new URLSearchParams("style=trap&vol=bad")).laneVolumes,
+    ).toEqual(createDefaultLaneVolumes());
   });
 
   it("falls back to the requested style defaults when URL data is invalid", () => {
@@ -70,6 +82,7 @@ describe("pattern state helpers", () => {
       bpm: 180,
       swing: 0,
       pattern: BEAT_STYLES.drill.pattern,
+      laneVolumes: createDefaultLaneVolumes(),
     });
   });
 

@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { BEAT_STYLES } from "../lib/beatStyles";
+import { createDefaultLaneVolumes } from "../lib/laneVolumes";
 import {
   createToneSampleBeatEngine,
+  type LaneVolumePort,
   type ToneRuntimePort,
   type ToneTransportPort,
   type ToneVoicePort,
@@ -41,6 +43,19 @@ describe("Tone.js sample beat engine", () => {
     expect(runtime.voices.hat.plays).toEqual([
       ["32n", 1.25, 1.12],
     ]);
+  });
+
+  it("applies lane volumes when start(style) is called", () => {
+    const runtime = createFakeToneRuntime();
+    const engine = createToneSampleBeatEngine({ runtime });
+
+    engine.start({
+      ...BEAT_STYLES.trap,
+      laneVolumes: { ...createDefaultLaneVolumes(), kick: 0.25, snare: 0 },
+    });
+
+    expect(runtime.laneVolumePorts.map((port) => port.linearVolume)).toContain(0.25);
+    expect(runtime.laneVolumePorts.map((port) => port.linearVolume)).toContain(0);
   });
 
   it("stops and disposes scheduled events and voices", () => {
@@ -163,6 +178,7 @@ function createFakeToneRuntime() {
   const sampleUrls: string[] = [];
   let startCount = 0;
   let loadedCount = 0;
+  const laneVolumeFactory = createFakeLaneVolumes();
 
   const runtime: ToneRuntimePort & {
     transport: ReturnType<typeof createFakeTransport>;
@@ -170,10 +186,12 @@ function createFakeToneRuntime() {
     sampleUrls: string[];
     startCount: number;
     loadedCount: number;
+    laneVolumePorts: Array<LaneVolumePort & { linearVolume: number }>;
   } = {
     transport,
     voices,
     sampleUrls,
+    laneVolumePorts: laneVolumeFactory.ports,
     get startCount() {
       return startCount;
     },
@@ -187,6 +205,7 @@ function createFakeToneRuntime() {
       loadedCount += 1;
     },
     getTransport: () => transport,
+    createLaneVolume: () => laneVolumeFactory.create(),
     createSamplePlayer: (url) => {
       sampleUrls.push(url);
       voices.kick.start = (time) => {
@@ -264,5 +283,27 @@ function createFakeVoice(): ToneVoicePort & {
     dispose() {
       this.disposed = true;
     },
+  };
+}
+
+function createFakeLaneVolumes() {
+  const ports: Array<LaneVolumePort & { linearVolume: number }> = [];
+
+  return {
+    create(): LaneVolumePort {
+      const port = {
+        node: {} as LaneVolumePort["node"],
+        linearVolume: 1,
+        setLinearVolume(volume: number) {
+          port.linearVolume = volume;
+        },
+        dispose() {
+          // no-op
+        },
+      };
+      ports.push(port);
+      return port;
+    },
+    ports,
   };
 }

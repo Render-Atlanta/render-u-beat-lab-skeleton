@@ -1,4 +1,12 @@
 import { BEAT_STYLES, type BeatStyleId } from "./beatStyles";
+import {
+  cloneLaneVolumes,
+  createDefaultLaneVolumes,
+  deserializeLaneVolumes,
+  laneVolumesAreDefault,
+  serializeLaneVolumes,
+  type LaneVolumes,
+} from "./laneVolumes";
 import { INSTRUMENT_IDS, type InstrumentId, type Pattern } from "./patterns";
 
 export const INSTRUMENT_ORDER: InstrumentId[] = INSTRUMENT_IDS;
@@ -8,6 +16,7 @@ export interface SequencerState {
   bpm: number;
   swing: number;
   pattern: Pattern;
+  laneVolumes: LaneVolumes;
 }
 
 export function createDefaultSequencerState(styleId: BeatStyleId): SequencerState {
@@ -17,6 +26,7 @@ export function createDefaultSequencerState(styleId: BeatStyleId): SequencerStat
     bpm: style.bpm,
     swing: style.swing,
     pattern: clonePattern(style.pattern),
+    laneVolumes: createDefaultLaneVolumes(),
   };
 }
 
@@ -92,12 +102,15 @@ export function readSequencerStateFromParams(params: URLSearchParams): Sequencer
     Math.round(defaults.swing * 100),
   );
   const pattern = deserializePattern(params.get("pattern") ?? "") ?? defaults.pattern;
+  const laneVolumes =
+    deserializeLaneVolumes(params.get("vol")) ?? defaults.laneVolumes;
 
   return {
     styleId,
     bpm,
     swing: swingPercent / 100,
     pattern,
+    laneVolumes,
   };
 }
 
@@ -107,7 +120,20 @@ export function writeSequencerStateToParams(state: SequencerState): URLSearchPar
   params.set("bpm", String(state.bpm));
   params.set("swing", String(Math.round(state.swing * 100)));
   params.set("pattern", serializePattern(state.pattern));
+  if (!laneVolumesAreDefault(state.laneVolumes)) {
+    params.set("vol", serializeLaneVolumes(state.laneVolumes));
+  }
   return params;
+}
+
+export function cloneSequencerState(sequencer: SequencerState): SequencerState {
+  return {
+    styleId: sequencer.styleId,
+    bpm: sequencer.bpm,
+    swing: sequencer.swing,
+    pattern: clonePattern(sequencer.pattern),
+    laneVolumes: cloneLaneVolumes(sequencer.laneVolumes),
+  };
 }
 
 function clampNumber(value: number, min: number, max: number, fallback: number): number {

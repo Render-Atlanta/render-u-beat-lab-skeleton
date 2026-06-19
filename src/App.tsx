@@ -59,7 +59,9 @@ import {
   createPlayableStyle,
   getSequencerLoopDurationMs,
   getSwingPercent,
+  resetSequencerLaneVolume,
   updateSequencerBpm,
+  updateSequencerLaneVolume,
   updateSequencerSwing,
 } from "./lib/sequencerDomain";
 import { getStyleReferences } from "./lib/styleReferences";
@@ -298,6 +300,14 @@ export function App() {
     });
   }
 
+  function updateLaneVolume(instrument: InstrumentId, volume: number) {
+    applySequencerState(updateSequencerLaneVolume(sequencer, instrument, volume));
+  }
+
+  function resetLaneVolume(instrument: InstrumentId) {
+    applySequencerState(resetSequencerLaneVolume(sequencer, instrument));
+  }
+
   async function captureMicSample() {
     if (!micSupport.supported) {
       setMicState({ status: "error", message: micSupport.message });
@@ -479,10 +489,13 @@ export function App() {
           swingPercent={getSwingPercent(sequencer.swing)}
           audioEngineKind={audioEngineKind}
           pattern={sequencer.pattern}
+          laneVolumes={sequencer.laneVolumes}
           activeStep={activeStep}
           onBpmChange={updateBpm}
           onSwingChange={updateSwing}
           onAudioEngineKindChange={updateAudioEngineKind}
+          onLaneVolumeChange={updateLaneVolume}
+          onLaneVolumeReset={resetLaneVolume}
           onReset={() => resetToStyle()}
           onToggleStep={toggleStep}
         />

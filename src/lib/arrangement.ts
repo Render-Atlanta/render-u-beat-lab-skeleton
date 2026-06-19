@@ -1,6 +1,7 @@
 import { BEAT_STYLES, type BeatStyleId } from "./beatStyles";
-import { INSTRUMENT_ORDER, clonePattern, type SequencerState } from "./patternState";
+import { INSTRUMENT_ORDER, clonePattern, cloneSequencerState, type SequencerState } from "./patternState";
 import { type InstrumentId, type Pattern } from "./patterns";
+import { normalizeLaneVolumes } from "./laneVolumes";
 import {
   normalizeProducerTagConfig,
   type ProducerTagConfig,
@@ -239,13 +240,68 @@ export function reconstructProjectState(project: BeatLabProject): BeatLabProject
   return result.project;
 }
 
-function cloneSequencerState(sequencer: SequencerState): SequencerState {
+function readSequencerState(value: unknown, errors: string[]): SequencerState | null {
+  if (!isRecord(value)) {
+    errors.push("Sequencer must be an object.");
+    return null;
+  }
+
+  const styleId = readBeatStyleId(value.styleId, errors, "Sequencer styleId");
+  const bpm = readIntegerInRange(value.bpm, 60, 180, errors, "Sequencer bpm");
+  const swing = readNumberInRange(value.swing, 0, 0.3, errors, "Sequencer swing");
+  const pattern = readPattern(value.pattern, errors, "Sequencer pattern");
+  const laneVolumes = readLaneVolumes(value.laneVolumes, errors);
+
+  if (!styleId || bpm === null || swing === null || !pattern || !laneVolumes) {
+    return null;
+  }
+
   return {
-    styleId: sequencer.styleId,
-    bpm: sequencer.bpm,
-    swing: sequencer.swing,
-    pattern: clonePattern(sequencer.pattern),
+    styleId,
+    bpm,
+    swing,
+    pattern,
+    laneVolumes,
   };
+}
+
+function readLaneVolumes(value: unknown, errors: string[]) {
+  if (value === undefined) {
+    return normalizeLaneVolumes();
+  }
+
+  if (!isRecord(value)) {
+    errors.push("Sequencer laneVolumes must be an object.");
+    return null;
+  }
+
+  const entries = INSTRUMENT_ORDER.map((instrument) => {
+    const laneVolume = value[instrument];
+    if (laneVolume === undefined) {
+      return [instrument, 1] as const;
+    }
+
+    const normalized = readNumberInRange(
+      laneVolume,
+      0,
+      1.5,
+      errors,
+      `Sequencer laneVolumes.${instrument}`,
+    );
+    if (normalized === null) {
+      return null;
+    }
+
+    return [instrument, normalized] as const;
+  });
+
+  if (entries.some((entry) => entry === null)) {
+    return null;
+  }
+
+  return normalizeLaneVolumes(
+    Object.fromEntries(entries as Array<readonly [InstrumentId, number]>),
+  );
 }
 
 function getSection(
@@ -257,29 +313,6 @@ function getSection(
     throw new Error(`Unknown arrangement section: ${sectionId}`);
   }
   return section;
-}
-
-function readSequencerState(value: unknown, errors: string[]): SequencerState | null {
-  if (!isRecord(value)) {
-    errors.push("Sequencer must be an object.");
-    return null;
-  }
-
-  const styleId = readBeatStyleId(value.styleId, errors, "Sequencer styleId");
-  const bpm = readIntegerInRange(value.bpm, 60, 180, errors, "Sequencer bpm");
-  const swing = readNumberInRange(value.swing, 0, 0.3, errors, "Sequencer swing");
-  const pattern = readPattern(value.pattern, errors, "Sequencer pattern");
-
-  if (!styleId || bpm === null || swing === null || !pattern) {
-    return null;
-  }
-
-  return {
-    styleId,
-    bpm,
-    swing,
-    pattern,
-  };
 }
 
 function readProducerTagConfig(

@@ -1,5 +1,6 @@
 import type { BeatStyle } from "../lib/beatStyles";
-import type { InstrumentId } from "../lib/patterns";
+import { getLaneVolumes } from "../lib/laneVolumes";
+import { INSTRUMENT_IDS, type InstrumentId } from "../lib/patterns";
 import {
   createProducerTagPlaybackPlan,
   createProducerTagUtterance,
@@ -48,6 +49,14 @@ export function createWebAudioBeatEngine(
 
   const master = context.createGain();
   master.gain.value = 0.65;
+  const laneBuses = Object.fromEntries(
+    INSTRUMENT_IDS.map((id) => {
+      const bus = context.createGain();
+      bus.gain.value = 1;
+      bus.connect(master);
+      return [id, bus] as const;
+    }),
+  ) as Record<InstrumentId, GainNode>;
   const analyser = context.createAnalyser?.() ?? null;
   if (analyser) {
     analyser.fftSize = 256;
@@ -74,6 +83,7 @@ export function createWebAudioBeatEngine(
 
   function start(style: BeatStyle) {
     stop();
+    applyLaneVolumes(style);
     step = 0;
     nextStepTime = context.currentTime + START_DELAY_SECONDS;
     stepQueue = [];
@@ -105,6 +115,13 @@ export function createWebAudioBeatEngine(
   function dispose() {
     stop();
     void context.close?.();
+  }
+
+  function applyLaneVolumes(style: BeatStyle) {
+    const volumes = getLaneVolumes(style);
+    for (const id of INSTRUMENT_IDS) {
+      laneBuses[id].gain.value = volumes[id];
+    }
   }
 
   function scheduleStep(style: BeatStyle, stepIndex: number, time: number) {
@@ -192,7 +209,7 @@ export function createWebAudioBeatEngine(
     osc.frequency.exponentialRampToValueAtTime(46, time + 0.16);
     gain.gain.setValueAtTime(0.9 * accent, time);
     gain.gain.exponentialRampToValueAtTime(0.001, time + 0.22);
-    osc.connect(gain).connect(master);
+    osc.connect(gain).connect(laneBuses.kick);
     osc.start(time);
     osc.stop(time + 0.24);
   }
@@ -208,7 +225,7 @@ export function createWebAudioBeatEngine(
     filter.Q.value = 0.8;
     gain.gain.setValueAtTime(0.42 * accent, time);
     gain.gain.exponentialRampToValueAtTime(0.001, time + 0.14);
-    source.connect(filter).connect(gain).connect(master);
+    source.connect(filter).connect(gain).connect(laneBuses.snare);
     source.start(time);
   }
 
@@ -222,7 +239,7 @@ export function createWebAudioBeatEngine(
     filter.frequency.value = 6500;
     gain.gain.setValueAtTime(0.18 * accent, time);
     gain.gain.exponentialRampToValueAtTime(0.001, time + 0.045);
-    source.connect(filter).connect(gain).connect(master);
+    source.connect(filter).connect(gain).connect(laneBuses.hat);
     source.start(time);
   }
 
@@ -236,7 +253,7 @@ export function createWebAudioBeatEngine(
     filter.frequency.value = 5200;
     gain.gain.setValueAtTime(0.14 * accent, time);
     gain.gain.exponentialRampToValueAtTime(0.001, time + 0.2);
-    source.connect(filter).connect(gain).connect(master);
+    source.connect(filter).connect(gain).connect(laneBuses.openHat);
     source.start(time);
   }
 
@@ -255,7 +272,7 @@ export function createWebAudioBeatEngine(
       const at = time + offset;
       gain.gain.setValueAtTime(0.4 * accent, at);
       gain.gain.exponentialRampToValueAtTime(0.001, at + 0.09);
-      source.connect(filter).connect(gain).connect(master);
+      source.connect(filter).connect(gain).connect(laneBuses.clap);
       source.start(at);
     }
   }
@@ -269,7 +286,7 @@ export function createWebAudioBeatEngine(
     osc.frequency.exponentialRampToValueAtTime(55, time + 0.08);
     gain.gain.setValueAtTime(0.7 * accent, time);
     gain.gain.exponentialRampToValueAtTime(0.001, time + 0.5);
-    osc.connect(gain).connect(master);
+    osc.connect(gain).connect(laneBuses["808"]);
     osc.start(time);
     osc.stop(time + 0.55);
   }

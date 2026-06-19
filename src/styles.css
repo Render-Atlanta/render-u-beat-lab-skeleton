@@ -340,8 +340,35 @@ button:disabled {
   align-items: center;
   display: grid;
   gap: 8px;
-  grid-template-columns: 56px repeat(16, minmax(16px, 1fr));
-  min-width: 520px;
+  grid-template-columns: minmax(148px, 180px) repeat(16, minmax(16px, 1fr));
+  min-width: 620px;
+}
+
+.track-label-block {
+  display: grid;
+  gap: 8px;
+}
+
+.track-volume {
+  align-items: end;
+  display: grid;
+  gap: 6px;
+}
+
+.track-volume__control {
+  display: grid;
+  gap: 4px;
+}
+
+.track-volume__control input[type="range"] {
+  accent-color: hsl(var(--accent));
+  width: 100%;
+}
+
+.track-volume__reset {
+  justify-self: start;
+  min-height: 28px;
+  padding: 0 8px;
 }
 
 .track-label {

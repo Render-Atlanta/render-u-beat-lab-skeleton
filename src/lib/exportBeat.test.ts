@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { BEAT_STYLES } from "./beatStyles";
 import { loadKitFromDisk } from "./loadKit.node";
+import { createDefaultLaneVolumes } from "./laneVolumes";
+import { patternFromSteps } from "./patterns";
+import { renderPatternToPcm } from "./styleRender";
 import { decodeWav } from "./wav";
 import { renderBeatWav } from "./exportBeat";
 
@@ -47,5 +50,31 @@ describe("renderBeatWav", () => {
     // And the last sample of the tag must NOT be zero (i.e. not truncated)
     const lastTagSample = result.samples[loopSamples + longTag.length - 1];
     expect(lastTagSample).not.toBeCloseTo(0, 3);
+  });
+
+  it("silences a muted lane in the exported PCM", () => {
+    const kickOnly = patternFromSteps({
+      kick: [1],
+      snare: [],
+      hat: [],
+      openHat: [],
+      clap: [],
+      "808": [],
+    });
+    const audible = renderPatternToPcm(kickOnly, BEAT_STYLES.trap, kit);
+    const muted = renderPatternToPcm(kickOnly, {
+      ...BEAT_STYLES.trap,
+      laneVolumes: { ...createDefaultLaneVolumes(), kick: 0 },
+    }, kit);
+
+    let audibleEnergy = 0;
+    let mutedEnergy = 0;
+    for (let i = 0; i < audible.length; i += 1) {
+      audibleEnergy += Math.abs(audible[i]);
+      mutedEnergy += Math.abs(muted[i]);
+    }
+
+    expect(audibleEnergy).toBeGreaterThan(0);
+    expect(mutedEnergy).toBe(0);
   });
 });

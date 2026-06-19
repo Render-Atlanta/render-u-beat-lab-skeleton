@@ -1,4 +1,5 @@
 import type { BeatStyle } from "./beatStyles";
+import { getLaneVolumes } from "./laneVolumes";
 import { INSTRUMENT_IDS, type InstrumentId, type Pattern } from "./patterns";
 
 export const RENDER_SAMPLE_RATE = 22050;
@@ -20,16 +21,21 @@ export function renderPatternToPcm(
   const out = new Float32Array(length);
   // Clamp swing to [0, 0.5] to match engine behavior and prevent negative sample start indices.
   const swing = Math.max(0, Math.min(0.5, style.swing));
+  const laneVolumes = getLaneVolumes(style);
 
   for (const lane of lanes) {
     const sample = kit[lane];
+    const laneVolume = laneVolumes[lane];
+    if (laneVolume === 0) {
+      continue;
+    }
     pattern[lane].forEach((on, i) => {
       if (!on) return;
       // Swing: delay odd 16ths by a fraction of a step.
       const swungSec = i * stepSec + (i % 2 === 1 ? swing * stepSec : 0);
       const start = Math.round(swungSec * RENDER_SAMPLE_RATE);
       for (let s = 0; s < sample.length && start + s < length; s += 1) {
-        out[start + s] += sample[s];
+        out[start + s] += sample[s] * laneVolume;
       }
     });
   }

@@ -4,6 +4,7 @@ import type { AudioEngineContractHarness, AudioEngineProbe } from "./engineContr
 import { runAudioEngineContract } from "./engineContract";
 import { createFakeAudioEngine } from "./fakeAudioEngine";
 import type {
+  LaneVolumePort,
   ToneRuntimePort,
   ToneTransportPort,
   ToneVoicePort,
@@ -280,6 +281,11 @@ function createToneFakeRuntime(): ToneRuntimePort & {
       // no-op
     },
     getTransport: () => transport,
+    createLaneVolume: () => ({
+      node: {} as LaneVolumePort["node"],
+      setLinearVolume: () => undefined,
+      dispose: () => undefined,
+    }),
     createKickSynth: () => voices.kick,
     createNoiseSynth: () => {
       const voice = orderedVoices[createdCount] ?? voices.openHat;

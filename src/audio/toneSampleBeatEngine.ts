@@ -1,10 +1,17 @@
 import * as Tone from "tone";
 import type { BeatStyle } from "../lib/beatStyles";
+import { getLaneVolumes } from "../lib/laneVolumes";
 import type { InstrumentId } from "../lib/patterns";
 import type { ProducerTagConfigInput } from "../lib/producerTag";
 import type { AudioEngine, ProducerTagSample } from "./audioEngine";
 import { getStepEvents } from "./transport";
 import { createToneVoices, playVoice } from "./toneVoices";
+
+export interface LaneVolumePort {
+  readonly node: Tone.Volume;
+  setLinearVolume(volume: number): void;
+  dispose(): void;
+}
 
 export interface ToneTransportPort {
   bpm: { value: number };
@@ -29,14 +36,15 @@ export interface ToneRuntimePort {
   start(): Promise<void>;
   loaded(): Promise<void>;
   getTransport(): ToneTransportPort;
+  createLaneVolume?(): LaneVolumePort;
   /**
    * Create a sample-player voice for `url`. Returns `null` if the player
    * cannot be constructed/loaded so the engine can fall back to a synth voice
    * without throwing or logging console errors.
    */
-  createSamplePlayer?(url: string): ToneVoicePort | null;
-  createKickSynth(): ToneVoicePort;
-  createNoiseSynth(options?: unknown): ToneVoicePort;
+  createSamplePlayer?(url: string, destination?: LaneVolumePort): ToneVoicePort | null;
+  createKickSynth(destination?: LaneVolumePort): ToneVoicePort;
+  createNoiseSynth(options?: unknown, destination?: LaneVolumePort): ToneVoicePort;
 }
 
 export type ToneSampleUrls = Partial<Record<InstrumentId, string>>;
@@ -51,7 +59,8 @@ export function createToneSampleBeatEngine(
 ): AudioEngine {
   const runtime = options.runtime ?? getDefaultToneRuntime();
   const transport = runtime.getTransport();
-  const voices = createToneVoices(runtime, options.sampleUrls ?? {});
+  const voiceBundle = createToneVoices(runtime, options.sampleUrls ?? {});
+  const { voices, setLaneVolumes, disposeLaneVolumes } = voiceBundle;
   let eventId: number | string | null = null;
   let stepIndex = 0;
   let visualStep: number | null = null;
@@ -65,6 +74,7 @@ export function createToneSampleBeatEngine(
 
   function start(style: BeatStyle) {
     stop();
+    setLaneVolumes(getLaneVolumes(style));
     stepIndex = 0;
     transport.bpm.value = style.bpm;
     transport.swing = Math.max(0, Math.min(0.5, style.swing));
@@ -98,6 +108,7 @@ export function createToneSampleBeatEngine(
     for (const voice of Object.values(voices)) {
       voice.dispose?.();
     }
+    disposeLaneVolumes();
   }
 
   function setProducerTagSample(sample: ProducerTagSample | null) {
@@ -152,19 +163,32 @@ function getDefaultToneRuntime(): ToneRuntimePort {
     start: Tone.start,
     loaded: Tone.loaded,
     getTransport: Tone.getTransport,
-    createSamplePlayer: (url) => {
+    createLaneVolume: () => {
+      const node = new Tone.Volume(0).toDestination();
+      return {
+        node,
+        setLinearVolume: (volume: number) => {
+          node.volume.value = volume <= 0 ? -Infinity : 20 * Math.log10(volume);
+        },
+        dispose: () => {
+          node.dispose();
+        },
+      };
+    },
+    createSamplePlayer: (url, destination) => {
       try {
-        // `onerror` swallows decode/network failures (Tone otherwise logs to
-        // the console). The voice keeps a `failed` flag and *throws* from
-        // start() once the sample is known-bad, so the engine wrapper degrades
-        // the lane to its synth fallback instead of going silent.
         let failed = false;
         const player = new Tone.Player({
           url,
           onerror: () => {
             failed = true;
           },
-        }).toDestination();
+        });
+        if (destination) {
+          player.connect(destination.node);
+        } else {
+          player.toDestination();
+        }
         return {
           start: (time) => {
             if (failed) {
@@ -185,8 +209,13 @@ function getDefaultToneRuntime(): ToneRuntimePort {
         return null;
       }
     },
-    createKickSynth: () => {
-      const synth = new Tone.MembraneSynth().toDestination();
+    createKickSynth: (destination) => {
+      const synth = new Tone.MembraneSynth();
+      if (destination) {
+        synth.connect(destination.node);
+      } else {
+        synth.toDestination();
+      }
       return {
         triggerAttackRelease: (...args) => {
           (
@@ -200,10 +229,15 @@ function getDefaultToneRuntime(): ToneRuntimePort {
         },
       };
     },
-    createNoiseSynth: (options) => {
+    createNoiseSynth: (options, destination) => {
       const synth = new Tone.NoiseSynth(
         options as ConstructorParameters<typeof Tone.NoiseSynth>[0],
-      ).toDestination();
+      );
+      if (destination) {
+        synth.connect(destination.node);
+      } else {
+        synth.toDestination();
+      }
       return {
         triggerAttackRelease: (...args) => {
           (

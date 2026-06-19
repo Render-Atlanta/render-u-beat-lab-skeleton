@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { BEAT_STYLES } from "../lib/beatStyles";
 import { INSTRUMENTS } from "../lib/instruments";
+import { createDefaultLaneVolumes } from "../lib/laneVolumes";
 import { SequencerPanel } from "./SequencerPanel";
 
 function noop() {}
@@ -15,10 +16,13 @@ function renderPanel(extra: Partial<Parameters<typeof SequencerPanel>[0]> = {}) 
       swingPercent={0}
       audioEngineKind="web-audio"
       pattern={BEAT_STYLES.trap.pattern}
+      laneVolumes={createDefaultLaneVolumes()}
       activeStep={null}
       onBpmChange={noop}
       onSwingChange={noop}
       onAudioEngineKindChange={noop}
+      onLaneVolumeChange={noop}
+      onLaneVolumeReset={noop}
       onReset={noop}
       onToggleStep={noop}
       {...extra}
@@ -61,6 +65,12 @@ describe("SequencerPanel lane count and new lanes", () => {
   it("renders the 808 lane label", () => {
     const html = renderPanel();
     expect(html).toContain("808");
+  });
+
+  it("renders a volume fader for each lane", () => {
+    const html = renderPanel();
+    const matches = html.match(/volume/gi);
+    expect(matches?.length).toBeGreaterThanOrEqual(INSTRUMENTS.length);
   });
 });
 

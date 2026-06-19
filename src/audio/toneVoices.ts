@@ -1,5 +1,7 @@
-import type { InstrumentId } from "../lib/patterns";
+import { INSTRUMENT_IDS, type InstrumentId } from "../lib/patterns";
+import type { LaneVolumes } from "../lib/laneVolumes";
 import type {
+  LaneVolumePort,
   ToneRuntimePort,
   ToneSampleUrls,
   ToneVoicePort,
@@ -10,72 +12,101 @@ import type {
 // pre-leveled), so a degraded lane plays at a steady, audible level.
 const FALLBACK_ACCENT = 0.9;
 
+export interface ToneVoiceBundle {
+  voices: Record<InstrumentId, ToneVoicePort>;
+  setLaneVolumes(volumes: LaneVolumes): void;
+  disposeLaneVolumes(): void;
+}
+
 export function createToneVoices(
   runtime: ToneRuntimePort,
   sampleUrls: ToneSampleUrls,
-): Record<InstrumentId, ToneVoicePort> {
+): ToneVoiceBundle {
+  const laneVolumes = Object.fromEntries(
+    INSTRUMENT_IDS.map((id) => [id, createLaneVolume(runtime)]),
+  ) as Record<InstrumentId, LaneVolumePort>;
+
+  const voices = Object.fromEntries(
+    INSTRUMENT_IDS.map((id) => [
+      id,
+      createVoice(runtime, id, sampleUrls[id], laneVolumes[id]),
+    ]),
+  ) as Record<InstrumentId, ToneVoicePort>;
+
   return {
-    kick: createVoice(runtime, "kick", sampleUrls.kick),
-    snare: createVoice(runtime, "snare", sampleUrls.snare),
-    hat: createVoice(runtime, "hat", sampleUrls.hat),
-    openHat: createVoice(runtime, "openHat", sampleUrls.openHat),
-    clap: createVoice(runtime, "clap", sampleUrls.clap),
-    "808": createVoice(runtime, "808", sampleUrls["808"]),
+    voices,
+    setLaneVolumes: (volumes) => {
+      for (const id of INSTRUMENT_IDS) {
+        laneVolumes[id].setLinearVolume(volumes[id]);
+      }
+    },
+    disposeLaneVolumes: () => {
+      for (const id of INSTRUMENT_IDS) {
+        laneVolumes[id].dispose();
+      }
+    },
   };
+}
+
+function createLaneVolume(runtime: ToneRuntimePort): LaneVolumePort {
+  return (
+    runtime.createLaneVolume?.() ?? {
+      node: {} as LaneVolumePort["node"],
+      setLinearVolume: () => undefined,
+      dispose: () => undefined,
+    }
+  );
 }
 
 function createVoice(
   runtime: ToneRuntimePort,
   instrument: InstrumentId,
   sampleUrl: string | undefined,
+  destination: LaneVolumePort,
 ): ToneVoicePort {
   if (sampleUrl && runtime.createSamplePlayer) {
-    // A failed/missing sample returns null (or throws) at construction; either
-    // way we fall through to the synth voice so playback degrades gracefully.
     let player: ToneVoicePort | null = null;
     try {
-      player = runtime.createSamplePlayer(sampleUrl);
+      player = runtime.createSamplePlayer(sampleUrl, destination);
     } catch {
       player = null;
     }
     if (player) {
-      return createSampleVoiceWithFallback(runtime, instrument, player);
+      return createSampleVoiceWithFallback(runtime, instrument, player, destination);
     }
   }
 
-  return createSynthVoice(runtime, instrument);
+  return createSynthVoice(runtime, instrument, destination);
 }
 
 function createSynthVoice(
   runtime: ToneRuntimePort,
   instrument: InstrumentId,
+  destination: LaneVolumePort,
 ): ToneVoicePort {
   if (instrument === "kick" || instrument === "808") {
-    return runtime.createKickSynth();
+    return runtime.createKickSynth(destination);
   }
 
   const isLong = instrument === "openHat" || instrument === "clap";
-  return runtime.createNoiseSynth({
-    envelope: {
-      attack: 0.001,
-      decay: isLong ? 0.18 : 0.045,
-      sustain: 0,
-      release: isLong ? 0.12 : 0.03,
+  return runtime.createNoiseSynth(
+    {
+      envelope: {
+        attack: 0.001,
+        decay: isLong ? 0.18 : 0.045,
+        sustain: 0,
+        release: isLong ? 0.12 : 0.03,
+      },
     },
-  });
+    destination,
+  );
 }
 
-/**
- * Wrap a sample player so a load/decode failure that surfaces *after*
- * construction (e.g. a 404 or undecodable file reported via Tone's `onerror`,
- * which makes `player.start` throw) degrades the lane to its synth voice
- * instead of going silent. The synth is created lazily and only the first time
- * the player fails, after which the lane stays on the synth.
- */
 function createSampleVoiceWithFallback(
   runtime: ToneRuntimePort,
   instrument: InstrumentId,
   player: ToneVoicePort,
+  destination: LaneVolumePort,
 ): ToneVoicePort {
   let synth: ToneVoicePort | null = null;
   let usePlayer = true;
@@ -87,12 +118,11 @@ function createSampleVoiceWithFallback(
           player.start?.(time);
           return;
         } catch {
-          // Sample is unusable — switch this lane to the synth permanently.
           usePlayer = false;
         }
       }
       if (!synth) {
-        synth = createSynthVoice(runtime, instrument);
+        synth = createSynthVoice(runtime, instrument, destination);
       }
       triggerSynthVoice(synth, instrument, time, FALLBACK_ACCENT);
     },
