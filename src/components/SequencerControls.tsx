@@ -4,22 +4,32 @@ export interface SequencerControlsProps {
   bpm: number;
   swingPercent: number;
   audioEngineKind: AudioEngineKind;
+  canUndo: boolean;
+  canRedo: boolean;
   onBpmChange: (bpm: number) => void;
   onSwingChange: (swingPercent: number) => void;
   onAudioEngineKindChange: (kind: AudioEngineKind) => void;
+  onUndo: () => void;
+  onRedo: () => void;
   onClear: () => void;
   onReset: () => void;
+  onShare: () => void;
 }
 
 export function SequencerControls({
   bpm,
   swingPercent,
   audioEngineKind,
+  canUndo,
+  canRedo,
   onBpmChange,
   onSwingChange,
   onAudioEngineKindChange,
+  onUndo,
+  onRedo,
   onClear,
   onReset,
+  onShare,
 }: SequencerControlsProps) {
   return (
     <div className="sequencer-controls" aria-label="Sequencer controls">
@@ -69,18 +79,18 @@ export function SequencerControls({
         <button
           className="button secondary compact icon"
           type="button"
-          disabled
+          disabled={!canUndo}
           aria-label="Undo"
-          title="Undo arrives in a follow-up update"
+          onClick={onUndo}
         >
           ↶
         </button>
         <button
           className="button secondary compact icon"
           type="button"
-          disabled
+          disabled={!canRedo}
           aria-label="Redo"
-          title="Redo arrives in a follow-up update"
+          onClick={onRedo}
         >
           ↷
         </button>
@@ -89,6 +99,9 @@ export function SequencerControls({
         </button>
         <button className="button secondary compact" type="button" onClick={onReset}>
           Reset
+        </button>
+        <button className="button secondary compact" type="button" onClick={onShare}>
+          Share link
         </button>
       </div>
       {/* Count-in + metronome arrive in PR-35; rendered inert for now. */}

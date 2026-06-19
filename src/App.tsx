@@ -41,10 +41,27 @@ import {
 } from "./lib/micCapture";
 import {
   createDefaultSequencerState,
-  readSequencerStateFromParams,
   writeSequencerStateToParams,
   type SequencerState,
 } from "./lib/patternState";
+import {
+  BEAT_SHARE_PARAM,
+  createShareUrl,
+  decodeBeatParam,
+  readInitialSequencerStateFromSources,
+  serializeBeat,
+  writeAutosavedSequencerState,
+} from "./lib/beatShare";
+import { getHistoryShortcut } from "./lib/beatShortcuts";
+import {
+  createHistoryState,
+  getHistorySnapshot,
+  pushHistorySnapshot,
+  redoHistory,
+  restoreHistorySnapshot,
+  undoHistory,
+  type SequencerHistoryState,
+} from "./lib/sequencerHistory";
 import {
   countActiveSteps,
   INSTRUMENT_IDS,
@@ -139,9 +156,27 @@ const MOBILE_TABS: { id: MobileTab; label: string }[] = [
 /** Viewport width at or below which the app switches to the single-column mobile shell. */
 const MOBILE_BREAKPOINT = 760;
 
+function getLocalStorage(): Storage | null {
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
+function readInitialSequencerState(): SequencerState {
+  return readInitialSequencerStateFromSources(
+    new URLSearchParams(window.location.search),
+    getLocalStorage(),
+  );
+}
+
 export function App() {
   const [sequencer, setSequencer] = useState<SequencerState>(() =>
-    readSequencerStateFromParams(new URLSearchParams(window.location.search)),
+    readInitialSequencerState(),
+  );
+  const [history, setHistory] = useState<SequencerHistoryState>(() =>
+    createHistoryState(),
   );
   const [isPlaying, setIsPlaying] = useState(false);
   const [producerTagText, setProducerTagText] = useState(DEFAULT_PRODUCER_TAG_TEXT);
@@ -243,9 +278,27 @@ export function App() {
   );
 
   useEffect(() => {
+    const currentBeat = new URLSearchParams(window.location.search).get(
+      BEAT_SHARE_PARAM,
+    );
+    if (currentBeat) {
+      const decoded = decodeBeatParam(currentBeat);
+      if (decoded && serializeBeat(decoded) === serializeBeat(sequencer)) {
+        return;
+      }
+    }
+
     const params = writeSequencerStateToParams(sequencer);
     const nextUrl = `${window.location.pathname}?${params.toString()}`;
     window.history.replaceState(null, "", nextUrl);
+  }, [sequencer]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      writeAutosavedSequencerState(getLocalStorage(), sequencer);
+    }, 250);
+
+    return () => window.clearTimeout(timer);
   }, [sequencer]);
 
   useEffect(
@@ -316,6 +369,23 @@ export function App() {
     }
   }, [producerTagConfig]);
 
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const shortcut = getHistoryShortcut(event);
+      if (shortcut === "undo" && history.undo.length > 0) {
+        event.preventDefault();
+        undoSequencer();
+      }
+      if (shortcut === "redo" && history.redo.length > 0) {
+        event.preventDefault();
+        redoSequencer();
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [history, sequencer]);
+
   async function getEngine() {
     let engine = engineRef.current;
     let isNewEngine = false;
@@ -371,18 +441,29 @@ export function App() {
     engine.playProducerTag(producerTagConfig);
   }
 
-  function applySequencerState(next: SequencerState) {
+  function applySequencerState(next: SequencerState, recordHistory = true) {
+    if (recordHistory) {
+      setHistory((current) => pushHistorySnapshot(current, sequencer, next));
+    }
     setSequencer(next);
     if (isPlaying && engineRef.current) {
       engineRef.current.start(audibleStyle(next, guidedState));
     }
   }
 
-  function applySequencerUpdate(updater: (current: SequencerState) => SequencerState) {
+  function applySequencerUpdate(
+    updater: (current: SequencerState) => SequencerState,
+    recordHistory = true,
+  ) {
     setSequencer((current) => {
       const next = updater(current);
       if (next === current) {
         return current;
+      }
+      if (recordHistory) {
+        setHistory((historyState) =>
+          pushHistorySnapshot(historyState, current, next),
+        );
       }
       if (isPlaying && engineRef.current) {
         engineRef.current.start(audibleStyle(next, guidedState));
@@ -453,6 +534,26 @@ export function App() {
 
   function updateMelodyStepPitch(stepIndex: number, degree: number) {
     applySequencerState(updateSequencerMelodyStepPitch(sequencer, stepIndex, degree));
+  }
+
+  function restoreSequencerSnapshot(snapshot: ReturnType<typeof getHistorySnapshot>) {
+    const next = restoreHistorySnapshot(sequencer, snapshot);
+    setSequencer(next);
+    if (isPlaying && engineRef.current) {
+      engineRef.current.start(audibleStyle(next, guidedState));
+    }
+  }
+
+  function undoSequencer() {
+    const result = undoHistory(history, getHistorySnapshot(sequencer));
+    setHistory(result.history);
+    restoreSequencerSnapshot(result.snapshot);
+  }
+
+  function redoSequencer() {
+    const result = redoHistory(history, getHistorySnapshot(sequencer));
+    setHistory(result.history);
+    restoreSequencerSnapshot(result.snapshot);
   }
 
   function changeGuidedState(next: GuidedModeState) {
@@ -565,6 +666,20 @@ export function App() {
     });
     setProjectJson(exportProjectJson(project));
     setExportMessage("Project JSON is ready.");
+  }
+
+  async function shareBeat() {
+    const url = createShareUrl(sequencer, window.location);
+    try {
+      if (!navigator.clipboard) {
+        throw new Error("Clipboard unavailable");
+      }
+      await navigator.clipboard.writeText(url);
+      setExportMessage("Share link copied.");
+    } catch {
+      setProjectJson(url);
+      setExportMessage("Share link is ready.");
+    }
   }
 
   function downloadWav() {
@@ -838,6 +953,8 @@ export function App() {
               melodyStepPitches={sequencer.melodyStepPitches}
               melodyPalette={melodyPalette}
               activeStep={activeStep}
+              canUndo={history.undo.length > 0}
+              canRedo={history.redo.length > 0}
               onBpmChange={updateBpm}
               onSwingChange={updateSwing}
               onAudioEngineKindChange={updateAudioEngineKind}
@@ -845,6 +962,9 @@ export function App() {
               onLaneVolumeReset={resetLaneVolume}
               onReset={() => resetToStyle()}
               onClear={clearPattern}
+              onUndo={undoSequencer}
+              onRedo={redoSequencer}
+              onShare={shareBeat}
               onToggleStep={toggleStep}
               onPaintStep={paintStep}
               onBassStepPitchChange={updateBassStepPitch}

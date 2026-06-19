@@ -37,6 +37,11 @@ function renderPanel(extra: Partial<Parameters<typeof SequencerPanel>[0]> = {}) 
       onLaneVolumeReset={noop}
       onReset={noop}
       onClear={noop}
+      canUndo={false}
+      canRedo={false}
+      onUndo={noop}
+      onRedo={noop}
+      onShare={noop}
       onToggleStep={noop}
       onPaintStep={noop}
       onBassStepPitchChange={noop}
@@ -100,7 +105,7 @@ describe("SequencerPanel control row", () => {
     const html = renderPanel();
     expect(html).toContain(">Clear</button>");
     expect(html).toContain(">Reset</button>");
-    // Tap, Undo, Redo, Count-in, Metronome stay inert until their follow-up PRs.
+    // Tap, Count-in, and Metronome stay inert until their follow-up PRs.
     expect(html.match(/disabled/g)).toHaveLength(5);
   });
 });

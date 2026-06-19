@@ -22,6 +22,8 @@ export interface SequencerPanelProps {
   melodyStepPitches: MelodyStepPitches;
   melodyPalette: PaletteEntry[];
   activeStep: number | null;
+  canUndo: boolean;
+  canRedo: boolean;
   /** Lanes to render, in order. Defaults to all instruments (free-form grid). */
   visibleInstruments?: InstrumentOption[];
   onBpmChange: (bpm: number) => void;
@@ -31,6 +33,9 @@ export interface SequencerPanelProps {
   onLaneVolumeReset: (instrument: InstrumentId) => void;
   onReset: () => void;
   onClear: () => void;
+  onUndo: () => void;
+  onRedo: () => void;
+  onShare: () => void;
   onToggleStep: (instrument: InstrumentId, stepIndex: number) => void;
   onPaintStep: (instrument: InstrumentId, stepIndex: number) => void;
   onBassStepPitchChange: (stepIndex: number, degree: number) => void;
@@ -51,6 +56,8 @@ export function SequencerPanel({
   melodyStepPitches,
   melodyPalette,
   activeStep,
+  canUndo,
+  canRedo,
   visibleInstruments = INSTRUMENTS,
   onBpmChange,
   onSwingChange,
@@ -59,6 +66,9 @@ export function SequencerPanel({
   onLaneVolumeReset,
   onReset,
   onClear,
+  onUndo,
+  onRedo,
+  onShare,
   onToggleStep,
   onPaintStep,
   onBassStepPitchChange,
@@ -91,11 +101,16 @@ export function SequencerPanel({
         bpm={bpm}
         swingPercent={swingPercent}
         audioEngineKind={audioEngineKind}
+        canUndo={canUndo}
+        canRedo={canRedo}
         onBpmChange={onBpmChange}
         onSwingChange={onSwingChange}
         onAudioEngineKindChange={onAudioEngineKindChange}
+        onUndo={onUndo}
+        onRedo={onRedo}
         onClear={onClear}
         onReset={onReset}
+        onShare={onShare}
       />
 
       <div
