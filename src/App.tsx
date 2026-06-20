@@ -83,6 +83,7 @@ import {
   getSequencerLoopDurationMs,
   getSwingPercent,
   resetSequencerLaneVolume,
+  toggleSequencerLaneMute,
   paintSequencerStep,
   updateSequencerBassStepPitch,
   updateSequencerBpm,
@@ -563,6 +564,10 @@ export function App() {
     applySequencerState(resetSequencerLaneVolume(sequencer, instrument));
   }
 
+  function toggleLaneMute(instrument: InstrumentId) {
+    applySequencerState(toggleSequencerLaneMute(sequencer, instrument));
+  }
+
   function updateBassStepPitch(stepIndex: number, degree: number) {
     applySequencerState(updateSequencerBassStepPitch(sequencer, stepIndex, degree));
   }
@@ -997,6 +1002,8 @@ export function App() {
               onAudioEngineKindChange={updateAudioEngineKind}
               onLaneVolumeChange={updateLaneVolume}
               onLaneVolumeReset={resetLaneVolume}
+              onLaneMuteToggle={toggleLaneMute}
+              laneMutes={sequencer.laneMutes}
               onReset={() => resetToStyle()}
               onClear={clearPattern}
               onUndo={undoSequencer}

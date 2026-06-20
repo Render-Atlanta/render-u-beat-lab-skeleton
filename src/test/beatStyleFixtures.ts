@@ -19,7 +19,7 @@ export const GOLDEN_BEAT_STYLE_FIXTURES: Record<
     hitCount: 23,
     densityLevel: "balanced",
     densitySummary:
-      "Still balanced: 23 hits keeps the same density as Atlanta trap pocket.",
+      "Still balanced: 23 hits keeps the same density as Atlanta Trap.",
     pocketSummary: "The offset snare pocket stays intact.",
   },
   crunk: {
@@ -27,7 +27,7 @@ export const GOLDEN_BEAT_STYLE_FIXTURES: Record<
       "1001001000100000.0000100000001000.1010101010101010.0000000000000001.0000100000001000.1000001000000000.0000000000000000",
     hitCount: 19,
     densityLevel: "balanced",
-    densitySummary: "Still balanced: 19 hits keeps the same density as Crunk chant.",
+    densitySummary: "Still balanced: 19 hits keeps the same density as Crunk Chant.",
     pocketSummary:
       "The snare still marks steps 5 and 13, so the center stays easy to follow.",
   },
@@ -36,7 +36,7 @@ export const GOLDEN_BEAT_STYLE_FIXTURES: Record<
       "1000010001010010.0000000010000000.1010111010101110.0001000000010000.0000000010000000.1000000001000000.0000000000000000",
     hitCount: 21,
     densityLevel: "balanced",
-    densitySummary: "Still balanced: 21 hits keeps the same density as Drill slide.",
+    densitySummary: "Still balanced: 21 hits keeps the same density as Drill Slide.",
     pocketSummary: "The offset snare pocket stays intact.",
   },
   rnb: {
@@ -44,7 +44,7 @@ export const GOLDEN_BEAT_STYLE_FIXTURES: Record<
       "1000000100100000.0000100000001000.1001001001001001.0000000000010000.0000100000001000.1000000100000000.0000000000000000",
     hitCount: 16,
     densityLevel: "open",
-    densitySummary: "Still open: 16 hits keeps the same density as R&B pocket.",
+    densitySummary: "Still open: 16 hits keeps the same density as R&B Pocket.",
     pocketSummary:
       "The snare still marks steps 5 and 13, so the center stays easy to follow.",
   },
@@ -53,7 +53,7 @@ export const GOLDEN_BEAT_STYLE_FIXTURES: Record<
       "1000001000100000.0000100000001000.1010101010101010.0000000100000001.0000100000001000.1000000000100000.0000000000000000",
     hitCount: 19,
     densityLevel: "balanced",
-    densitySummary: "Still balanced: 19 hits keeps the same density as Pop bounce.",
+    densitySummary: "Still balanced: 19 hits keeps the same density as Pop Bounce.",
     pocketSummary:
       "The snare still marks steps 5 and 13, so the center stays easy to follow.",
   },
@@ -63,7 +63,7 @@ export const GOLDEN_BEAT_STYLE_FIXTURES: Record<
     hitCount: 22,
     densityLevel: "balanced",
     densitySummary:
-      "Still balanced: 22 hits keeps the same density as Afrobeats bounce.",
+      "Still balanced: 22 hits keeps the same density as Afrobeats.",
     pocketSummary:
       "The snare still marks steps 5 and 13, so the center stays easy to follow.",
   },
@@ -73,7 +73,7 @@ export const GOLDEN_BEAT_STYLE_FIXTURES: Record<
     hitCount: 20,
     densityLevel: "balanced",
     densitySummary:
-      "Still balanced: 20 hits keeps the same density as Amapiano log pulse.",
+      "Still balanced: 20 hits keeps the same density as Amapiano.",
     pocketSummary:
       "The snare still marks steps 5 and 13, so the center stays easy to follow.",
   },

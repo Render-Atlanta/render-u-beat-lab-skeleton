@@ -2,6 +2,7 @@ import { INSTRUMENTS, type InstrumentOption } from "../lib/instruments";
 import { DEFAULT_LANE_VOLUME } from "../lib/laneVolumes";
 import type { InstrumentId, Pattern } from "../lib/patterns";
 import type { LaneVolumes } from "../lib/laneVolumes";
+import type { LaneMutes } from "../lib/laneMutes";
 import type { AudioEngineKind } from "../audio/audioEngine";
 import type { BassStepPitches, MelodyStepPitches, PaletteEntry } from "../lib/stepPitch";
 import type { StepVelocity, StepVelocities } from "../lib/stepVelocity";
@@ -16,6 +17,7 @@ export interface SequencerPanelProps {
   audioEngineKind: AudioEngineKind;
   pattern: Pattern;
   laneVolumes: LaneVolumes;
+  laneMutes: LaneMutes;
   stepVelocities: StepVelocities;
   bassStepPitches: BassStepPitches;
   bassPalette: PaletteEntry[];
@@ -32,6 +34,7 @@ export interface SequencerPanelProps {
   onAudioEngineKindChange: (kind: AudioEngineKind) => void;
   onLaneVolumeChange: (instrument: InstrumentId, volume: number) => void;
   onLaneVolumeReset: (instrument: InstrumentId) => void;
+  onLaneMuteToggle: (instrument: InstrumentId) => void;
   onReset: () => void;
   onClear: () => void;
   onUndo: () => void;
@@ -55,6 +58,7 @@ export function SequencerPanel({
   audioEngineKind,
   pattern,
   laneVolumes,
+  laneMutes,
   stepVelocities,
   bassStepPitches,
   bassPalette,
@@ -70,6 +74,7 @@ export function SequencerPanel({
   onAudioEngineKindChange,
   onLaneVolumeChange,
   onLaneVolumeReset,
+  onLaneMuteToggle,
   onReset,
   onClear,
   onUndo,
@@ -135,14 +140,28 @@ export function SequencerPanel({
         onPointerUp={stepPaint.endPaint}
         onPointerCancel={stepPaint.endPaint}
       >
-        {visibleInstruments.map((instrument) => (
-          <div className="track-row" key={instrument.id}>
+        {visibleInstruments.map((instrument) => {
+          const muted = laneMutes[instrument.id];
+          return (
+          <div
+            className={`track-row${muted ? " muted" : ""}`}
+            key={instrument.id}
+          >
             <div className="track-label-block">
               <div className="track-label">
                 <span className="track-label__name">{instrument.label}</span>
                 <span className="track-label__role">{instrument.role}</span>
                 <span className="track-label__explainer">{instrument.explainer}</span>
               </div>
+              <button
+                className={`button secondary compact track-mute${muted ? " active" : ""}`}
+                type="button"
+                aria-pressed={muted}
+                aria-label={`${muted ? "Unmute" : "Mute"} ${instrument.label} lane`}
+                onClick={() => onLaneMuteToggle(instrument.id)}
+              >
+                {muted ? "Muted" : "Mute"}
+              </button>
               <div className="track-volume">
                 <label className="track-volume__control">
                   <span className="eyebrow">{instrument.label} volume</span>
@@ -254,7 +273,8 @@ export function SequencerPanel({
               );
             })}
           </div>
-        ))}
+          );
+        })}
       </div>
     </section>
   );

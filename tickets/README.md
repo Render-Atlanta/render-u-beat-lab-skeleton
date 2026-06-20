@@ -74,3 +74,14 @@ introduces. Each later ticket lands as its own tested PR.
 | [PR-34](PR-34-undo-redo-autosave-share.md) | Undo/redo, autosave & compact share | Feature | 4 | PR-32, PR-33 |
 | [PR-35](PR-35-count-in-and-metronome.md) | Count-in & metronome | Feature | 4 | PR-11, PR-32 |
 | [PR-36](PR-36-tap-tempo.md) | Tap tempo | Feature | 4 | PR-32 |
+
+## New styles & analysis
+
+New genre pockets and an audio-decomposition feature requested after the Wave 4
+redesign.
+
+| ID | Title | Type | Depends on |
+| --- | --- | --- | --- |
+| [PR-37](PR-37-new-orleans-bounce-style.md) | New Orleans Bounce style | Feature | PR-02, PR-27 |
+| [PR-38](PR-38-house-music-style.md) | House Music style | Feature | PR-02, PR-27 |
+| [PR-39](PR-39-song-upload-decompose.md) | Song upload, analysis & decomposition | Spike → Feature | PR-05, PR-06, PR-14, PR-08 |

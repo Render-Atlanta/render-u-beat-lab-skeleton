@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { BEAT_STYLES } from "../lib/beatStyles";
 import { INSTRUMENTS } from "../lib/instruments";
 import { createDefaultLaneVolumes } from "../lib/laneVolumes";
+import { createDefaultLaneMutes } from "../lib/laneMutes";
 import { createDefaultStepVelocities } from "../lib/stepVelocity";
 import {
   createDefaultBassStepPitches,
@@ -24,6 +25,7 @@ function renderPanel(extra: Partial<Parameters<typeof SequencerPanel>[0]> = {}) 
       audioEngineKind="web-audio"
       pattern={BEAT_STYLES.trap.pattern}
       laneVolumes={createDefaultLaneVolumes()}
+      laneMutes={createDefaultLaneMutes()}
       stepVelocities={createDefaultStepVelocities()}
       bassStepPitches={createDefaultBassStepPitches()}
       bassPalette={getInKeyPalette(BEAT_STYLES.trap.musicalKey)}
@@ -36,6 +38,7 @@ function renderPanel(extra: Partial<Parameters<typeof SequencerPanel>[0]> = {}) 
       onAudioEngineKindChange={noop}
       onLaneVolumeChange={noop}
       onLaneVolumeReset={noop}
+      onLaneMuteToggle={noop}
       onReset={noop}
       onClear={noop}
       canUndo={false}

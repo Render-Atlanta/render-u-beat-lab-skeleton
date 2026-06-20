@@ -9,6 +9,7 @@ import {
   writeSequencerStateToParams,
 } from "./patternState";
 import { createDefaultLaneVolumes } from "./laneVolumes";
+import { createDefaultLaneMutes } from "./laneMutes";
 import {
   createDefaultBassStepPitches,
   createDefaultMelodyStepPitches,
@@ -89,6 +90,7 @@ describe("pattern state helpers", () => {
       swing: 0.12,
       pattern: togglePatternStep(state.pattern, "snare", 3),
       laneVolumes: { ...createDefaultLaneVolumes(), hat: 0.5 },
+      laneMutes: createDefaultLaneMutes(),
       stepVelocities,
       bassStepPitches: createDefaultBassStepPitches(),
       melodyStepPitches: createDefaultMelodyStepPitches(),
@@ -124,6 +126,27 @@ describe("pattern state helpers", () => {
     expect(readSequencerStateFromParams(params).melodyStepPitches).toEqual(melodyStepPitches);
   });
 
+  it("round-trips lane mutes through URL params and omits them when none are set", () => {
+    const state = createDefaultSequencerState("trap");
+
+    // No mutes → the param is omitted entirely.
+    expect(writeSequencerStateToParams(state).has("mute")).toBe(false);
+
+    const muted = { ...state, laneMutes: { ...state.laneMutes, snare: true } };
+    const params = writeSequencerStateToParams(muted);
+    expect(params.get("mute")).toBe("0100000");
+    expect(readSequencerStateFromParams(params).laneMutes).toEqual(muted.laneMutes);
+  });
+
+  it("defaults lane mutes when the mute param is missing or invalid", () => {
+    expect(
+      readSequencerStateFromParams(new URLSearchParams("style=trap")).laneMutes,
+    ).toEqual(createDefaultLaneMutes());
+    expect(
+      readSequencerStateFromParams(new URLSearchParams("style=trap&mute=nope")).laneMutes,
+    ).toEqual(createDefaultLaneMutes());
+  });
+
   it("defaults lane volumes when the vol param is missing or invalid", () => {
     expect(
       readSequencerStateFromParams(new URLSearchParams("style=trap")).laneVolumes,
@@ -153,6 +176,7 @@ describe("pattern state helpers", () => {
       swing: 0,
       pattern: BEAT_STYLES.drill.pattern,
       laneVolumes: createDefaultLaneVolumes(),
+      laneMutes: createDefaultLaneMutes(),
       stepVelocities: createDefaultStepVelocities(),
       bassStepPitches: createDefaultBassStepPitches(),
       melodyStepPitches: createDefaultMelodyStepPitches(),

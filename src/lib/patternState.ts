@@ -7,6 +7,14 @@ import {
   serializeLaneVolumes,
   type LaneVolumes,
 } from "./laneVolumes";
+import {
+  cloneLaneMutes,
+  createDefaultLaneMutes,
+  deserializeLaneMutes,
+  laneMutesAreDefault,
+  serializeLaneMutes,
+  type LaneMutes,
+} from "./laneMutes";
 import { INSTRUMENT_IDS, type InstrumentId, type Pattern } from "./patterns";
 import {
   bassStepPitchesAreDefault,
@@ -39,6 +47,7 @@ export interface SequencerState {
   swing: number;
   pattern: Pattern;
   laneVolumes: LaneVolumes;
+  laneMutes: LaneMutes;
   stepVelocities: StepVelocities;
   bassStepPitches: BassStepPitches;
   melodyStepPitches: MelodyStepPitches;
@@ -52,6 +61,7 @@ export function createDefaultSequencerState(styleId: BeatStyleId): SequencerStat
     swing: style.swing,
     pattern: clonePattern(style.pattern),
     laneVolumes: createDefaultLaneVolumes(),
+    laneMutes: createDefaultLaneMutes(),
     stepVelocities: createDefaultStepVelocities(),
     bassStepPitches: createDefaultBassStepPitches(),
     melodyStepPitches: createDefaultMelodyStepPitches(),
@@ -135,6 +145,8 @@ export function readSequencerStateFromParams(params: URLSearchParams): Sequencer
   const pattern = deserializePattern(params.get("pattern") ?? "") ?? defaults.pattern;
   const laneVolumes =
     deserializeLaneVolumes(params.get("vol")) ?? defaults.laneVolumes;
+  const laneMutes =
+    deserializeLaneMutes(params.get("mute")) ?? defaults.laneMutes;
   const stepVelocities =
     deserializeStepVelocities(params.get("vel")) ?? defaults.stepVelocities;
   const bassStepPitches =
@@ -148,6 +160,7 @@ export function readSequencerStateFromParams(params: URLSearchParams): Sequencer
     swing: swingPercent / 100,
     pattern,
     laneVolumes,
+    laneMutes,
     stepVelocities,
     bassStepPitches,
     melodyStepPitches,
@@ -162,6 +175,9 @@ export function writeSequencerStateToParams(state: SequencerState): URLSearchPar
   params.set("pattern", serializePattern(state.pattern));
   if (!laneVolumesAreDefault(state.laneVolumes)) {
     params.set("vol", serializeLaneVolumes(state.laneVolumes));
+  }
+  if (!laneMutesAreDefault(state.laneMutes)) {
+    params.set("mute", serializeLaneMutes(state.laneMutes));
   }
   if (!stepVelocitiesAreDefault(state.stepVelocities)) {
     params.set("vel", serializeStepVelocities(state.stepVelocities));
@@ -182,6 +198,7 @@ export function cloneSequencerState(sequencer: SequencerState): SequencerState {
     swing: sequencer.swing,
     pattern: clonePattern(sequencer.pattern),
     laneVolumes: cloneLaneVolumes(sequencer.laneVolumes),
+    laneMutes: cloneLaneMutes(sequencer.laneMutes),
     stepVelocities: cloneStepVelocities(sequencer.stepVelocities),
     bassStepPitches: cloneBassStepPitches(sequencer.bassStepPitches),
     melodyStepPitches: cloneMelodyStepPitches(sequencer.melodyStepPitches),

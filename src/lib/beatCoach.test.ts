@@ -24,7 +24,7 @@ describe("beat coach helpers", () => {
   it("turns a style preset into compact coach metadata", () => {
     expect(getStyleCoach("rnb")).toEqual({
       id: "rnb",
-      name: "R&B pocket",
+      name: "R&B Pocket",
       bpm: 74,
       swingPercent: 18,
       concept: "A softer groove can feel stronger when it leaves space.",
@@ -34,7 +34,7 @@ describe("beat coach helpers", () => {
 
     expect(getStyleCoach("afrobeats")).toMatchObject({
       id: "afrobeats",
-      name: "Afrobeats bounce",
+      name: "Afrobeats",
       bpm: 104,
       swingPercent: 10,
       concept: "Syncopated drums can feel relaxed and forward at the same time.",
@@ -42,7 +42,7 @@ describe("beat coach helpers", () => {
 
     expect(getStyleCoach("amapiano")).toMatchObject({
       id: "amapiano",
-      name: "Amapiano log pulse",
+      name: "Amapiano",
       bpm: 112,
       swingPercent: 14,
       concept: "A hypnotic pulse works when the drums leave room for the bass idea.",
@@ -69,7 +69,7 @@ describe("beat coach helpers", () => {
       densityDelta: -2,
       densityLevel: "balanced",
       densitySummary:
-        "Balanced: you removed 2 hits, so the beat feels more open than Atlanta trap pocket.",
+        "Balanced: you removed 2 hits, so the beat feels more open than Atlanta Trap.",
       pocketSummary:
         "The snare moved onto steps 5 and 13, so the groove feels more square.",
       instrumentSummaries: [
@@ -104,7 +104,7 @@ describe("beat coach helpers", () => {
       densityDelta: -12,
       densityLevel: "sparse",
       densitySummary:
-        "Sparse: you removed 12 hits, so the beat feels more open than Pop bounce.",
+        "Sparse: you removed 12 hits, so the beat feels more open than Pop Bounce.",
       pocketSummary:
         "The snare moved away from steps 5 and 13, so the pocket feels less expected; fewer kicks leave more space; fewer hats make the top line breathe.",
       instrumentSummaries: [
@@ -122,7 +122,7 @@ describe("beat coach helpers", () => {
   it("recognizes unchanged preset density", () => {
     // crunk base now has clap:[5,13] and 808:[1,7] (4 extra hits), so 19 hits → balanced.
     expect(summarizePatternChange("crunk", BEAT_STYLES.crunk.pattern).densitySummary).toBe(
-      "Still balanced: 19 hits keeps the same density as Crunk chant.",
+      "Still balanced: 19 hits keeps the same density as Crunk Chant.",
     );
   });
 });

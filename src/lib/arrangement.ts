@@ -2,6 +2,7 @@ import { BEAT_STYLES, type BeatStyleId } from "./beatStyles";
 import { INSTRUMENT_ORDER, clonePattern, cloneSequencerState, type SequencerState } from "./patternState";
 import { type InstrumentId, type Pattern } from "./patterns";
 import { normalizeLaneVolumes } from "./laneVolumes";
+import { createDefaultLaneMutes } from "./laneMutes";
 import { normalizeBassStepPitches, normalizeMelodyStepPitches } from "./stepPitch";
 import { normalizeStepVelocities } from "./stepVelocity";
 import {
@@ -253,6 +254,7 @@ function readSequencerState(value: unknown, errors: string[]): SequencerState | 
   const swing = readNumberInRange(value.swing, 0, 0.3, errors, "Sequencer swing");
   const pattern = readPattern(value.pattern, errors, "Sequencer pattern");
   const laneVolumes = readLaneVolumes(value.laneVolumes, errors);
+  const laneMutes = readLaneMutes(value.laneMutes, errors);
   const stepVelocities = readStepVelocities(value.stepVelocities, errors);
   const bassStepPitches = readBassStepPitches(value.bassStepPitches, errors);
   const melodyStepPitches = readMelodyStepPitches(value.melodyStepPitches, errors);
@@ -263,6 +265,7 @@ function readSequencerState(value: unknown, errors: string[]): SequencerState | 
     swing === null ||
     !pattern ||
     !laneVolumes ||
+    !laneMutes ||
     !stepVelocities ||
     !bassStepPitches ||
     !melodyStepPitches
@@ -276,6 +279,7 @@ function readSequencerState(value: unknown, errors: string[]): SequencerState | 
     swing,
     pattern,
     laneVolumes,
+    laneMutes,
     stepVelocities,
     bassStepPitches,
     melodyStepPitches,
@@ -407,6 +411,32 @@ function readLaneVolumes(value: unknown, errors: string[]) {
   return normalizeLaneVolumes(
     Object.fromEntries(entries as Array<readonly [InstrumentId, number]>),
   );
+}
+
+function readLaneMutes(value: unknown, errors: string[]) {
+  if (value === undefined) {
+    return createDefaultLaneMutes();
+  }
+
+  if (!isRecord(value)) {
+    errors.push("Sequencer laneMutes must be an object.");
+    return null;
+  }
+
+  const mutes = createDefaultLaneMutes();
+  for (const instrument of INSTRUMENT_ORDER) {
+    const muted = value[instrument];
+    if (muted === undefined) {
+      continue;
+    }
+    if (typeof muted !== "boolean") {
+      errors.push(`Sequencer laneMutes.${instrument} must be a boolean.`);
+      return null;
+    }
+    mutes[instrument] = muted;
+  }
+
+  return mutes;
 }
 
 function getSection(

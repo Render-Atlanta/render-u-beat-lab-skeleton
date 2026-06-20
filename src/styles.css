@@ -411,6 +411,25 @@ button:disabled {
   padding: 0 8px;
 }
 
+.track-mute {
+  justify-self: start;
+  min-height: 28px;
+  padding: 0 10px;
+}
+
+.track-mute.active {
+  background: hsl(var(--accent));
+  border-color: hsl(var(--accent));
+  color: hsl(var(--ink));
+}
+
+/* Muted lane: keep the pattern visible but visibly dimmed so it reads as
+   silenced rather than empty. The mute button stays at full opacity. */
+.track-row.muted .step-cell-wrap,
+.track-row.muted .track-label {
+  opacity: 0.4;
+}
+
 .track-label {
   color: hsl(var(--muted));
   font-size: 0.76rem;

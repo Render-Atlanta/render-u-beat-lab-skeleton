@@ -34,7 +34,7 @@ export interface BeatStyle {
 export const BEAT_STYLES: Record<BeatStyleId, BeatStyle> = {
   trap: {
     id: "trap",
-    name: "Atlanta trap pocket",
+    name: "Atlanta Trap",
     bpm: 142,
     swing: 0.04,
     pattern: patternFromSteps({
@@ -52,7 +52,7 @@ export const BEAT_STYLES: Record<BeatStyleId, BeatStyle> = {
   },
   crunk: {
     id: "crunk",
-    name: "Crunk chant",
+    name: "Crunk Chant",
     bpm: 96,
     swing: 0.04,
     pattern: patternFromSteps({
@@ -70,7 +70,7 @@ export const BEAT_STYLES: Record<BeatStyleId, BeatStyle> = {
   },
   drill: {
     id: "drill",
-    name: "Drill slide",
+    name: "Drill Slide",
     bpm: 144,
     swing: 0.12,
     pattern: patternFromSteps({
@@ -88,7 +88,7 @@ export const BEAT_STYLES: Record<BeatStyleId, BeatStyle> = {
   },
   rnb: {
     id: "rnb",
-    name: "R&B pocket",
+    name: "R&B Pocket",
     bpm: 74,
     swing: 0.18,
     pattern: patternFromSteps({
@@ -106,7 +106,7 @@ export const BEAT_STYLES: Record<BeatStyleId, BeatStyle> = {
   },
   pop: {
     id: "pop",
-    name: "Pop bounce",
+    name: "Pop Bounce",
     bpm: 118,
     swing: 0.02,
     pattern: patternFromSteps({
@@ -124,7 +124,7 @@ export const BEAT_STYLES: Record<BeatStyleId, BeatStyle> = {
   },
   afrobeats: {
     id: "afrobeats",
-    name: "Afrobeats bounce",
+    name: "Afrobeats",
     bpm: 104,
     swing: 0.1,
     pattern: patternFromSteps({
@@ -142,7 +142,7 @@ export const BEAT_STYLES: Record<BeatStyleId, BeatStyle> = {
   },
   amapiano: {
     id: "amapiano",
-    name: "Amapiano log pulse",
+    name: "Amapiano",
     bpm: 112,
     swing: 0.14,
     pattern: patternFromSteps({

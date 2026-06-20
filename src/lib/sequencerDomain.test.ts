@@ -5,6 +5,7 @@ import {
   getSequencerLoopDurationMs,
   getSwingPercent,
   paintSequencerStep,
+  toggleSequencerLaneMute,
   updateSequencerStep,
   updateSequencerBpm,
   updateSequencerSwing,
@@ -27,6 +28,23 @@ describe("sequencer domain helpers", () => {
     });
     expect(sequencer.pattern.kick[0]).toBe(BEAT_STYLES.trap.pattern.kick[0]);
     expect(sequencer.stepVelocities.kick[0]).toBe(1);
+  });
+
+  it("silences muted lanes in the playable style while keeping the pattern", () => {
+    const base = createDefaultSequencerState("trap");
+    const muted = toggleSequencerLaneMute(base, "hat");
+    const playable = createPlayableStyle(muted);
+
+    // Muted lane drops to silent gain, others keep their volume.
+    expect(playable.laneVolumes!.hat).toBe(0);
+    expect(playable.laneVolumes!.kick).toBe(1);
+    // The pattern itself is untouched — the hits are preserved for the grid.
+    expect(playable.pattern.hat).toEqual(BEAT_STYLES.trap.pattern.hat);
+    expect(muted.laneMutes.hat).toBe(true);
+
+    // Unmuting restores the lane to audible.
+    const unmuted = toggleSequencerLaneMute(muted, "hat");
+    expect(createPlayableStyle(unmuted).laneVolumes!.hat).toBe(1);
   });
 
   it("cycles unpitched drum steps through velocity levels", () => {

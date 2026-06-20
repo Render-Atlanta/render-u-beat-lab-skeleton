@@ -1,5 +1,6 @@
 import { BEAT_STYLES, type BeatStyle } from "./beatStyles";
 import { updateLaneVolume } from "./laneVolumes";
+import { applyLaneMutes, toggleLaneMute } from "./laneMutes";
 import { clonePattern, togglePatternStep, type SequencerState } from "./patternState";
 import type { InstrumentId } from "./patterns";
 import {
@@ -29,7 +30,7 @@ export function createPlayableStyle(sequencer: SequencerState): BeatStyle {
     bpm: sequencer.bpm,
     swing: sequencer.swing,
     pattern: clonePattern(sequencer.pattern),
-    laneVolumes: { ...sequencer.laneVolumes },
+    laneVolumes: applyLaneMutes({ ...sequencer.laneVolumes }, sequencer.laneMutes),
     stepVelocities: cloneStepVelocities(sequencer.stepVelocities),
     bassStepPitches: [...sequencer.bassStepPitches],
     melodyStepPitches: [...sequencer.melodyStepPitches],
@@ -111,6 +112,17 @@ export function resetSequencerLaneVolume(
   instrument: InstrumentId,
 ): SequencerState {
   return updateSequencerLaneVolume(sequencer, instrument, 1);
+}
+
+export function toggleSequencerLaneMute(
+  sequencer: SequencerState,
+  instrument: InstrumentId,
+): SequencerState {
+  return {
+    ...sequencer,
+    laneMutes: toggleLaneMute(sequencer.laneMutes, instrument),
+    pattern: clonePattern(sequencer.pattern),
+  };
 }
 
 export function updateSequencerBassStepPitch(
