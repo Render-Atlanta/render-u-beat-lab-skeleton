@@ -23,6 +23,8 @@ function renderControls(
       onClear={noop}
       onReset={noop}
       onShare={noop}
+      onMakeVariation={noop}
+      onAddFill={noop}
       countInEnabled={false}
       metronomeEnabled={false}
       onCountInToggle={noop}

@@ -69,6 +69,18 @@ export function getStepVelocityFactor(velocity: StepVelocity): number {
   return STEP_VELOCITY_FACTORS[velocity];
 }
 
+export type StepVelocityName = "ghost" | "normal" | "accent";
+
+export function getVelocityName(velocity: StepVelocity): StepVelocityName {
+  if (velocity === 0) {
+    return "ghost";
+  }
+  if (velocity === 2) {
+    return "accent";
+  }
+  return "normal";
+}
+
 export function getStepVelocities(style: {
   stepVelocities?: StepVelocities;
 }): StepVelocities {

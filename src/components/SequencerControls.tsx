@@ -15,6 +15,8 @@ export interface SequencerControlsProps {
   onClear: () => void;
   onReset: () => void;
   onShare: () => void;
+  onMakeVariation: () => void;
+  onAddFill: () => void;
   countInEnabled: boolean;
   metronomeEnabled: boolean;
   onCountInToggle: () => void;
@@ -36,6 +38,8 @@ export function SequencerControls({
   onClear,
   onReset,
   onShare,
+  onMakeVariation,
+  onAddFill,
   countInEnabled,
   metronomeEnabled,
   onCountInToggle,
@@ -111,6 +115,25 @@ export function SequencerControls({
         </button>
         <button className="button secondary compact" type="button" onClick={onShare}>
           Share link
+        </button>
+      </div>
+      {/* Drummer: tasteful in-style variations + fills */}
+      <div className="control-buttons" aria-label="Drummer">
+        <button
+          className="button secondary compact"
+          type="button"
+          onClick={onMakeVariation}
+          title="Make a tasteful variation of the current beat"
+        >
+          Vary
+        </button>
+        <button
+          className="button secondary compact"
+          type="button"
+          onClick={onAddFill}
+          title="Add a drum fill on the last beat"
+        >
+          Fill
         </button>
       </div>
       {/* Count-in + metronome practice aids */}

@@ -5,7 +5,7 @@ import type { LaneVolumes } from "../lib/laneVolumes";
 import type { LaneMutes } from "../lib/laneMutes";
 import type { AudioEngineKind } from "../audio/audioEngine";
 import type { BassStepPitches, MelodyStepPitches, PaletteEntry } from "../lib/stepPitch";
-import type { StepVelocity, StepVelocities } from "../lib/stepVelocity";
+import { getVelocityName, type StepVelocities } from "../lib/stepVelocity";
 import type { BassGuitarStepPitches } from "../lib/bassGuitarPitch";
 import { BeatRuler } from "./BeatRuler";
 import { StepPitchSelect } from "./StepPitchSelect";
@@ -50,6 +50,8 @@ export interface SequencerPanelProps {
   onClear: () => void;
   onUndo: () => void;
   onRedo: () => void;
+  onMakeVariation: () => void;
+  onAddFill: () => void;
   onShare: () => void;
   countInEnabled: boolean;
   metronomeEnabled: boolean;
@@ -93,6 +95,8 @@ export function SequencerPanel({
   onClear,
   onUndo,
   onRedo,
+  onMakeVariation,
+  onAddFill,
   onShare,
   countInEnabled,
   metronomeEnabled,
@@ -149,6 +153,8 @@ export function SequencerPanel({
         onClear={onClear}
         onReset={onReset}
         onShare={onShare}
+        onMakeVariation={onMakeVariation}
+        onAddFill={onAddFill}
         countInEnabled={countInEnabled}
         metronomeEnabled={metronomeEnabled}
         onCountInToggle={onCountInToggle}
@@ -283,16 +289,4 @@ export function SequencerPanel({
       </div>
     </section>
   );
-}
-
-function getVelocityName(velocity: StepVelocity): "ghost" | "normal" | "accent" {
-  if (velocity === 0) {
-    return "ghost";
-  }
-
-  if (velocity === 2) {
-    return "accent";
-  }
-
-  return "normal";
 }

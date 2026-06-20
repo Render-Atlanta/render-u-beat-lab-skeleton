@@ -42,7 +42,13 @@ Top picks:
       two transitive deps; the format is frozen, so there's nothing to maintain.
 - [ ] **"Learn to Play" lessons** — turn guided-mode one-liners into multi-step lessons.
 - [ ] **Waveform view + onset markers** (`wavesurfer.js`) — for the upload/sample features.
-- [ ] **Drummer-style variations & fills** — perturb the current pocket within its style profile.
+- [x] ~~**Drummer-style variations & fills** — perturb the current pocket within its style profile.~~
+      Shipped as the **Vary** / **Fill** buttons (`beatVariation.ts` + seeded
+      `seededRng.ts`). Variation flips hat movement + an occasional syncopated
+      kick while preserving the backbeat, downbeat pulse, and melodic lanes;
+      Fill adds a style-aware last-beat roll (hat vs snare) with an open-hat
+      lead-in. Deterministic + unit-tested; applied via `applySequencerState`
+      so undo/redo and autosave come free.
 - [ ] MIDI controller input, piano-roll-lite, groove/humanize, FX sends, kit selection (`smplr`), music theory (`tonal`).
 - [ ] **Analysis upgrade**: `essentia.js` (robust BPM/beat/key) could raise PR-39 accuracy.
 - [ ] **Sampled / realistic instruments** (incl. the parked sampled bass via `smplr`/soundfonts)

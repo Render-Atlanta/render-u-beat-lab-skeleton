@@ -84,6 +84,12 @@ import { decodeProducerTagSample } from "./lib/producerTagSample";
 import { renderBeatWav } from "./lib/exportBeat";
 import { renderBeatMidi } from "./lib/exportMidi";
 import {
+  addFill,
+  makeVariation,
+  type BeatVariationInput,
+  type BeatVariationResult,
+} from "./lib/beatVariation";
+import {
   createPlayableStyle,
   getSequencerLoopDurationMs,
   getSwingPercent,
@@ -553,6 +559,22 @@ export function App() {
       pattern: emptyPattern,
       stepVelocities: createDefaultStepVelocities(),
     });
+  }
+
+  // Vary / Fill share the same shape: transform the current beat with a fresh
+  // random seed, then apply the result through the normal history/autosave path.
+  function applyDrummerAction(
+    transform: (input: BeatVariationInput, seed: number) => BeatVariationResult,
+  ) {
+    const { pattern, stepVelocities } = transform(
+      {
+        pattern: sequencer.pattern,
+        stepVelocities: sequencer.stepVelocities,
+        styleId: sequencer.styleId,
+      },
+      (Math.random() * 0xffffffff) >>> 0,
+    );
+    applySequencerState({ ...sequencer, pattern, stepVelocities });
   }
 
   function updateBpm(bpm: number) {
@@ -1089,6 +1111,8 @@ export function App() {
               onClear={clearPattern}
               onUndo={undoSequencer}
               onRedo={redoSequencer}
+              onMakeVariation={() => applyDrummerAction(makeVariation)}
+              onAddFill={() => applyDrummerAction(addFill)}
               onShare={shareBeat}
               countInEnabled={practiceAids.countInEnabled}
               metronomeEnabled={practiceAids.metronomeEnabled}
