@@ -31,6 +31,7 @@ function renderPanel(extra: Partial<Parameters<typeof SequencerPanel>[0]> = {}) 
       melodyPalette={getMelodyPalette(BEAT_STYLES.trap.musicalKey)}
       activeStep={null}
       onBpmChange={noop}
+      onTapTempo={noop}
       onSwingChange={noop}
       onAudioEngineKindChange={noop}
       onLaneVolumeChange={noop}
@@ -109,8 +110,8 @@ describe("SequencerPanel control row", () => {
     const html = renderPanel();
     expect(html).toContain(">Clear</button>");
     expect(html).toContain(">Reset</button>");
-    // Tap stays inert until PR-36; Undo and Redo disable when history is empty.
-    expect(html.match(/disabled/g)).toHaveLength(3);
+    // Tap tempo is wired now; only Undo and Redo disable when history is empty.
+    expect(html.match(/disabled/g)).toHaveLength(2);
   });
 });
 

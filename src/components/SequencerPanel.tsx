@@ -27,6 +27,7 @@ export interface SequencerPanelProps {
   /** Lanes to render, in order. Defaults to all instruments (free-form grid). */
   visibleInstruments?: InstrumentOption[];
   onBpmChange: (bpm: number) => void;
+  onTapTempo: () => void;
   onSwingChange: (swingPercent: number) => void;
   onAudioEngineKindChange: (kind: AudioEngineKind) => void;
   onLaneVolumeChange: (instrument: InstrumentId, volume: number) => void;
@@ -64,6 +65,7 @@ export function SequencerPanel({
   canRedo,
   visibleInstruments = INSTRUMENTS,
   onBpmChange,
+  onTapTempo,
   onSwingChange,
   onAudioEngineKindChange,
   onLaneVolumeChange,
@@ -112,6 +114,7 @@ export function SequencerPanel({
         canUndo={canUndo}
         canRedo={canRedo}
         onBpmChange={onBpmChange}
+        onTapTempo={onTapTempo}
         onSwingChange={onSwingChange}
         onAudioEngineKindChange={onAudioEngineKindChange}
         onUndo={onUndo}

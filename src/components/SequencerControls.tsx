@@ -7,6 +7,7 @@ export interface SequencerControlsProps {
   canUndo: boolean;
   canRedo: boolean;
   onBpmChange: (bpm: number) => void;
+  onTapTempo: () => void;
   onSwingChange: (swingPercent: number) => void;
   onAudioEngineKindChange: (kind: AudioEngineKind) => void;
   onUndo: () => void;
@@ -27,6 +28,7 @@ export function SequencerControls({
   canUndo,
   canRedo,
   onBpmChange,
+  onTapTempo,
   onSwingChange,
   onAudioEngineKindChange,
   onUndo,
@@ -51,12 +53,11 @@ export function SequencerControls({
           onChange={(event) => onBpmChange(Number(event.target.value))}
         />
       </label>
-      {/* Tap tempo arrives in PR-36 — rendered inert so the control row is final. */}
       <button
         className="button secondary compact"
         type="button"
-        disabled
-        title="Tap tempo arrives in a follow-up update"
+        onClick={onTapTempo}
+        title="Tap a steady beat to set the tempo"
       >
         Tap
       </button>

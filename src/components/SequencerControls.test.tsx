@@ -15,6 +15,7 @@ function renderControls(
       canUndo={false}
       canRedo={false}
       onBpmChange={noop}
+      onTapTempo={noop}
       onSwingChange={noop}
       onAudioEngineKindChange={noop}
       onUndo={noop}
@@ -38,8 +39,16 @@ describe("SequencerControls history and share buttons", () => {
 
     expect(empty).toContain('aria-label="Undo"');
     expect(empty).toContain('aria-label="Redo"');
-    expect(empty.match(/disabled=""/g)).toHaveLength(3);
-    expect(ready.match(/disabled=""/g)).toHaveLength(1);
+    // Only Undo and Redo can disable now that Tap tempo is wired and active.
+    expect(empty.match(/disabled=""/g)).toHaveLength(2);
+    expect(ready).not.toContain('disabled=""');
+  });
+
+  it("renders an active Tap tempo button", () => {
+    const html = renderControls();
+
+    expect(html).toContain(">Tap</button>");
+    expect(html).not.toContain('title="Tap tempo arrives in a follow-up update"');
   });
 
   it("renders active count-in and metronome toggles", () => {

@@ -92,6 +92,7 @@ import {
   updateSequencerSwing,
 } from "./lib/sequencerDomain";
 import { getStyleReferences } from "./lib/styleReferences";
+import { TAP_TEMPO_MAX_TAPS, tapTempo } from "./lib/tapTempo";
 import { getInKeyPalette, getMelodyPalette } from "./lib/stepPitch";
 import { createDefaultStepVelocities } from "./lib/stepVelocity";
 import { StyleFidelityMeter } from "./components/StyleFidelityMeter";
@@ -422,6 +423,7 @@ export function App() {
   playableStyleRef.current = playableStyle;
   const producerTagConfigRef = useRef(producerTagConfig);
   producerTagConfigRef.current = producerTagConfig;
+  const tapTimestampsRef = useRef<number[]>([]);
 
   const practiceAids = usePracticeAids({
     bpm: sequencer.bpm,
@@ -513,6 +515,18 @@ export function App() {
 
   function updateBpm(bpm: number) {
     applySequencerState(updateSequencerBpm(sequencer, bpm));
+  }
+
+  function handleTapTempo() {
+    const taps = [...tapTimestampsRef.current, performance.now()].slice(
+      -TAP_TEMPO_MAX_TAPS,
+    );
+    tapTimestampsRef.current = taps;
+
+    const bpm = tapTempo(taps);
+    if (bpm !== null) {
+      updateBpm(bpm);
+    }
   }
 
   function updateSwing(swingPercent: number) {
@@ -978,6 +992,7 @@ export function App() {
               canUndo={history.undo.length > 0}
               canRedo={history.redo.length > 0}
               onBpmChange={updateBpm}
+              onTapTempo={handleTapTempo}
               onSwingChange={updateSwing}
               onAudioEngineKindChange={updateAudioEngineKind}
               onLaneVolumeChange={updateLaneVolume}
