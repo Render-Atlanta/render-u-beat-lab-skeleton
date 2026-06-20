@@ -1085,6 +1085,20 @@ button:disabled {
   max-width: 48ch;
 }
 
+.guided-banner__tip {
+  color: hsl(var(--ink));
+  font-weight: 600;
+  margin: 6px 0 0;
+  max-width: 48ch;
+}
+
+.guided-banner__live {
+  color: hsl(var(--muted));
+  font-size: 0.82rem;
+  margin: 6px 0 0;
+  max-width: 48ch;
+}
+
 .guided-banner__actions {
   display: flex;
   flex-wrap: wrap;

@@ -5,6 +5,7 @@ import { clonePattern } from "./patternState";
 import type { InstrumentId } from "./patterns";
 import {
   advanceGuidedStep,
+  retreatGuidedStep,
   exitGuided,
   getGuidedSequence,
   getRevealedLaneIds,
@@ -102,5 +103,28 @@ describe("maskPatternToLanes", () => {
     const before = clonePattern(pattern);
     maskPatternToLanes(pattern, ["kick"]);
     expect(pattern).toEqual(before);
+  });
+});
+
+describe("retreatGuidedStep", () => {
+  it("steps back, clamped at the first lane", () => {
+    expect(retreatGuidedStep({ active: true, stepIndex: 2 })).toEqual({
+      active: true,
+      stepIndex: 1,
+    });
+    expect(retreatGuidedStep({ active: true, stepIndex: 0 })).toEqual({
+      active: true,
+      stepIndex: 0,
+    });
+  });
+
+  it("is the inverse of advanceGuidedStep mid-sequence", () => {
+    const state = { active: true, stepIndex: 2 } as const;
+    expect(retreatGuidedStep(advanceGuidedStep(state))).toEqual(state);
+  });
+
+  it("is a no-op when inactive", () => {
+    const state = { active: false, stepIndex: 3 } as const;
+    expect(retreatGuidedStep(state)).toEqual(state);
   });
 });

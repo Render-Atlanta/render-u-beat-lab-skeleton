@@ -17,6 +17,7 @@ describe("GuidedModeBanner", () => {
         stepCount={INSTRUMENTS.length}
         isLastStep={false}
         onNext={noop}
+        onPrevious={noop}
         onSkip={noop}
         onExit={noop}
       />,
@@ -36,6 +37,7 @@ describe("GuidedModeBanner", () => {
         stepCount={INSTRUMENTS.length}
         isLastStep={false}
         onNext={noop}
+        onPrevious={noop}
         onSkip={noop}
         onExit={noop}
       />,
@@ -52,11 +54,46 @@ describe("GuidedModeBanner", () => {
         stepCount={INSTRUMENTS.length}
         isLastStep
         onNext={noop}
+        onPrevious={noop}
         onSkip={noop}
         onExit={noop}
       />,
     );
     expect(html).toContain("Finish");
     expect(html).not.toContain("Next layer");
+  });
+
+  it("shows the guided tip and the earlier-layers coaching line", () => {
+    const html = renderToStaticMarkup(
+      <GuidedModeBanner
+        instrument={kick}
+        stepIndex={1}
+        stepCount={INSTRUMENTS.length}
+        isLastStep={false}
+        onNext={noop}
+        onPrevious={noop}
+        onSkip={noop}
+        onExit={noop}
+      />,
+    );
+    expect(html).toContain(kick.guidedTip);
+    expect(html).toContain("Earlier layers stay live");
+    expect(html).toContain("Previous layer");
+  });
+
+  it("disables Previous on the first step", () => {
+    const html = renderToStaticMarkup(
+      <GuidedModeBanner
+        instrument={kick}
+        stepIndex={0}
+        stepCount={INSTRUMENTS.length}
+        isLastStep={false}
+        onNext={noop}
+        onPrevious={noop}
+        onSkip={noop}
+        onExit={noop}
+      />,
+    );
+    expect(html).toMatch(/<button[^>]*disabled[^>]*>[^<]*Previous layer/);
   });
 });

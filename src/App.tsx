@@ -108,6 +108,7 @@ import { GuidedModeBanner } from "./components/GuidedModeBanner";
 import { INSTRUMENTS } from "./lib/instruments";
 import {
   advanceGuidedStep,
+  retreatGuidedStep,
   exitGuided,
   getGuidedSequence,
   getRevealedLaneIds,
@@ -635,6 +636,10 @@ export function App() {
     changeGuidedState(advanceGuidedStep(guidedState));
   }
 
+  function handleGuidedPrevious() {
+    changeGuidedState(retreatGuidedStep(guidedState));
+  }
+
   function handleGuidedSkip() {
     changeGuidedState(skipGuided(guidedState));
   }
@@ -1009,6 +1014,7 @@ export function App() {
                 stepCount={getGuidedSequence().length}
                 isLastStep={isLastGuidedStep(guidedState)}
                 onNext={handleGuidedNext}
+                onPrevious={handleGuidedPrevious}
                 onSkip={handleGuidedSkip}
                 onExit={handleGuidedExit}
               />

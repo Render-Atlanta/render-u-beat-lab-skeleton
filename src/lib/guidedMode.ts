@@ -32,6 +32,14 @@ export function advanceGuidedStep(state: GuidedModeState): GuidedModeState {
   return { active: true, stepIndex: state.stepIndex + 1 };
 }
 
+/** Step back to the previous lane; clamped at the first lane. */
+export function retreatGuidedStep(state: GuidedModeState): GuidedModeState {
+  if (!state.active) {
+    return state;
+  }
+  return { active: true, stepIndex: Math.max(0, state.stepIndex - 1) };
+}
+
 /** Jump straight to the full free-form grid. */
 export function skipGuided(_state: GuidedModeState): GuidedModeState {
   return { active: false, stepIndex: LAST_INDEX };
