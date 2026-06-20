@@ -85,6 +85,7 @@ import { renderBeatWav } from "./lib/exportBeat";
 import { renderBeatMidi } from "./lib/exportMidi";
 import {
   addFill,
+  humanizeGroove,
   makeVariation,
   type BeatVariationInput,
   type BeatVariationResult,
@@ -1113,6 +1114,7 @@ export function App() {
               onRedo={redoSequencer}
               onMakeVariation={() => applyDrummerAction(makeVariation)}
               onAddFill={() => applyDrummerAction(addFill)}
+              onHumanize={() => applyDrummerAction(humanizeGroove)}
               onShare={shareBeat}
               countInEnabled={practiceAids.countInEnabled}
               metronomeEnabled={practiceAids.metronomeEnabled}

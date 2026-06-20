@@ -49,7 +49,11 @@ Top picks:
       Fill adds a style-aware last-beat roll (hat vs snare) with an open-hat
       lead-in. Deterministic + unit-tested; applied via `applySequencerState`
       so undo/redo and autosave come free.
-- [ ] MIDI controller input, piano-roll-lite, groove/humanize, FX sends, kit selection (`smplr`), music theory (`tonal`).
+- [x] ~~**Groove / humanize**~~ — shipped as the **Humanize** button (`humanizeGroove`):
+      seeded velocity dynamics (accent the pulse, ghost the in-between 16ths),
+      drums only; timing-feel stays the Swing control. Reuses `seededRng` and
+      the `applyDrummerAction` helper from the Vary/Fill round.
+- [ ] Still open: MIDI controller input, piano-roll-lite, FX sends, kit selection (`smplr`), music theory (`tonal`).
 - [ ] **Analysis upgrade**: `essentia.js` (robust BPM/beat/key) could raise PR-39 accuracy.
 - [ ] **Sampled / realistic instruments** (incl. the parked sampled bass via `smplr`/soundfonts)
       — requires solving offline/OfflineAudioContext sample rendering first, since

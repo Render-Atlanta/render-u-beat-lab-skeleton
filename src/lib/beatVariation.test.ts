@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { addFill, makeVariation, type BeatVariationInput } from "./beatVariation";
+import {
+  addFill,
+  humanizeGroove,
+  makeVariation,
+  type BeatVariationInput,
+} from "./beatVariation";
 import { patternFromSteps } from "./patterns";
 import { createDefaultStepVelocities } from "./stepVelocity";
 
@@ -97,5 +102,67 @@ describe("addFill", () => {
     expect(stepVelocities.snare[15]).toBe(2);
     // Hat lane's first three beats unchanged (only the open-hat lead-in is added).
     expect(pattern.hat).toEqual(input.pattern.hat);
+  });
+});
+
+describe("humanizeGroove", () => {
+  it("is deterministic and leaves the pattern itself untouched", () => {
+    const input = makeInput("trap");
+    const a = humanizeGroove(input, 321);
+    const b = humanizeGroove(input, 321);
+    expect(a).toEqual(b);
+    expect(a.pattern).toEqual(input.pattern); // only velocities change
+  });
+
+  it("only re-voices drum lanes, leaving melodic-lane velocities alone", () => {
+    const input = makeInput("trap");
+    const { stepVelocities } = humanizeGroove(input, 9);
+    expect(stepVelocities["808"]).toEqual(input.stepVelocities["808"]);
+    expect(stepVelocities.bassGuitar).toEqual(input.stepVelocities.bassGuitar);
+    expect(stepVelocities.melody).toEqual(input.stepVelocities.melody);
+  });
+
+  it("keeps kick and snare present (never ghosted) and emits valid velocities", () => {
+    const input = makeInput("trap");
+    for (let seed = 1; seed <= 25; seed += 1) {
+      const { pattern, stepVelocities } = humanizeGroove(input, seed);
+      for (let step = 0; step < 16; step += 1) {
+        for (const lane of ["kick", "snare", "hat", "openHat", "clap"] as const) {
+          const v = stepVelocities[lane][step];
+          expect([0, 1, 2]).toContain(v);
+          if (pattern[lane][step] && (lane === "kick" || lane === "snare")) {
+            expect(v).toBeGreaterThanOrEqual(1); // presence lanes never ghost
+          }
+        }
+      }
+    }
+  });
+
+  it("introduces dynamics — not every hit stays at normal velocity", () => {
+    // A hat-heavy bar should pick up some ghosts/accents rather than a flat 1.
+    const input: BeatVariationInput = {
+      pattern: patternFromSteps({
+        kick: [1, 9],
+        snare: [5, 13],
+        hat: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
+        openHat: [],
+        clap: [],
+        "808": [],
+        bassGuitar: [],
+        melody: [],
+      }),
+      stepVelocities: createDefaultStepVelocities(),
+      styleId: "trap",
+    };
+    const { stepVelocities } = humanizeGroove(input, 7);
+    const distinct = new Set(stepVelocities.hat);
+    expect(distinct.size).toBeGreaterThan(1); // more than just "normal"
+  });
+
+  it("does not mutate the input", () => {
+    const input = makeInput("trap");
+    const before = JSON.stringify(input.stepVelocities);
+    humanizeGroove(input, 5);
+    expect(JSON.stringify(input.stepVelocities)).toBe(before);
   });
 });

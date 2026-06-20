@@ -25,6 +25,7 @@ function renderControls(
       onShare={noop}
       onMakeVariation={noop}
       onAddFill={noop}
+      onHumanize={noop}
       countInEnabled={false}
       metronomeEnabled={false}
       onCountInToggle={noop}

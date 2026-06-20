@@ -54,6 +54,7 @@ function renderPanel(extra: Partial<Parameters<typeof SequencerPanel>[0]> = {}) 
       onShare={noop}
       onMakeVariation={noop}
       onAddFill={noop}
+      onHumanize={noop}
       countInEnabled={false}
       metronomeEnabled={false}
       onCountInToggle={noop}

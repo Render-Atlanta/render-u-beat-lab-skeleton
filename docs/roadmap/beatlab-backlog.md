@@ -23,7 +23,7 @@ library's current version/maintenance before adopting.
 |------|-------------|--------------|--------------------|--------|
 | **MIDI controller input** | FL / GB | Play & record lanes from a hardware controller | Web MIDI / `webmidi.js` | Med |
 | **Piano-roll-lite** | FL piano roll | Scale-locked pitch editing for melody / 808 / bass guitar | in-house or NexusUI piano | Med |
-| **Groove / humanize** | FL groove templates | Subtle timing/velocity randomization to teach "feel" | extends swing + `stepVelocities` | Low |
+| ~~**Groove / humanize**~~ ✅ | FL groove templates | Shipped as the **Humanize** button: seeded velocity dynamics (accent the pulse, ghost the in-between 16ths) via `beatVariation.humanizeGroove`. Timing-feel stays the Swing control. | extends `stepVelocities` | Low |
 | **FX sends (reverb/delay)** | both | Beginner "space" + "vibe" knobs | Tone.js effects (already a dep) | Low–Med |
 | **Per-channel kit selection** | FL channel rack | Swap kick/snare samples; browsable kits | `smplr` drum packs (once in) | Med |
 | **Robust music theory** | — | Chords/scales for melody/bass; future chord lane | `tonal` (replaces hand-rolled `stepPitch` math) | Med |

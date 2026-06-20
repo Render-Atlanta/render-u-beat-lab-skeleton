@@ -52,6 +52,7 @@ export interface SequencerPanelProps {
   onRedo: () => void;
   onMakeVariation: () => void;
   onAddFill: () => void;
+  onHumanize: () => void;
   onShare: () => void;
   countInEnabled: boolean;
   metronomeEnabled: boolean;
@@ -97,6 +98,7 @@ export function SequencerPanel({
   onRedo,
   onMakeVariation,
   onAddFill,
+  onHumanize,
   onShare,
   countInEnabled,
   metronomeEnabled,
@@ -155,6 +157,7 @@ export function SequencerPanel({
         onShare={onShare}
         onMakeVariation={onMakeVariation}
         onAddFill={onAddFill}
+        onHumanize={onHumanize}
         countInEnabled={countInEnabled}
         metronomeEnabled={metronomeEnabled}
         onCountInToggle={onCountInToggle}

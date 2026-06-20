@@ -17,6 +17,7 @@ export interface SequencerControlsProps {
   onShare: () => void;
   onMakeVariation: () => void;
   onAddFill: () => void;
+  onHumanize: () => void;
   countInEnabled: boolean;
   metronomeEnabled: boolean;
   onCountInToggle: () => void;
@@ -40,6 +41,7 @@ export function SequencerControls({
   onShare,
   onMakeVariation,
   onAddFill,
+  onHumanize,
   countInEnabled,
   metronomeEnabled,
   onCountInToggle,
@@ -134,6 +136,14 @@ export function SequencerControls({
           title="Add a drum fill on the last beat"
         >
           Fill
+        </button>
+        <button
+          className="button secondary compact"
+          type="button"
+          onClick={onHumanize}
+          title="Humanize the groove — vary hit dynamics so it feels less robotic"
+        >
+          Humanize
         </button>
       </div>
       {/* Count-in + metronome practice aids */}

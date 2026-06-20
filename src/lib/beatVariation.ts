@@ -1,7 +1,11 @@
 import type { BeatStyleId } from "./beatStyles";
 import { clonePattern } from "./patternState";
-import type { Pattern } from "./patterns";
-import { cloneStepVelocities, type StepVelocities } from "./stepVelocity";
+import { INSTRUMENT_IDS, type InstrumentId, type Pattern } from "./patterns";
+import {
+  cloneStepVelocities,
+  type StepVelocities,
+  type StepVelocity,
+} from "./stepVelocity";
 import { createRng, randomInt, shuffle } from "./seededRng";
 
 const STEPS = 16;
@@ -102,4 +106,75 @@ export function addFill(
   stepVelocities.openHat[STEPS - 1] = 2;
 
   return { pattern, stepVelocities };
+}
+
+/**
+ * How each lane's velocity is humanized: "accent" sits forward, "presence"
+ * keeps the anchor audible (never ghosted), "feel" carries the groove with
+ * ghost notes between hits, and "none" leaves the lane alone (the melodic lanes
+ * are harmony, not drummer dynamics). Keyed by every `InstrumentId` so adding a
+ * lane is a compile error until it gets a role — mirroring `FILL_LANE` above.
+ */
+type GrooveRole = "accent" | "presence" | "feel" | "none";
+
+const GROOVE_ROLE: Record<InstrumentId, GrooveRole> = {
+  kick: "presence",
+  snare: "presence",
+  hat: "feel",
+  openHat: "accent",
+  clap: "accent",
+  "808": "none",
+  bassGuitar: "none",
+  melody: "none",
+};
+
+/**
+ * Humanize the groove: re-voice each active drum hit's velocity by metric
+ * position with a little seeded randomness, so the beat breathes instead of
+ * sounding machine-flat — accents on the pulse, ghost notes on the in-between
+ * 16ths. Only velocities change (timing feel is the Swing control); the pattern
+ * and the melodic lanes are untouched. Deterministic for a given seed.
+ */
+export function humanizeGroove(
+  input: BeatVariationInput,
+  seed: number,
+): BeatVariationResult {
+  const rng = createRng(seed);
+  const stepVelocities = cloneStepVelocities(input.stepVelocities);
+
+  for (const lane of INSTRUMENT_IDS) {
+    const role = GROOVE_ROLE[lane];
+    if (role === "none") {
+      continue;
+    }
+    for (let step = 0; step < STEPS; step += 1) {
+      if (input.pattern[lane][step]) {
+        stepVelocities[lane][step] = humanizedVelocity(role, step, rng());
+      }
+    }
+  }
+
+  return { pattern: clonePattern(input.pattern), stepVelocities };
+}
+
+function humanizedVelocity(
+  role: Exclude<GrooveRole, "none">,
+  step: number,
+  r: number,
+): StepVelocity {
+  if (role === "accent") {
+    return r < 0.7 ? 2 : 1; // accents/layers sit forward
+  }
+  if (role === "presence") {
+    // Kick/snare keep presence: accent the downbeat, never ghost.
+    return DOWNBEATS.includes(step) ? (r < 0.5 ? 2 : 1) : r < 0.2 ? 2 : 1;
+  }
+  // "feel": accent the pulse, ghost the in-between 16ths.
+  if (DOWNBEATS.includes(step)) {
+    return r < 0.6 ? 2 : 1;
+  }
+  if (step % 2 === 0) {
+    return 1; // on an 8th-note position
+  }
+  return r < 0.65 ? 0 : 1;
 }
