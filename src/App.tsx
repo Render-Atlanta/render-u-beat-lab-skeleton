@@ -15,6 +15,9 @@ import { SequencerPanel } from "./components/SequencerPanel";
 import { CountInOverlay } from "./components/CountInOverlay";
 import { usePracticeAids } from "./components/usePracticeAids";
 import { StyleSelector } from "./components/StyleSelector";
+import { CommandBar, type CommandSuggestion } from "./components/CommandBar";
+import { applyAction, describeAction } from "./lib/commandBus";
+import { parseFastPath } from "./lib/commandFastPath";
 import {
   createBeatLabProject,
   createDefaultArrangement,
@@ -167,6 +170,13 @@ const MOBILE_TABS: { id: MobileTab; label: string }[] = [
 /** Viewport width at or below which the app switches to the single-column mobile shell. */
 const MOBILE_BREAKPOINT = 760;
 
+const COMMAND_SUGGESTIONS: CommandSuggestion[] = [
+  { label: "Make it bounce", command: "make it bounce" },
+  { label: "Slower", command: "slower" },
+  { label: "More swing", command: "more swing" },
+  { label: "Make it trap", command: "make it trap" },
+];
+
 function getLocalStorage(): Storage | null {
   try {
     return window.localStorage;
@@ -229,6 +239,7 @@ export function App() {
   const [viewportWidth, setViewportWidth] = useState(() =>
     typeof window === "undefined" ? 1280 : window.innerWidth,
   );
+  const [commandStatus, setCommandStatus] = useState<string | null>(null);
 
   const baseStyle = BEAT_STYLES[sequencer.styleId];
   const styleCoach = useMemo(
@@ -523,6 +534,15 @@ export function App() {
 
   function updateBpm(bpm: number) {
     applySequencerState(updateSequencerBpm(sequencer, bpm));
+  }
+
+  function handleCommand(text: string) {
+    const action = parseFastPath(text) ?? { kind: "unknown" as const, reason: "no-match" };
+    const next = applyAction(action, sequencer);
+    if (next !== sequencer) {
+      applySequencerState(next);
+    }
+    setCommandStatus(describeAction(action));
   }
 
   function handleTapTempo() {
@@ -972,6 +992,11 @@ export function App() {
         styles={Object.values(BEAT_STYLES)}
         selectedStyleId={sequencer.styleId}
         onSelectStyle={resetToStyle}
+      />
+      <CommandBar
+        suggestions={COMMAND_SUGGESTIONS}
+        statusMessage={commandStatus}
+        onSubmit={handleCommand}
       />
 
       <section className="work-area" aria-label="Beat workbench">

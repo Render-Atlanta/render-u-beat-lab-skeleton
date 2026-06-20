@@ -1408,3 +1408,27 @@ button:disabled {
   height: 46px;
   width: 46px;
 }
+
+.command-bar__form {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.command-bar__input {
+  flex: 1;
+  min-width: 0;
+}
+
+.command-bar__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+
+.command-bar__status {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  opacity: 0.85;
+}
