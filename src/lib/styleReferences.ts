@@ -241,6 +241,32 @@ export const STYLE_REFERENCES: Record<BeatStyleId, StyleReferenceTrack[]> = {
       sourceUrl: "https://songbpm.com/@crystal-waters/gypsy-woman-shes-homeless",
     },
   ],
+  bounce: [
+    {
+      artist: "Juvenile",
+      title: "Back That Azz Up",
+      bpm: 98,
+      swing: "light",
+      profile: "Cash Money bounce crossover: driving kick, syncopated offbeat snare, and a call-and-response hook.",
+      sourceUrl: "https://songbpm.com/@juvenile/back-that-azz-up",
+    },
+    {
+      artist: "DJ Jubilee",
+      title: "Get Ready, Ready",
+      bpm: 96,
+      swing: "light",
+      profile: "Foundational Triggerman bounce: galloping snare over a relentless up-tempo pulse with chant space.",
+      sourceUrl: "https://songbpm.com/@dj-jubilee/get-ready-ready",
+    },
+    {
+      artist: "Big Freedia",
+      title: "Explode",
+      bpm: 100,
+      swing: "light",
+      profile: "Modern Queen-of-Bounce energy: busy syncopated snare, four-on-the-floor drive, and crowd call-outs.",
+      sourceUrl: "https://songbpm.com/@big-freedia/explode",
+    },
+  ],
 };
 
 export function getStyleReferences(styleId: BeatStyleId): StyleReferenceTrack[] {

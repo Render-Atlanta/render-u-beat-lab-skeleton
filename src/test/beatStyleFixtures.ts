@@ -86,4 +86,13 @@ export const GOLDEN_BEAT_STYLE_FIXTURES: Record<
     pocketSummary:
       "The snare still marks steps 5 and 13, so the center stays easy to follow.",
   },
+  bounce: {
+    serializedPattern:
+      "1000001000100000.0001011000010110.1010101010101010.0000000100000001.0001000000010000.1000000000100000.0000000000000000",
+    hitCount: 23,
+    densityLevel: "balanced",
+    densitySummary:
+      "Still balanced: 23 hits keeps the same density as New Orleans Bounce.",
+    pocketSummary: "The offset snare pocket stays intact.",
+  },
 };

@@ -119,6 +119,11 @@ const STYLE_COACH_NOTES: Record<
     feelNote: "Four-on-the-floor pulse, claps on 2 and 4, offbeat open hats that sizzle.",
     tryThis: "Try keeping all four kicks and adding one open hat between each beat.",
   },
+  bounce: {
+    concept: "Call-and-response leaves gaps so a chant or crowd can answer the drums.",
+    feelNote: "Up-tempo skip, galloping offbeat snare, driving kick and 808 underneath.",
+    tryThis: "Try removing one snare hit to open a gap, then answer it with an open hat.",
+  },
 };
 
 const INSTRUMENT_LABELS: Record<InstrumentId, string> = {

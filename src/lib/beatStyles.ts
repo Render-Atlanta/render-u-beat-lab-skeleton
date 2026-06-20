@@ -16,7 +16,8 @@ export type BeatStyleId =
   | "pop"
   | "afrobeats"
   | "amapiano"
-  | "house";
+  | "house"
+  | "bounce";
 
 export interface BeatStyle {
   id: BeatStyleId;
@@ -176,5 +177,23 @@ export const BEAT_STYLES: Record<BeatStyleId, BeatStyle> = {
     musicalKey: { root: "A", scale: "minor" },
     lesson:
       "House is four-on-the-floor: a steady kick on every beat keeps the pulse out in the open. Where the trap and R&B pockets lean and swing, house stays straight — the offbeat open hats do the pushing instead of the drums shifting.",
+  },
+  bounce: {
+    id: "bounce",
+    name: "New Orleans Bounce",
+    bpm: 98,
+    swing: 0.06,
+    pattern: patternFromSteps({
+      kick: [1, 7, 11],
+      snare: [4, 6, 7, 12, 14, 15],
+      hat: [1, 3, 5, 7, 9, 11, 13, 15],
+      openHat: [8, 16],
+      clap: [4, 12],
+      "808": [1, 11],
+      melody: [],
+    }),
+    musicalKey: { root: "C", scale: "minor" },
+    lesson:
+      "New Orleans bounce is up-tempo call-and-response: the snare gallops through the offbeats while the kick and 808 drive underneath, leaving gaps for a chant to answer. Where Atlanta trap sits the snare half-time and lets fast hats float, bounce keeps everything pushing forward and trades the lean for a relentless, syncopated skip.",
   },
 };

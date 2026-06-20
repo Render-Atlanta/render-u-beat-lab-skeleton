@@ -5,32 +5,32 @@ import type { NormalizationStats, StyleFeatureVector } from "./styleFidelity";
 
 export const STYLE_PROFILE_STATS: NormalizationStats = {
   "mean": {
-    "bpmNorm": 0.57125,
-    "swing": 0.08000000000000002,
-    "onsetDensity": 0.244140625,
-    "laneShareKick": 0.2630126173276328,
-    "laneShareSnare": 0.11691975035628285,
-    "laneShareHat": 0.48218401395645977,
-    "laneShareOpenHat": 0.13788361835962454,
-    "syncopation": 0.5814121701312104,
-    "backbeat": 0.75,
-    "rmsNorm": 0.09478772497518272,
-    "lowEnergyShare": 0.6190490190801891,
-    "zcr": 0.2242785336807422
+    "bpmNorm": 0.5622222222222222,
+    "swing": 0.07777777777777778,
+    "onsetDensity": 0.25,
+    "laneShareKick": 0.2513328528292409,
+    "laneShareSnare": 0.13901638628160817,
+    "laneShareHat": 0.47539163813673607,
+    "laneShareOpenHat": 0.13425912275241478,
+    "syncopation": 0.598682162923649,
+    "backbeat": 0.6666666666666666,
+    "rmsNorm": 0.09250226581475389,
+    "lowEnergyShare": 0.6048919438708946,
+    "zcr": 0.23997555336959644
   },
   "std": {
-    "bpmNorm": 0.10936607106411018,
-    "swing": 0.06,
-    "onsetDensity": 0.033088035832221516,
-    "laneShareKick": 0.02708214817019288,
-    "laneShareSnare": 0.038494778046541035,
-    "laneShareHat": 0.09068177417233719,
-    "laneShareOpenHat": 0.06705503700738612,
-    "syncopation": 0.13409045565652097,
-    "backbeat": 0.4330127018922193,
-    "rmsNorm": 0.011983547439335092,
-    "lowEnergyShare": 0.043682630110382106,
-    "zcr": 0.06439050830463834
+    "bpmNorm": 0.1062259413574855,
+    "swing": 0.05691665988829199,
+    "onsetDensity": 0.035324635328777436,
+    "laneShareKick": 0.041752656209883936,
+    "laneShareSnare": 0.07227232333211714,
+    "laneShareHat": 0.08762755269652502,
+    "laneShareOpenHat": 0.06404589121158578,
+    "syncopation": 0.13553031364936236,
+    "backbeat": 0.4714045207910317,
+    "rmsNorm": 0.013016752330804312,
+    "lowEnergyShare": 0.05744158137481978,
+    "zcr": 0.07521055129133711
   }
 };
 
@@ -62,6 +62,20 @@ export const STYLE_GOLDENS: Record<BeatStyleId, StyleFeatureVector> = {
     "rmsNorm": 0.09508238397233088,
     "lowEnergyShare": 0.5785291308185356,
     "zcr": 0.2781810381810382
+  },
+  "bounce": {
+    "bpmNorm": 0.49,
+    "swing": 0.06,
+    "onsetDensity": 0.296875,
+    "laneShareKick": 0.15789473684210525,
+    "laneShareSnare": 0.3157894736842105,
+    "laneShareHat": 0.42105263157894735,
+    "laneShareOpenHat": 0.10526315789473684,
+    "syncopation": 0.7368421052631579,
+    "backbeat": 0,
+    "rmsNorm": 0.07421859253132326,
+    "lowEnergyShare": 0.49163534219653865,
+    "zcr": 0.3655517108804306
   },
   "crunk": {
     "bpmNorm": 0.48,

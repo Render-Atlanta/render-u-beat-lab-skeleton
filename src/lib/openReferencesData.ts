@@ -259,4 +259,8 @@ export const OPEN_REFERENCES: Record<BeatStyleId, OpenReferenceExample[]> = {
   // fabricate external rows; a verified open-license house pick can be added
   // later once a human confirms the license on the asset's own page.
   house: [originalCc0Example("house")],
+  // Same restraint for bounce: ship only the in-repo CC0 original. A verified
+  // open-license bounce pick can be added later once a human confirms the
+  // license on the asset's own page.
+  bounce: [originalCc0Example("bounce")],
 };
