@@ -215,6 +215,32 @@ export const STYLE_REFERENCES: Record<BeatStyleId, StyleReferenceTrack[]> = {
       sourceUrl: "https://en.wikipedia.org/wiki/Imithandazo",
     },
   ],
+  house: [
+    {
+      artist: "Daft Punk",
+      title: "One More Time",
+      bpm: 123,
+      swing: "straight",
+      profile: "Filtered French-house anthem: relentless four-on-the-floor kick, bright claps, and offbeat hats.",
+      sourceUrl: "https://songbpm.com/@daft-punk/one-more-time",
+    },
+    {
+      artist: "Robin S",
+      title: "Show Me Love",
+      bpm: 120,
+      swing: "straight",
+      profile: "Classic '90s organ house with a straight pulse, snappy backbeat claps, and an open-hat lift.",
+      sourceUrl: "https://songbpm.com/@robin-s/show-me-love",
+    },
+    {
+      artist: "Crystal Waters",
+      title: "Gypsy Woman (She's Homeless)",
+      bpm: 125,
+      swing: "straight",
+      profile: "Deep-house standard built on a hypnotic four-on-the-floor groove and a chanted vocal hook.",
+      sourceUrl: "https://songbpm.com/@crystal-waters/gypsy-woman-shes-homeless",
+    },
+  ],
 };
 
 export function getStyleReferences(styleId: BeatStyleId): StyleReferenceTrack[] {

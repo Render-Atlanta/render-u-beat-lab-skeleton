@@ -5,32 +5,32 @@ import type { NormalizationStats, StyleFeatureVector } from "./styleFidelity";
 
 export const STYLE_PROFILE_STATS: NormalizationStats = {
   "mean": {
-    "bpmNorm": 0.5642857142857143,
-    "swing": 0.09142857142857144,
-    "onsetDensity": 0.24776785714285715,
-    "laneShareKick": 0.25976952184382524,
-    "laneShareSnare": 0.11321440857044572,
-    "laneShareHat": 0.510251117991056,
-    "laneShareOpenHat": 0.11676495159467296,
-    "syncopation": 0.623654725047914,
-    "backbeat": 0.7142857142857143,
-    "rmsNorm": 0.09579559963922743,
-    "lowEnergyShare": 0.6289295099211996,
-    "zcr": 0.21207498584557707
+    "bpmNorm": 0.57125,
+    "swing": 0.08000000000000002,
+    "onsetDensity": 0.244140625,
+    "laneShareKick": 0.2630126173276328,
+    "laneShareSnare": 0.11691975035628285,
+    "laneShareHat": 0.48218401395645977,
+    "laneShareOpenHat": 0.13788361835962454,
+    "syncopation": 0.5814121701312104,
+    "backbeat": 0.75,
+    "rmsNorm": 0.09478772497518272,
+    "lowEnergyShare": 0.6190490190801891,
+    "zcr": 0.2242785336807422
   },
   "std": {
-    "bpmNorm": 0.1152459658862783,
-    "swing": 0.055402055513329475,
-    "onsetDensity": 0.03385212251808728,
-    "laneShareKick": 0.027460497785367067,
-    "laneShareSnare": 0.03979577913876025,
-    "laneShareHat": 0.05564014855501167,
-    "laneShareOpenHat": 0.039632474225180916,
-    "syncopation": 0.07920473417985228,
-    "backbeat": 0.4517539514526256,
-    "rmsNorm": 0.012489754880899411,
-    "lowEnergyShare": 0.03741357245775798,
-    "zcr": 0.05955694994947329
+    "bpmNorm": 0.10936607106411018,
+    "swing": 0.06,
+    "onsetDensity": 0.033088035832221516,
+    "laneShareKick": 0.02708214817019288,
+    "laneShareSnare": 0.038494778046541035,
+    "laneShareHat": 0.09068177417233719,
+    "laneShareOpenHat": 0.06705503700738612,
+    "syncopation": 0.13409045565652097,
+    "backbeat": 0.4330127018922193,
+    "rmsNorm": 0.011983547439335092,
+    "lowEnergyShare": 0.043682630110382106,
+    "zcr": 0.06439050830463834
   }
 };
 
@@ -90,6 +90,20 @@ export const STYLE_GOLDENS: Record<BeatStyleId, StyleFeatureVector> = {
     "rmsNorm": 0.1086457982759151,
     "lowEnergyShare": 0.6599889652274933,
     "zcr": 0.16815974547890153
+  },
+  "house": {
+    "bpmNorm": 0.62,
+    "swing": 0,
+    "onsetDensity": 0.21875,
+    "laneShareKick": 0.2857142857142857,
+    "laneShareSnare": 0.14285714285714285,
+    "laneShareHat": 0.2857142857142857,
+    "laneShareOpenHat": 0.2857142857142857,
+    "syncopation": 0.2857142857142857,
+    "backbeat": 1,
+    "rmsNorm": 0.08773260232686968,
+    "lowEnergyShare": 0.5498855831931158,
+    "zcr": 0.30970336852689795
   },
   "pop": {
     "bpmNorm": 0.59,

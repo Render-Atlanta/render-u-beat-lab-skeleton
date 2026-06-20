@@ -77,4 +77,13 @@ export const GOLDEN_BEAT_STYLE_FIXTURES: Record<
     pocketSummary:
       "The snare still marks steps 5 and 13, so the center stays easy to follow.",
   },
+  house: {
+    serializedPattern:
+      "1000100010001000.0000100000001000.1000100010001000.0010001000100010.0000100000001000.1000000010000000.0000000000000000",
+    hitCount: 18,
+    densityLevel: "open",
+    densitySummary: "Still open: 18 hits keeps the same density as House Music.",
+    pocketSummary:
+      "The snare still marks steps 5 and 13, so the center stays easy to follow.",
+  },
 };

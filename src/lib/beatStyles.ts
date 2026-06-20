@@ -15,7 +15,8 @@ export type BeatStyleId =
   | "rnb"
   | "pop"
   | "afrobeats"
-  | "amapiano";
+  | "amapiano"
+  | "house";
 
 export interface BeatStyle {
   id: BeatStyleId;
@@ -157,5 +158,23 @@ export const BEAT_STYLES: Record<BeatStyleId, BeatStyle> = {
     musicalKey: { root: "F", scale: "minor" },
     lesson:
       "Amapiano leaves air around the drums so the bass/log-drum idea can talk. Keep the pulse hypnotic and let accents answer each other.",
+  },
+  house: {
+    id: "house",
+    name: "House Music",
+    bpm: 124,
+    swing: 0,
+    pattern: patternFromSteps({
+      kick: [1, 5, 9, 13],
+      snare: [5, 13],
+      hat: [1, 5, 9, 13],
+      openHat: [3, 7, 11, 15],
+      clap: [5, 13],
+      "808": [1, 9],
+      melody: [],
+    }),
+    musicalKey: { root: "A", scale: "minor" },
+    lesson:
+      "House is four-on-the-floor: a steady kick on every beat keeps the pulse out in the open. Where the trap and R&B pockets lean and swing, house stays straight — the offbeat open hats do the pushing instead of the drums shifting.",
   },
 };

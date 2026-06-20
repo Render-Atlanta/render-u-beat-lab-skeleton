@@ -255,4 +255,8 @@ export const OPEN_REFERENCES: Record<BeatStyleId, OpenReferenceExample[]> = {
         "Self-titled 'Amapiano', tagged Afrobeat / African — a direct genre-name match for the amapiano style.",
     }),
   ],
+  // Like crunk, house keeps only its guaranteed in-repo CC0 original. We do not
+  // fabricate external rows; a verified open-license house pick can be added
+  // later once a human confirms the license on the asset's own page.
+  house: [originalCc0Example("house")],
 };

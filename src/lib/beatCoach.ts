@@ -114,6 +114,11 @@ const STYLE_COACH_NOTES: Record<
     feelNote: "Roomy bounce, patient hats, open accents that answer the low pulse.",
     tryThis: "Try muting one kick and moving an open hat later by a step.",
   },
+  house: {
+    concept: "A kick on every beat makes straight time feel inevitable instead of stiff.",
+    feelNote: "Four-on-the-floor pulse, claps on 2 and 4, offbeat open hats that sizzle.",
+    tryThis: "Try keeping all four kicks and adding one open hat between each beat.",
+  },
 };
 
 const INSTRUMENT_LABELS: Record<InstrumentId, string> = {
