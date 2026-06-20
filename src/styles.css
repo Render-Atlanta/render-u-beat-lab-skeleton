@@ -376,6 +376,32 @@ button:disabled {
   padding: 18px;
 }
 
+.beat-ruler {
+  align-items: end;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(148px, 180px) repeat(16, minmax(16px, 1fr));
+  min-width: 620px;
+}
+
+.beat-ruler__spacer {
+  grid-column: 1;
+}
+
+.beat-ruler__beat {
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  grid-column: span 4;
+  letter-spacing: 0.04em;
+  opacity: 0.55;
+  text-align: center;
+}
+
+.beat-ruler__beat.is-current {
+  font-weight: 700;
+  opacity: 1;
+}
+
 .track-row {
   align-items: center;
   display: grid;

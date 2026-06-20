@@ -6,6 +6,7 @@ import type { LaneMutes } from "../lib/laneMutes";
 import type { AudioEngineKind } from "../audio/audioEngine";
 import type { BassStepPitches, MelodyStepPitches, PaletteEntry } from "../lib/stepPitch";
 import type { StepVelocity, StepVelocities } from "../lib/stepVelocity";
+import { BeatRuler } from "./BeatRuler";
 import { SequencerControls } from "./SequencerControls";
 import { useStepPaint } from "./useStepPaint";
 
@@ -140,6 +141,7 @@ export function SequencerPanel({
         onPointerUp={stepPaint.endPaint}
         onPointerCancel={stepPaint.endPaint}
       >
+        <BeatRuler activeStep={activeStep} />
         {visibleInstruments.map((instrument) => {
           const muted = laneMutes[instrument.id];
           return (

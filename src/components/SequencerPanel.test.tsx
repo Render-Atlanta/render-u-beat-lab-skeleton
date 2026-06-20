@@ -180,3 +180,21 @@ describe("SequencerPanel guided filtering", () => {
     expect(html).not.toContain(">Melody</span>");
   });
 });
+
+describe("SequencerPanel beat ruler", () => {
+  it("renders four beat numbers 1-4 with none current when stopped", () => {
+    const markup = renderPanel({ activeStep: null });
+    expect(markup).toContain('aria-label="Beat ruler"');
+    for (const n of ["1", "2", "3", "4"]) {
+      expect(markup).toMatch(new RegExp(`beat-ruler__beat[^>]*>${n}<`));
+    }
+    expect(markup).not.toContain("is-current");
+  });
+
+  it("highlights the current beat from activeStep", () => {
+    // activeStep 5 -> floor(5/4) = beat index 1 -> the "2" cell is current
+    const markup = renderPanel({ activeStep: 5 });
+    expect(markup).toMatch(/beat-ruler__beat[^>]*is-current[^>]*>2</);
+    expect(markup).not.toMatch(/beat-ruler__beat[^>]*is-current[^>]*>1</);
+  });
+});
