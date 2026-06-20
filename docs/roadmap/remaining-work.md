@@ -40,7 +40,12 @@ Top picks:
       (`midiFile.ts` + `midiReader.ts` + `exportMidi.ts`) rather than
       `@tonejs/midi`, which is ~4 years stale (last publish 2022-04) and pulls in
       two transitive deps; the format is frozen, so there's nothing to maintain.
-- [ ] **"Learn to Play" lessons** — turn guided-mode one-liners into multi-step lessons.
+- [x] ~~**"Learn to Play" lessons** — turn guided-mode one-liners into multi-step lessons.~~
+      Shipped as a **Lessons** tab (`lessons.ts` + `LessonsPanel`): 3 hands-on
+      lessons (first beat → bounce → feel) whose steps check themselves off live
+      as you build on the grid (pure predicates over `SequencerState`). The
+      "feel" lesson reinforces the Vary/Fill/Humanize/Swing controls. Active
+      lesson persists via `lessonPrefs`; progress is derived live.
 - [ ] **Waveform view + onset markers** (`wavesurfer.js`) — for the upload/sample features.
 - [x] ~~**Drummer-style variations & fills** — perturb the current pocket within its style profile.~~
       Shipped as the **Vary** / **Fill** buttons (`beatVariation.ts` + seeded

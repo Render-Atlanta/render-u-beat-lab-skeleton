@@ -7,6 +7,9 @@ import {
 import type { ProducerTagSample } from "./audio/audioEngine";
 import { getKitSampleUrls } from "./audio/sampleKit";
 import { ArrangementPanel } from "./components/ArrangementPanel";
+import { LessonsPanel } from "./components/LessonsPanel";
+import { LESSONS, evaluateLesson, getLesson } from "./lib/lessons";
+import { readLessonPref, writeLessonPref } from "./lib/lessonPrefs";
 import { BeatCoachPanel } from "./components/BeatCoachPanel";
 import { CapturePanel } from "./components/CapturePanel";
 import { SongDecomposePanel } from "./components/SongDecomposePanel";
@@ -156,7 +159,7 @@ function audibleStyle(state: SequencerState, guided: GuidedModeState) {
  */
 type LayoutMode = "rail" | "focus" | "pro";
 /** Which tool occupies the tabbed tool panel on desktop. */
-type ToolTab = "coach" | "tag" | "arrange" | "capture";
+type ToolTab = "coach" | "lessons" | "tag" | "arrange" | "capture";
 /** Mobile view selector — "make" shows the sequencer, the rest mirror the tools. */
 type MobileTab = "make" | ToolTab;
 
@@ -168,6 +171,7 @@ const LAYOUT_MODES: { id: LayoutMode; label: string }[] = [
 
 const TOOL_TABS: { id: ToolTab; label: string }[] = [
   { id: "coach", label: "Coach" },
+  { id: "lessons", label: "Lessons" },
   { id: "tag", label: "Tag" },
   { id: "arrange", label: "Arrange" },
   { id: "capture", label: "Capture" },
@@ -261,6 +265,9 @@ export function App() {
   const [layout, setLayout] = useState<LayoutMode>("rail");
   const [tool, setTool] = useState<ToolTab>("coach");
   const [mobileTab, setMobileTab] = useState<MobileTab>("make");
+  // Which "Learn to play" lesson is open (null = the lesson list). Progress is
+  // derived live from the beat, so only the open lesson needs to persist.
+  const [lessonId, setLessonId] = useState<string | null>(() => readLessonPref());
   const [sheetOpen, setSheetOpen] = useState(false);
   const [viewportWidth, setViewportWidth] = useState(() =>
     typeof window === "undefined" ? 1280 : window.innerWidth,
@@ -352,6 +359,10 @@ export function App() {
 
     return () => window.clearTimeout(timer);
   }, [sequencer]);
+
+  useEffect(() => {
+    writeLessonPref(lessonId);
+  }, [lessonId]);
 
   useEffect(
     () => () => {
@@ -913,6 +924,7 @@ export function App() {
   // On mobile the visible tool follows the tab bar; on desktop it follows `tool`.
   const activeTool: ToolTab =
     isMobile && mobileTab !== "make" ? mobileTab : tool;
+  const activeLesson = getLesson(lessonId);
   const showSequencer = !isMobile || mobileTab === "make";
   const showToolPanel = isMobile
     ? mobileTab !== "make"
@@ -961,6 +973,20 @@ export function App() {
                 {tagRecordError}
               </p>
             ) : null}
+          </div>
+        );
+      case "lessons":
+        return (
+          <div className="tool-body">
+            <LessonsPanel
+              lessons={LESSONS}
+              activeLessonId={lessonId}
+              evaluation={
+                activeLesson ? evaluateLesson(activeLesson, sequencer) : null
+              }
+              onStart={setLessonId}
+              onExit={() => setLessonId(null)}
+            />
           </div>
         );
       case "arrange":

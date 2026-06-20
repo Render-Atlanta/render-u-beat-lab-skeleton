@@ -679,6 +679,120 @@ button:disabled {
   margin: 0;
 }
 
+/* Learn-to-play lessons */
+.lesson-list {
+  display: grid;
+  gap: 8px;
+}
+
+.lesson-card {
+  background: hsl(var(--bg));
+  border: 1px solid hsl(var(--border));
+  border-radius: 6px;
+  cursor: pointer;
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  text-align: left;
+}
+
+.lesson-card:hover {
+  border-color: hsl(var(--teal));
+}
+
+.lesson-card strong {
+  color: hsl(var(--ink));
+  font-size: 0.92rem;
+}
+
+.lesson-card span {
+  font-size: 0.84rem;
+}
+
+.lesson-card small {
+  color: hsl(var(--muted));
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.lesson-progress {
+  color: hsl(var(--muted));
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  margin: 0 0 4px;
+  text-transform: uppercase;
+}
+
+.lesson-complete {
+  background: hsl(var(--teal) / 0.12);
+  border: 1px solid hsl(var(--teal));
+  border-radius: 6px;
+  color: hsl(var(--ink));
+  font-weight: 700;
+  margin: 0 0 8px;
+  padding: 10px;
+}
+
+.lesson-steps {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.lesson-step {
+  align-items: start;
+  background: hsl(var(--bg));
+  border: 1px solid hsl(var(--border));
+  border-radius: 6px;
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+}
+
+.lesson-step.active {
+  border-color: hsl(var(--teal));
+}
+
+.lesson-step.done {
+  opacity: 0.7;
+}
+
+.lesson-step__mark {
+  color: hsl(var(--muted));
+  flex: none;
+  font-weight: 800;
+  width: 1.1em;
+}
+
+.lesson-step.done .lesson-step__mark {
+  color: hsl(var(--teal));
+}
+
+.lesson-step.active .lesson-step__mark {
+  color: hsl(var(--ink));
+}
+
+.lesson-step__body {
+  display: grid;
+  gap: 3px;
+}
+
+.lesson-step__instruction {
+  color: hsl(var(--ink));
+  font-size: 0.88rem;
+}
+
+.lesson-step__hint {
+  color: hsl(var(--muted));
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
 .tag-controls {
   gap: 12px;
 }
@@ -1404,7 +1518,10 @@ button:disabled {
   border-top: 1px solid hsl(var(--border));
   bottom: 0;
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  /* One equal column per tab, whatever the count — stays a single row as tools
+     are added (e.g. the Lessons tab) instead of wrapping and breaking the bar. */
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
   left: 0;
   position: fixed;
   right: 0;
