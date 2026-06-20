@@ -11,6 +11,10 @@ import {
   getInKeyPalette,
   getMelodyPalette,
 } from "../lib/stepPitch";
+import {
+  createDefaultBassGuitarStepPitches,
+  getBassGuitarPalette,
+} from "../lib/bassGuitarPitch";
 import { SequencerPanel } from "./SequencerPanel";
 
 function noop() {}
@@ -29,6 +33,8 @@ function renderPanel(extra: Partial<Parameters<typeof SequencerPanel>[0]> = {}) 
       stepVelocities={createDefaultStepVelocities()}
       bassStepPitches={createDefaultBassStepPitches()}
       bassPalette={getInKeyPalette(BEAT_STYLES.trap.musicalKey)}
+      bassGuitarStepPitches={createDefaultBassGuitarStepPitches()}
+      bassGuitarPalette={getBassGuitarPalette(BEAT_STYLES.trap.musicalKey)}
       melodyStepPitches={createDefaultMelodyStepPitches()}
       melodyPalette={getMelodyPalette(BEAT_STYLES.trap.musicalKey)}
       activeStep={null}
@@ -53,6 +59,7 @@ function renderPanel(extra: Partial<Parameters<typeof SequencerPanel>[0]> = {}) 
       onToggleStep={noop}
       onPaintStep={noop}
       onBassStepPitchChange={noop}
+      onBassGuitarStepPitchChange={noop}
       onMelodyStepPitchChange={noop}
       {...extra}
     />,
@@ -79,11 +86,11 @@ describe("SequencerPanel role coaching", () => {
 
 describe("SequencerPanel lane count and new lanes", () => {
   it("renders exactly 7 instrument lanes", () => {
-    expect(INSTRUMENTS).toHaveLength(7);
+    expect(INSTRUMENTS).toHaveLength(8);
     const html = renderPanel();
     // Each track row contains the instrument label; count occurrences of track-label__name spans
     const matches = html.match(/track-label__name/g);
-    expect(matches).toHaveLength(7);
+    expect(matches).toHaveLength(8);
   });
 
   it("renders the Clap lane label", () => {

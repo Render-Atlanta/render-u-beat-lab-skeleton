@@ -5,7 +5,7 @@ import { decodeWav } from "./wav";
 import type { DecodedKit } from "./styleRender";
 import { RENDER_SAMPLE_RATE } from "./styleRender";
 
-type SampledInstrumentId = Exclude<InstrumentId, "melody">;
+type SampledInstrumentId = Exclude<InstrumentId, "melody" | "bassGuitar">;
 const LANES: SampledInstrumentId[] = ["kick", "snare", "hat", "openHat", "clap", "808"];
 
 /** Load + decode the bundled CC0 kit from disk (Node: scripts + tests). */

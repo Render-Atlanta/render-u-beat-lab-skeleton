@@ -47,6 +47,7 @@ export interface ToneRuntimePort {
   createSamplePlayer?(url: string, destination?: LaneVolumePort): ToneVoicePort | null;
   createKickSynth(destination?: LaneVolumePort): ToneVoicePort;
   createBassSynth?(destination?: LaneVolumePort): ToneVoicePort;
+  createBassGuitarSynth?(destination?: LaneVolumePort): ToneVoicePort;
   createMelodySynth?(destination?: LaneVolumePort): ToneVoicePort;
   createNoiseSynth(options?: unknown, destination?: LaneVolumePort): ToneVoicePort;
   onClickPlayed?: () => void;

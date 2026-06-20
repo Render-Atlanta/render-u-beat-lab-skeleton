@@ -14,6 +14,7 @@ const decomp: SongDecomposition = {
     openHat: Array(16).fill(false),
     clap: Array(16).fill(false),
     "808": Array(16).fill(false),
+    bassGuitar: Array(16).fill(false),
     melody: Array(16).fill(false),
   },
   classifications: [],

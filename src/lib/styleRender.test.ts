@@ -53,6 +53,7 @@ describe("renderPatternToPcm", () => {
       openHat: [],
       clap: [],
       "808": [],
+      bassGuitar: [],
       melody: [],
     });
     const stepVelocities = createDefaultStepVelocities();

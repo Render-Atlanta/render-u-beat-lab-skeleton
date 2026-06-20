@@ -55,6 +55,15 @@ export const INSTRUMENTS: InstrumentOption[] = [
     guidedTip: "The sub-bass. Pitch it to follow your root note for movement.",
   },
   {
+    id: "bassGuitar",
+    label: "Bass Gtr",
+    role: "Bassline",
+    explainer:
+      "A plucked electric bass that adds melodic low-end groove above the 808 sub.",
+    guidedTip:
+      "Follows your root note on the 808 hits — nudge a step's pitch to walk the bassline.",
+  },
+  {
     id: "melody",
     label: "Melody",
     role: "Lead",

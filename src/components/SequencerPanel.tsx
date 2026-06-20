@@ -6,9 +6,17 @@ import type { LaneMutes } from "../lib/laneMutes";
 import type { AudioEngineKind } from "../audio/audioEngine";
 import type { BassStepPitches, MelodyStepPitches, PaletteEntry } from "../lib/stepPitch";
 import type { StepVelocity, StepVelocities } from "../lib/stepVelocity";
+import type { BassGuitarStepPitches } from "../lib/bassGuitarPitch";
 import { BeatRuler } from "./BeatRuler";
+import { StepPitchSelect } from "./StepPitchSelect";
 import { SequencerControls } from "./SequencerControls";
 import { useStepPaint } from "./useStepPaint";
+
+type PitchLaneConfig = {
+  pitches: number[];
+  palette: PaletteEntry[];
+  onChange: (index: number, degree: number) => void;
+};
 
 export interface SequencerPanelProps {
   styleName: string;
@@ -22,6 +30,8 @@ export interface SequencerPanelProps {
   stepVelocities: StepVelocities;
   bassStepPitches: BassStepPitches;
   bassPalette: PaletteEntry[];
+  bassGuitarStepPitches: BassGuitarStepPitches;
+  bassGuitarPalette: PaletteEntry[];
   melodyStepPitches: MelodyStepPitches;
   melodyPalette: PaletteEntry[];
   activeStep: number | null;
@@ -48,6 +58,7 @@ export interface SequencerPanelProps {
   onToggleStep: (instrument: InstrumentId, stepIndex: number) => void;
   onPaintStep: (instrument: InstrumentId, stepIndex: number) => void;
   onBassStepPitchChange: (stepIndex: number, degree: number) => void;
+  onBassGuitarStepPitchChange: (stepIndex: number, degree: number) => void;
   onMelodyStepPitchChange: (stepIndex: number, degree: number) => void;
 }
 
@@ -63,6 +74,8 @@ export function SequencerPanel({
   stepVelocities,
   bassStepPitches,
   bassPalette,
+  bassGuitarStepPitches,
+  bassGuitarPalette,
   melodyStepPitches,
   melodyPalette,
   activeStep,
@@ -88,9 +101,17 @@ export function SequencerPanel({
   onToggleStep,
   onPaintStep,
   onBassStepPitchChange,
+  onBassGuitarStepPitchChange,
   onMelodyStepPitchChange,
 }: SequencerPanelProps) {
   const stepPaint = useStepPaint(onPaintStep);
+
+  // The pitched lanes share one editor; look up each lane's pitches/palette/handler.
+  const pitchLanes: Partial<Record<InstrumentId, PitchLaneConfig>> = {
+    "808": { pitches: bassStepPitches, palette: bassPalette, onChange: onBassStepPitchChange },
+    bassGuitar: { pitches: bassGuitarStepPitches, palette: bassGuitarPalette, onChange: onBassGuitarStepPitchChange },
+    melody: { pitches: melodyStepPitches, palette: melodyPalette, onChange: onMelodyStepPitchChange },
+  };
 
   function handleStepClick(instrument: InstrumentId, stepIndex: number) {
     if (stepPaint.shouldSuppressClick()) {
@@ -192,17 +213,10 @@ export function SequencerPanel({
               </div>
             </div>
             {pattern[instrument.id].map((step, index) => {
-              const is808 = instrument.id === "808";
-              const isMelody = instrument.id === "melody";
-              const bassDegree = bassStepPitches[index];
-              const melodyDegree = melodyStepPitches[index];
-              const pitchDegree = isMelody ? melodyDegree : bassDegree;
-              const pitchPalette = isMelody ? melodyPalette : bassPalette;
+              const pitched = pitchLanes[instrument.id];
+              const pitchDegree = pitched ? pitched.pitches[index] : 0;
               const pitchEntry =
-                (is808 || isMelody) && step ? pitchPalette[pitchDegree] : null;
-              const onPitchChange = isMelody
-                ? onMelodyStepPitchChange
-                : onBassStepPitchChange;
+                pitched && step ? pitched.palette[pitchDegree] : null;
               const velocity = stepVelocities[instrument.id][index];
               const velocityName = getVelocityName(velocity);
               const velocityClass =
@@ -251,25 +265,14 @@ export function SequencerPanel({
                   }
                   onClick={() => handleStepClick(instrument.id, index)}
                 />
-                {(is808 || isMelody) && step ? (
-                  <label className="step-pitch">
-                    <span className="sr-only">{`${instrument.label} step ${index + 1} note`}</span>
-                    <select
-                      className={`step-pitch__select pitch-${pitchEntry?.function ?? "root"}`}
-                      value={pitchDegree}
-                      aria-label={`${instrument.label} step ${index + 1} note`}
-                      onClick={(event) => event.stopPropagation()}
-                      onChange={(event) =>
-                        onPitchChange(index, Number(event.target.value))
-                      }
-                    >
-                      {pitchPalette.map((entry) => (
-                        <option key={entry.degree} value={entry.degree}>
-                          {entry.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                {pitched && step ? (
+                  <StepPitchSelect
+                    label={instrument.label}
+                    stepIndex={index}
+                    degree={pitchDegree}
+                    palette={pitched.palette}
+                    onChange={pitched.onChange}
+                  />
                 ) : null}
               </div>
               );

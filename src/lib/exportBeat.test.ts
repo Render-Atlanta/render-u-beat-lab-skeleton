@@ -66,6 +66,7 @@ describe("renderBeatWav", () => {
       openHat: [],
       clap: [],
       "808": [],
+      bassGuitar: [],
       melody: [],
     });
     const audible = renderPatternToPcm(kickOnly, BEAT_STYLES.trap, kit);
@@ -93,6 +94,7 @@ describe("renderBeatWav", () => {
       openHat: [],
       clap: [],
       "808": [1],
+      bassGuitar: [],
       melody: [],
     });
     const rootStyle = {
@@ -135,6 +137,7 @@ describe("renderBeatWav", () => {
       openHat: [],
       clap: [],
       "808": [],
+      bassGuitar: [],
       melody: [1],
     });
     const rootStyle = {

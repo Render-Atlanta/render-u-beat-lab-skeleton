@@ -7,6 +7,7 @@ import {
   paintSequencerStep,
   toggleSequencerLaneMute,
   updateSequencerStep,
+  updateSequencerBassGuitarStepPitch,
   updateSequencerBpm,
   updateSequencerSwing,
 } from "./sequencerDomain";
@@ -80,6 +81,22 @@ describe("sequencer domain helpers", () => {
     expect(first.stepVelocities["808"][1]).toBe(1);
     expect(second.pattern["808"][1]).toBe(false);
     expect(second.stepVelocities["808"][1]).toBe(1);
+  });
+
+  it("treats the bass guitar as a pitched lane (binary toggle, no velocity)", () => {
+    const sequencer = createDefaultSequencerState("trap");
+    const toggled = updateSequencerStep(sequencer, "bassGuitar", 2);
+    expect(toggled.pattern.bassGuitar[2]).toBe(true);
+    expect(toggled.stepVelocities.bassGuitar[2]).toBe(1);
+  });
+
+  it("updates and clamps bass guitar step pitch", () => {
+    const sequencer = createDefaultSequencerState("trap");
+    const edited = updateSequencerBassGuitarStepPitch(sequencer, 3, 2);
+    expect(edited.bassGuitarStepPitches[3]).toBe(2);
+    // Out-of-range degrees clamp to the palette (7 in-key degrees → max index 6).
+    const clamped = updateSequencerBassGuitarStepPitch(sequencer, 0, 99);
+    expect(clamped.bassGuitarStepPitches[0]).toBe(6);
   });
 
   it("paints only unpitched drum lanes at normal velocity", () => {

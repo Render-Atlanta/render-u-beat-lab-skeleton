@@ -5,6 +5,7 @@ import {
   midiToNoteName,
   type PaletteEntry,
 } from "../lib/stepPitch";
+import { getBassGuitarPitchForStep } from "../lib/bassGuitarPitch";
 import { INSTRUMENT_IDS, type InstrumentId } from "../lib/patterns";
 import { getStepVelocities, getStepVelocityFactor } from "../lib/stepVelocity";
 
@@ -83,6 +84,15 @@ export function getStepEvents(
           style.musicalKey,
           stepIndex,
           style.bassStepPitches,
+        );
+        event.pitch = toStepPitch(pitch);
+      }
+
+      if (instrument === "bassGuitar") {
+        const pitch = getBassGuitarPitchForStep(
+          style.musicalKey,
+          stepIndex,
+          style.bassGuitarStepPitches,
         );
         event.pitch = toStepPitch(pitch);
       }

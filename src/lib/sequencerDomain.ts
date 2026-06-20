@@ -11,6 +11,10 @@ import {
   type ScaleDegree,
 } from "./stepPitch";
 import {
+  getBassGuitarPalette,
+  updateBassGuitarStepPitch,
+} from "./bassGuitarPitch";
+import {
   cloneStepVelocities,
   cycleStepVelocity,
   DEFAULT_STEP_VELOCITY,
@@ -33,6 +37,7 @@ export function createPlayableStyle(sequencer: SequencerState): BeatStyle {
     laneVolumes: applyLaneMutes({ ...sequencer.laneVolumes }, sequencer.laneMutes),
     stepVelocities: cloneStepVelocities(sequencer.stepVelocities),
     bassStepPitches: [...sequencer.bassStepPitches],
+    bassGuitarStepPitches: [...sequencer.bassGuitarStepPitches],
     melodyStepPitches: [...sequencer.melodyStepPitches],
   };
 }
@@ -163,6 +168,25 @@ export function updateSequencerMelodyStepPitch(
   };
 }
 
+export function updateSequencerBassGuitarStepPitch(
+  sequencer: SequencerState,
+  stepIndex: number,
+  degree: ScaleDegree,
+): SequencerState {
+  const paletteSize = getBassGuitarPalette(BEAT_STYLES[sequencer.styleId].musicalKey).length;
+
+  return {
+    ...sequencer,
+    bassGuitarStepPitches: updateBassGuitarStepPitch(
+      sequencer.bassGuitarStepPitches,
+      stepIndex,
+      degree,
+      paletteSize,
+    ),
+    pattern: clonePattern(sequencer.pattern),
+  };
+}
+
 export function updateSequencerBpm(
   sequencer: SequencerState,
   bpm: number,
@@ -210,5 +234,9 @@ function clampRoundedNumber(value: number, min: number, max: number): number {
 }
 
 function isPitchedLane(instrument: InstrumentId): boolean {
-  return instrument === "808" || instrument === "melody";
+  return (
+    instrument === "808" ||
+    instrument === "bassGuitar" ||
+    instrument === "melody"
+  );
 }

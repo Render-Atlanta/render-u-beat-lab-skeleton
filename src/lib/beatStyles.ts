@@ -1,5 +1,6 @@
 import type { LaneVolumes } from "./laneVolumes";
 import { patternFromSteps, type Pattern } from "./patterns";
+import type { BassGuitarStepPitches } from "./bassGuitarPitch";
 import type { BassStepPitches, MelodyStepPitches, NoteName, ScaleType } from "./stepPitch";
 import type { StepVelocities } from "./stepVelocity";
 
@@ -29,6 +30,7 @@ export interface BeatStyle {
   laneVolumes?: LaneVolumes;
   stepVelocities?: StepVelocities;
   bassStepPitches?: BassStepPitches;
+  bassGuitarStepPitches?: BassGuitarStepPitches;
   melodyStepPitches?: MelodyStepPitches;
   lesson: string;
 }
@@ -46,6 +48,7 @@ export const BEAT_STYLES: Record<BeatStyleId, BeatStyle> = {
       openHat: [6, 14],
       clap: [9],
       "808": [1, 7, 11],
+      bassGuitar: [1, 7, 11],
       melody: [],
     }),
     musicalKey: { root: "A", scale: "minor" },
@@ -64,6 +67,7 @@ export const BEAT_STYLES: Record<BeatStyleId, BeatStyle> = {
       openHat: [16],
       clap: [5, 13],
       "808": [1, 7],
+      bassGuitar: [1, 7],
       melody: [],
     }),
     musicalKey: { root: "E", scale: "minor" },
@@ -82,6 +86,7 @@ export const BEAT_STYLES: Record<BeatStyleId, BeatStyle> = {
       openHat: [4, 12],
       clap: [9],
       "808": [1, 10],
+      bassGuitar: [1, 10],
       melody: [],
     }),
     musicalKey: { root: "F#", scale: "minor" },
@@ -100,6 +105,7 @@ export const BEAT_STYLES: Record<BeatStyleId, BeatStyle> = {
       openHat: [12],
       clap: [5, 13],
       "808": [1, 8],
+      bassGuitar: [1, 8],
       melody: [],
     }),
     musicalKey: { root: "D", scale: "minor" },
@@ -118,6 +124,7 @@ export const BEAT_STYLES: Record<BeatStyleId, BeatStyle> = {
       openHat: [8, 16],
       clap: [5, 13],
       "808": [1, 11],
+      bassGuitar: [1, 11],
       melody: [],
     }),
     musicalKey: { root: "C", scale: "major" },
@@ -136,6 +143,7 @@ export const BEAT_STYLES: Record<BeatStyleId, BeatStyle> = {
       openHat: [7, 15],
       clap: [5, 13],
       "808": [1, 7, 14],
+      bassGuitar: [1, 7, 14],
       melody: [],
     }),
     musicalKey: { root: "G", scale: "minor" },
@@ -154,6 +162,7 @@ export const BEAT_STYLES: Record<BeatStyleId, BeatStyle> = {
       openHat: [6, 11, 15],
       clap: [5, 13],
       "808": [1, 9, 12],
+      bassGuitar: [1, 9, 12],
       melody: [],
     }),
     musicalKey: { root: "F", scale: "minor" },
@@ -172,6 +181,7 @@ export const BEAT_STYLES: Record<BeatStyleId, BeatStyle> = {
       openHat: [3, 7, 11, 15],
       clap: [5, 13],
       "808": [1, 9],
+      bassGuitar: [1, 9],
       melody: [],
     }),
     musicalKey: { root: "A", scale: "minor" },
@@ -190,6 +200,7 @@ export const BEAT_STYLES: Record<BeatStyleId, BeatStyle> = {
       openHat: [8, 16],
       clap: [4, 12],
       "808": [1, 11],
+      bassGuitar: [1, 11],
       melody: [],
     }),
     musicalKey: { root: "C", scale: "minor" },

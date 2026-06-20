@@ -42,7 +42,7 @@ describe("laneMutes", () => {
     );
     const serialized = serializeLaneMutes(mutes);
 
-    expect(serialized).toBe("1000010");
+    expect(serialized).toBe("10000100");
     expect(deserializeLaneMutes(serialized)).toEqual(mutes);
   });
 

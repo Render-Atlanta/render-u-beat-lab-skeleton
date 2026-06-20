@@ -67,6 +67,12 @@ export const INSTRUMENT_COACH: Record<InstrumentId, InstrumentCoachCopy> = {
     role: "The deep sub-bass that carries the low-end weight of the beat.",
     editTip: "Place it with the kick for power; leave space so it doesn't muddy.",
   },
+  bassGuitar: {
+    id: "bassGuitar",
+    label: "Bass Gtr",
+    role: "A plucked electric bass that adds a melodic groove above the 808 sub.",
+    editTip: "Follow the root for a simple line, then move a step's pitch to walk it.",
+  },
   melody: {
     id: "melody",
     label: "Melody",
@@ -133,6 +139,7 @@ const INSTRUMENT_LABELS: Record<InstrumentId, string> = {
   openHat: "Open hat",
   clap: "Clap",
   "808": "808",
+  bassGuitar: "Bass Gtr",
   melody: "Melody",
 };
 
@@ -143,6 +150,7 @@ const INSTRUMENT_ORDER: InstrumentId[] = [
   "openHat",
   "clap",
   "808",
+  "bassGuitar",
   "melody",
 ];
 

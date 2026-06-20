@@ -37,6 +37,7 @@ describe("pattern helpers", () => {
       openHat: [16],
       clap: [],
       "808": [],
+      bassGuitar: [],
       melody: [],
     });
 
@@ -57,6 +58,7 @@ describe("instrument vocabulary", () => {
       "openHat",
       "clap",
       "808",
+      "bassGuitar",
       "melody",
     ]);
   });
@@ -69,10 +71,11 @@ describe("instrument vocabulary", () => {
       openHat: [8],
       clap: [],
       "808": [],
+      bassGuitar: [],
       melody: [],
     });
     expect(Object.keys(pattern).sort()).toEqual(
-      ["808", "clap", "hat", "kick", "melody", "openHat", "snare"],
+      ["808", "bassGuitar", "clap", "hat", "kick", "melody", "openHat", "snare"],
     );
     expect(pattern.clap.every((s) => s === false)).toBe(true);
     expect(pattern["808"].every((s) => s === false)).toBe(true);

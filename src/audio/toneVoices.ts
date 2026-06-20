@@ -65,7 +65,11 @@ function createVoice(
   sampleUrl: string | undefined,
   destination: LaneVolumePort,
 ): ToneVoicePort {
-  if (instrument === "808" || instrument === "melody") {
+  if (
+    instrument === "808" ||
+    instrument === "bassGuitar" ||
+    instrument === "melody"
+  ) {
     return createSynthVoice(runtime, instrument, destination);
   }
 
@@ -91,6 +95,14 @@ function createSynthVoice(
 ): ToneVoicePort {
   if (instrument === "808") {
     return runtime.createBassSynth?.(destination) ?? runtime.createKickSynth(destination);
+  }
+
+  if (instrument === "bassGuitar") {
+    return (
+      runtime.createBassGuitarSynth?.(destination) ??
+      runtime.createBassSynth?.(destination) ??
+      runtime.createKickSynth(destination)
+    );
   }
 
   if (instrument === "melody") {
@@ -153,7 +165,12 @@ export function playVoice(
   accent: number,
   pitch?: StepPitch,
 ) {
-  if (voice.start && instrument !== "808" && instrument !== "melody") {
+  if (
+    voice.start &&
+    instrument !== "808" &&
+    instrument !== "bassGuitar" &&
+    instrument !== "melody"
+  ) {
     voice.start(time, accent);
     return;
   }
@@ -170,6 +187,11 @@ function triggerSynthVoice(
 ) {
   if (instrument === "808") {
     voice.triggerAttackRelease?.(pitch?.noteName ?? "A1", "8n", time, accent);
+    return;
+  }
+
+  if (instrument === "bassGuitar") {
+    voice.triggerAttackRelease?.(pitch?.noteName ?? "A2", "8n", time, accent);
     return;
   }
 

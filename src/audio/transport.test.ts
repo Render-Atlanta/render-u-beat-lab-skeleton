@@ -33,6 +33,7 @@ describe("audio transport helpers", () => {
       "kick",
       "hat",
       "808",
+      "bassGuitar",
     ]);
     expect(getStepEvents(BEAT_STYLES.trap, 1, 1.5)).toEqual([]);
   });
@@ -46,6 +47,7 @@ describe("audio transport helpers", () => {
           kick: Array.from({ length: 16 }, () => false),
           hat: Array.from({ length: 16 }, () => false),
           "808": Array.from({ length: 16 }, () => false),
+          bassGuitar: Array.from({ length: 16 }, () => false),
           melody: [true, ...Array.from({ length: 15 }, () => false)],
         },
         melodyStepPitches: [2, ...Array.from({ length: 15 }, () => 0)],

@@ -27,7 +27,7 @@ describe("laneVolumes", () => {
     const volumes = updateLaneVolume(createDefaultLaneVolumes(), "snare", 0.5);
     const serialized = serializeLaneVolumes(volumes);
 
-    expect(serialized).toBe("1,0.5,1,1,1,1,1");
+    expect(serialized).toBe("1,0.5,1,1,1,1,1,1");
     expect(deserializeLaneVolumes(serialized)).toEqual(volumes);
   });
 

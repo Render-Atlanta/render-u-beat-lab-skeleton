@@ -90,6 +90,7 @@ import {
   toggleSequencerLaneMute,
   paintSequencerStep,
   updateSequencerBassStepPitch,
+  updateSequencerBassGuitarStepPitch,
   updateSequencerBpm,
   updateSequencerLaneVolume,
   updateSequencerMelodyStepPitch,
@@ -99,6 +100,7 @@ import {
 import { getStyleReferences } from "./lib/styleReferences";
 import { TAP_TEMPO_MAX_TAPS, tapTempo } from "./lib/tapTempo";
 import { getInKeyPalette, getMelodyPalette } from "./lib/stepPitch";
+import { getBassGuitarPalette } from "./lib/bassGuitarPitch";
 import { createDefaultStepVelocities } from "./lib/stepVelocity";
 import { StyleFidelityMeter } from "./components/StyleFidelityMeter";
 import { EqVisualizer } from "./components/EqVisualizer";
@@ -293,6 +295,10 @@ export function App() {
   );
   const bassPalette = useMemo(
     () => getInKeyPalette(baseStyle.musicalKey),
+    [baseStyle.musicalKey],
+  );
+  const bassGuitarPalette = useMemo(
+    () => getBassGuitarPalette(baseStyle.musicalKey),
     [baseStyle.musicalKey],
   );
   const melodyPalette = useMemo(
@@ -598,6 +604,12 @@ export function App() {
 
   function updateBassStepPitch(stepIndex: number, degree: number) {
     applySequencerState(updateSequencerBassStepPitch(sequencer, stepIndex, degree));
+  }
+
+  function updateBassGuitarStepPitch(stepIndex: number, degree: number) {
+    applySequencerState(
+      updateSequencerBassGuitarStepPitch(sequencer, stepIndex, degree),
+    );
   }
 
   function updateMelodyStepPitch(stepIndex: number, degree: number) {
@@ -1030,6 +1042,8 @@ export function App() {
               stepVelocities={sequencer.stepVelocities}
               bassStepPitches={sequencer.bassStepPitches}
               bassPalette={bassPalette}
+              bassGuitarStepPitches={sequencer.bassGuitarStepPitches}
+              bassGuitarPalette={bassGuitarPalette}
               melodyStepPitches={sequencer.melodyStepPitches}
               melodyPalette={melodyPalette}
               activeStep={activeStep}
@@ -1055,6 +1069,7 @@ export function App() {
               onToggleStep={toggleStep}
               onPaintStep={paintStep}
               onBassStepPitchChange={updateBassStepPitch}
+              onBassGuitarStepPitchChange={updateBassGuitarStepPitch}
               onMelodyStepPitchChange={updateMelodyStepPitch}
               visibleInstruments={visibleInstruments}
             />

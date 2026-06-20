@@ -7,6 +7,10 @@ import {
   synthesizeBassNotePcm,
   synthesizeMelodyNotePcm,
 } from "./stepPitch";
+import {
+  getBassGuitarPitchForStep,
+  synthesizeBassGuitarNotePcm,
+} from "./bassGuitarPitch";
 import { getStepVelocities, getStepVelocityFactor } from "./stepVelocity";
 
 export const RENDER_SAMPLE_RATE = 22050;
@@ -14,7 +18,7 @@ const STEPS = 16;
 const TAIL_SECONDS = 0.5;
 const PEAK_TARGET = 0.9;
 
-type SampledInstrumentId = Exclude<InstrumentId, "melody">;
+type SampledInstrumentId = Exclude<InstrumentId, "melody" | "bassGuitar">;
 export type DecodedKit = Record<SampledInstrumentId, Float32Array>;
 
 export function renderPatternToPcm(
@@ -43,6 +47,25 @@ export function renderPatternToPcm(
         if (!on) return;
         const pitch = getBassPitchForStep(style.musicalKey, i, style.bassStepPitches);
         const sample = synthesizeBassNotePcm(pitch.frequency, RENDER_SAMPLE_RATE);
+        const swungSec = i * stepSec + (i % 2 === 1 ? swing * stepSec : 0);
+        const start = Math.round(swungSec * RENDER_SAMPLE_RATE);
+        const hitGain = laneVolume * getStepVelocityFactor(stepVelocities[lane][i]);
+        for (let s = 0; s < sample.length && start + s < length; s += 1) {
+          out[start + s] += sample[s] * hitGain;
+        }
+      });
+      continue;
+    }
+
+    if (lane === "bassGuitar") {
+      pattern[lane].forEach((on, i) => {
+        if (!on) return;
+        const pitch = getBassGuitarPitchForStep(
+          style.musicalKey,
+          i,
+          style.bassGuitarStepPitches,
+        );
+        const sample = synthesizeBassGuitarNotePcm(pitch.frequency, RENDER_SAMPLE_RATE);
         const swungSec = i * stepSec + (i % 2 === 1 ? swing * stepSec : 0);
         const start = Math.round(swungSec * RENDER_SAMPLE_RATE);
         const hitGain = laneVolume * getStepVelocityFactor(stepVelocities[lane][i]);

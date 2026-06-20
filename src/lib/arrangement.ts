@@ -4,6 +4,7 @@ import { type InstrumentId, type Pattern } from "./patterns";
 import { normalizeLaneVolumes } from "./laneVolumes";
 import { createDefaultLaneMutes } from "./laneMutes";
 import { normalizeBassStepPitches, normalizeMelodyStepPitches } from "./stepPitch";
+import { normalizeBassGuitarStepPitches } from "./bassGuitarPitch";
 import { normalizeStepVelocities } from "./stepVelocity";
 import {
   normalizeProducerTagConfig,
@@ -257,6 +258,10 @@ function readSequencerState(value: unknown, errors: string[]): SequencerState | 
   const laneMutes = readLaneMutes(value.laneMutes, errors);
   const stepVelocities = readStepVelocities(value.stepVelocities, errors);
   const bassStepPitches = readBassStepPitches(value.bassStepPitches, errors);
+  const bassGuitarStepPitches = readBassGuitarStepPitches(
+    value.bassGuitarStepPitches,
+    errors,
+  );
   const melodyStepPitches = readMelodyStepPitches(value.melodyStepPitches, errors);
 
   if (
@@ -268,6 +273,7 @@ function readSequencerState(value: unknown, errors: string[]): SequencerState | 
     !laneMutes ||
     !stepVelocities ||
     !bassStepPitches ||
+    !bassGuitarStepPitches ||
     !melodyStepPitches
   ) {
     return null;
@@ -282,6 +288,7 @@ function readSequencerState(value: unknown, errors: string[]): SequencerState | 
     laneMutes,
     stepVelocities,
     bassStepPitches,
+    bassGuitarStepPitches,
     melodyStepPitches,
   };
 }
@@ -341,6 +348,15 @@ function readMelodyStepPitches(value: unknown, errors: string[]) {
 
 function readBassStepPitches(value: unknown, errors: string[]) {
   return readPitchArray(value, errors, "bassStepPitches", normalizeBassStepPitches);
+}
+
+function readBassGuitarStepPitches(value: unknown, errors: string[]) {
+  return readPitchArray(
+    value,
+    errors,
+    "bassGuitarStepPitches",
+    normalizeBassGuitarStepPitches,
+  );
 }
 
 function readPitchArray(
@@ -583,7 +599,7 @@ function readPattern(value: unknown, errors: string[], path: string): Pattern | 
   }
 
   const empty = () => Array.from({ length: 16 }, () => false);
-  const optionalLanes = new Set<InstrumentId>(["clap", "808", "melody"]);
+  const optionalLanes = new Set<InstrumentId>(["clap", "808", "bassGuitar", "melody"]);
   const entries = INSTRUMENT_ORDER.map((instrument) => {
     const row = value[instrument];
 

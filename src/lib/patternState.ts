@@ -31,6 +31,14 @@ import {
   type MelodyStepPitches,
 } from "./stepPitch";
 import {
+  bassGuitarStepPitchesAreDefault,
+  cloneBassGuitarStepPitches,
+  createDefaultBassGuitarStepPitches,
+  deserializeBassGuitarStepPitches,
+  serializeBassGuitarStepPitches,
+  type BassGuitarStepPitches,
+} from "./bassGuitarPitch";
+import {
   cloneStepVelocities,
   createDefaultStepVelocities,
   deserializeStepVelocities,
@@ -50,6 +58,7 @@ export interface SequencerState {
   laneMutes: LaneMutes;
   stepVelocities: StepVelocities;
   bassStepPitches: BassStepPitches;
+  bassGuitarStepPitches: BassGuitarStepPitches;
   melodyStepPitches: MelodyStepPitches;
 }
 
@@ -64,6 +73,7 @@ export function createDefaultSequencerState(styleId: BeatStyleId): SequencerStat
     laneMutes: createDefaultLaneMutes(),
     stepVelocities: createDefaultStepVelocities(),
     bassStepPitches: createDefaultBassStepPitches(),
+    bassGuitarStepPitches: createDefaultBassGuitarStepPitches(),
     melodyStepPitches: createDefaultMelodyStepPitches(),
   };
 }
@@ -96,12 +106,24 @@ export function serializePattern(pattern: Pattern): string {
 
 const LEGACY_LANE_ORDER: InstrumentId[] = ["kick", "snare", "hat", "openHat"];
 const SIX_LANE_ORDER: InstrumentId[] = ["kick", "snare", "hat", "openHat", "clap", "808"];
+// Pre-bassGuitar full pattern (7 rows) — kept so older share links still load.
+const SEVEN_LANE_ORDER: InstrumentId[] = [
+  "kick",
+  "snare",
+  "hat",
+  "openHat",
+  "clap",
+  "808",
+  "melody",
+];
 
 export function deserializePattern(value: string): Pattern | null {
   const rows = value.split(".");
   const order =
     rows.length === INSTRUMENT_ORDER.length
       ? INSTRUMENT_ORDER
+      : rows.length === SEVEN_LANE_ORDER.length
+        ? SEVEN_LANE_ORDER
       : rows.length === SIX_LANE_ORDER.length
         ? SIX_LANE_ORDER
       : rows.length === LEGACY_LANE_ORDER.length
@@ -151,6 +173,8 @@ export function readSequencerStateFromParams(params: URLSearchParams): Sequencer
     deserializeStepVelocities(params.get("vel")) ?? defaults.stepVelocities;
   const bassStepPitches =
     deserializeBassStepPitches(params.get("bass")) ?? defaults.bassStepPitches;
+  const bassGuitarStepPitches =
+    deserializeBassGuitarStepPitches(params.get("bgtr")) ?? defaults.bassGuitarStepPitches;
   const melodyStepPitches =
     deserializeMelodyStepPitches(params.get("melody")) ?? defaults.melodyStepPitches;
 
@@ -163,6 +187,7 @@ export function readSequencerStateFromParams(params: URLSearchParams): Sequencer
     laneMutes,
     stepVelocities,
     bassStepPitches,
+    bassGuitarStepPitches,
     melodyStepPitches,
   };
 }
@@ -185,6 +210,9 @@ export function writeSequencerStateToParams(state: SequencerState): URLSearchPar
   if (!bassStepPitchesAreDefault(state.bassStepPitches)) {
     params.set("bass", serializeBassStepPitches(state.bassStepPitches));
   }
+  if (!bassGuitarStepPitchesAreDefault(state.bassGuitarStepPitches)) {
+    params.set("bgtr", serializeBassGuitarStepPitches(state.bassGuitarStepPitches));
+  }
   if (!melodyStepPitchesAreDefault(state.melodyStepPitches)) {
     params.set("melody", serializeMelodyStepPitches(state.melodyStepPitches));
   }
@@ -201,6 +229,7 @@ export function cloneSequencerState(sequencer: SequencerState): SequencerState {
     laneMutes: cloneLaneMutes(sequencer.laneMutes),
     stepVelocities: cloneStepVelocities(sequencer.stepVelocities),
     bassStepPitches: cloneBassStepPitches(sequencer.bassStepPitches),
+    bassGuitarStepPitches: cloneBassGuitarStepPitches(sequencer.bassGuitarStepPitches),
     melodyStepPitches: cloneMelodyStepPitches(sequencer.melodyStepPitches),
   };
 }

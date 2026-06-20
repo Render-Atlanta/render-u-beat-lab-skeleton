@@ -38,6 +38,16 @@ export function getDefaultToneRuntime(): ToneRuntimePort {
       else synth.toDestination();
       return toToneVoice(synth);
     },
+    createBassGuitarSynth: (destination) => {
+      const synth = new Tone.Synth({
+        oscillator: { type: "sawtooth" },
+        // Pluckier than the 808 sub: faster attack, shorter decay, less sustain.
+        envelope: { attack: 0.006, decay: 0.18, sustain: 0.04, release: 0.09 },
+      });
+      if (destination) synth.connect(destination.node);
+      else synth.toDestination();
+      return toToneVoice(synth);
+    },
     createMelodySynth: (destination) => {
       const synth = new Tone.Synth({
         oscillator: { type: "triangle" },

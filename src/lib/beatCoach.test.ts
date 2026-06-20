@@ -57,6 +57,7 @@ describe("beat coach helpers", () => {
       openHat: [8, 16],
       clap: [],
       "808": [],
+      bassGuitar: [],
       melody: [],
     });
 
@@ -64,12 +65,12 @@ describe("beat coach helpers", () => {
     // editedPattern has clap:[] and 808:[], giving editedHitCount=21.
     expect(summarizePatternChange("trap", editedPattern)).toEqual({
       styleId: "trap",
-      baseHitCount: 23,
+      baseHitCount: 26,
       editedHitCount: 21,
-      densityDelta: -2,
+      densityDelta: -5,
       densityLevel: "balanced",
       densitySummary:
-        "Balanced: you removed 2 hits, so the beat feels more open than Atlanta Trap.",
+        "Balanced: you removed 5 hits, so the beat feels more open than Atlanta Trap.",
       pocketSummary:
         "The snare moved onto steps 5 and 13, so the groove feels more square.",
       instrumentSummaries: [
@@ -79,6 +80,7 @@ describe("beat coach helpers", () => {
         "Open hat: unchanged at 2 hits.",
         "Clap: down 1 to 0 hits.",
         "808: down 3 to 0 hits.",
+        "Bass Gtr: down 3 to 0 hits.",
         "Melody: unchanged at 0 hits.",
       ],
       tryThis: "Try adding two hats in a row before the snare, then remove one kick.",
@@ -93,18 +95,19 @@ describe("beat coach helpers", () => {
       openHat: [],
       clap: [],
       "808": [],
+      bassGuitar: [],
       melody: [],
     });
 
     // pop base now has clap:[5,13] and 808:[1,11] (4 extra hits), so base=19.
     // editedPattern has clap:[] and 808:[], giving editedHitCount=7.
     expect(summarizePatternChange("pop", editedPattern)).toMatchObject({
-      baseHitCount: 19,
+      baseHitCount: 21,
       editedHitCount: 7,
-      densityDelta: -12,
+      densityDelta: -14,
       densityLevel: "sparse",
       densitySummary:
-        "Sparse: you removed 12 hits, so the beat feels more open than Pop Bounce.",
+        "Sparse: you removed 14 hits, so the beat feels more open than Pop Bounce.",
       pocketSummary:
         "The snare moved away from steps 5 and 13, so the pocket feels less expected; fewer kicks leave more space; fewer hats make the top line breathe.",
       instrumentSummaries: [
@@ -114,6 +117,7 @@ describe("beat coach helpers", () => {
         "Open hat: down 2 to 0 hits.",
         "Clap: down 2 to 0 hits.",
         "808: down 2 to 0 hits.",
+        "Bass Gtr: down 2 to 0 hits.",
         "Melody: unchanged at 0 hits.",
       ],
     });
@@ -122,7 +126,7 @@ describe("beat coach helpers", () => {
   it("recognizes unchanged preset density", () => {
     // crunk base now has clap:[5,13] and 808:[1,7] (4 extra hits), so 19 hits → balanced.
     expect(summarizePatternChange("crunk", BEAT_STYLES.crunk.pattern).densitySummary).toBe(
-      "Still balanced: 19 hits keeps the same density as Crunk Chant.",
+      "Still balanced: 21 hits keeps the same density as Crunk Chant.",
     );
   });
 });

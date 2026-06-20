@@ -80,6 +80,7 @@ export function createWebAudioBeatEngine(
     openHat: playOpenHat,
     clap: playClap,
     "808": play808,
+    bassGuitar: playBassGuitar,
     melody: playMelody,
   };
 
@@ -330,6 +331,24 @@ export function createWebAudioBeatEngine(
     osc.connect(filter).connect(gain).connect(laneBuses["808"]);
     osc.start(time);
     osc.stop(time + 0.4);
+  }
+
+  function playBassGuitar(time: number, accent = 1, pitch?: StepPitch) {
+    const frequency = pitch?.frequency ?? 110;
+    const osc = context.createOscillator();
+    const filter = context.createBiquadFilter();
+    const gain = context.createGain();
+    osc.type = "sawtooth";
+    osc.frequency.setValueAtTime(frequency, time);
+    filter.type = "lowpass";
+    filter.frequency.value = 1300;
+    // Plucked envelope: fast attack, short decay — distinct from the 808's sustained sub.
+    gain.gain.setValueAtTime(0.0001, time);
+    gain.gain.exponentialRampToValueAtTime(0.5 * accent, time + 0.006);
+    gain.gain.exponentialRampToValueAtTime(0.001, time + 0.18);
+    osc.connect(filter).connect(gain).connect(laneBuses.bassGuitar);
+    osc.start(time);
+    osc.stop(time + 0.22);
   }
 
   function playMelody(time: number, accent = 1, pitch?: StepPitch) {

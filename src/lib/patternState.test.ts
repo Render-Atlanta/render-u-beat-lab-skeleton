@@ -14,6 +14,7 @@ import {
   createDefaultBassStepPitches,
   createDefaultMelodyStepPitches,
 } from "./stepPitch";
+import { createDefaultBassGuitarStepPitches } from "./bassGuitarPitch";
 import { createDefaultStepVelocities } from "./stepVelocity";
 import { GOLDEN_BEAT_STYLE_FIXTURES } from "../test/beatStyleFixtures";
 
@@ -82,7 +83,7 @@ describe("pattern state helpers", () => {
     });
 
     expect(params.get("vel")).toBe(
-      "2111111111111111.1111111111111111.1101111111111111.1111111111111111.1111111111111111.1111111111111111.1111111111111111",
+      "2111111111111111.1111111111111111.1101111111111111.1111111111111111.1111111111111111.1111111111111111.1111111111111111.1111111111111111",
     );
     expect(readSequencerStateFromParams(params)).toEqual({
       styleId: "afrobeats",
@@ -93,6 +94,7 @@ describe("pattern state helpers", () => {
       laneMutes: createDefaultLaneMutes(),
       stepVelocities,
       bassStepPitches: createDefaultBassStepPitches(),
+      bassGuitarStepPitches: createDefaultBassGuitarStepPitches(),
       melodyStepPitches: createDefaultMelodyStepPitches(),
     });
   });
@@ -134,7 +136,7 @@ describe("pattern state helpers", () => {
 
     const muted = { ...state, laneMutes: { ...state.laneMutes, snare: true } };
     const params = writeSequencerStateToParams(muted);
-    expect(params.get("mute")).toBe("0100000");
+    expect(params.get("mute")).toBe("01000000");
     expect(readSequencerStateFromParams(params).laneMutes).toEqual(muted.laneMutes);
   });
 
@@ -179,6 +181,7 @@ describe("pattern state helpers", () => {
       laneMutes: createDefaultLaneMutes(),
       stepVelocities: createDefaultStepVelocities(),
       bassStepPitches: createDefaultBassStepPitches(),
+      bassGuitarStepPitches: createDefaultBassGuitarStepPitches(),
       melodyStepPitches: createDefaultMelodyStepPitches(),
     });
   });

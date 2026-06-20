@@ -12,6 +12,7 @@ export function createFakeToneRuntime() {
     snare: createFakeVoice(),
     hat: createFakeVoice(),
     openHat: createFakeVoice(),
+    bassGuitar: createFakeVoice(),
   };
   const sampleUrls: string[] = [];
   let startCount = 0;
@@ -53,6 +54,7 @@ export function createFakeToneRuntime() {
       return voices.kick;
     },
     createKickSynth: () => voices.kick,
+    createBassGuitarSynth: () => voices.bassGuitar,
     createNoiseSynth: () => {
       if (voices.snare.created === false) {
         voices.snare.created = true;

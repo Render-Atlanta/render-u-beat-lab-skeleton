@@ -2,7 +2,8 @@ import type { BeatStyleId } from "../lib/beatStyles";
 import type { InstrumentId } from "../lib/patterns";
 import type { ToneSampleUrls } from "./toneSampleBeatEngine";
 
-type SampleKitLane = Exclude<InstrumentId, "melody">;
+// melody and bassGuitar are synthesized (pitched lanes), not sampled.
+type SampleKitLane = Exclude<InstrumentId, "melody" | "bassGuitar">;
 
 // ---------------------------------------------------------------------------
 // PR-13 sample kit manifest

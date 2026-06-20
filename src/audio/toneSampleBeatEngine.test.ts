@@ -100,7 +100,7 @@ describe("Tone.js sample beat engine", () => {
       ...BEAT_STYLES.trap,
       stepVelocities: {
         ...Object.fromEntries(
-          ["kick", "snare", "hat", "openHat", "clap", "808", "melody"].map((id) => [
+          ["kick", "snare", "hat", "openHat", "clap", "808", "bassGuitar", "melody"].map((id) => [
             id,
             Array.from({ length: 16 }, () => 1),
           ]),
