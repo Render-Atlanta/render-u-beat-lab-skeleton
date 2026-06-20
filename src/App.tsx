@@ -8,6 +8,7 @@ import type { ProducerTagSample } from "./audio/audioEngine";
 import { getKitSampleUrls } from "./audio/sampleKit";
 import { ArrangementPanel } from "./components/ArrangementPanel";
 import { LessonsPanel } from "./components/LessonsPanel";
+import { PianoRollPanel, type PianoRollLane } from "./components/PianoRollPanel";
 import { LESSONS, evaluateLesson, getLesson } from "./lib/lessons";
 import { readLessonPref, writeLessonPref } from "./lib/lessonPrefs";
 import { BeatCoachPanel } from "./components/BeatCoachPanel";
@@ -107,7 +108,12 @@ import {
   updateSequencerMelodyStepPitch,
   updateSequencerStep,
   updateSequencerSwing,
+  type PitchedInstrumentId,
 } from "./lib/sequencerDomain";
+import {
+  clearSequencerPitchedStep,
+  setSequencerPitchedStepNote,
+} from "./lib/pianoRoll";
 import { getStyleReferences } from "./lib/styleReferences";
 import { TAP_TEMPO_MAX_TAPS, tapTempo } from "./lib/tapTempo";
 import { getInKeyPalette, getMelodyPalette } from "./lib/stepPitch";
@@ -159,7 +165,7 @@ function audibleStyle(state: SequencerState, guided: GuidedModeState) {
  */
 type LayoutMode = "rail" | "focus" | "pro";
 /** Which tool occupies the tabbed tool panel on desktop. */
-type ToolTab = "coach" | "lessons" | "tag" | "arrange" | "capture";
+type ToolTab = "coach" | "lessons" | "notes" | "tag" | "arrange" | "capture";
 /** Mobile view selector — "make" shows the sequencer, the rest mirror the tools. */
 type MobileTab = "make" | ToolTab;
 
@@ -172,6 +178,7 @@ const LAYOUT_MODES: { id: LayoutMode; label: string }[] = [
 const TOOL_TABS: { id: ToolTab; label: string }[] = [
   { id: "coach", label: "Coach" },
   { id: "lessons", label: "Lessons" },
+  { id: "notes", label: "Piano Roll" },
   { id: "tag", label: "Tag" },
   { id: "arrange", label: "Arrange" },
   { id: "capture", label: "Capture" },
@@ -335,6 +342,41 @@ export function App() {
     () => getMelodyPalette(baseStyle.musicalKey),
     [baseStyle.musicalKey],
   );
+  const pianoRollLanes = useMemo<PianoRollLane[]>(() => {
+    const labelOf = (id: PitchedInstrumentId) =>
+      INSTRUMENTS.find((instrument) => instrument.id === id)?.label ?? id;
+    return [
+      {
+        id: "808",
+        label: labelOf("808"),
+        steps: sequencer.pattern["808"],
+        pitches: sequencer.bassStepPitches,
+        palette: bassPalette,
+      },
+      {
+        id: "bassGuitar",
+        label: labelOf("bassGuitar"),
+        steps: sequencer.pattern.bassGuitar,
+        pitches: sequencer.bassGuitarStepPitches,
+        palette: bassGuitarPalette,
+      },
+      {
+        id: "melody",
+        label: labelOf("melody"),
+        steps: sequencer.pattern.melody,
+        pitches: sequencer.melodyStepPitches,
+        palette: melodyPalette,
+      },
+    ];
+  }, [
+    sequencer.pattern,
+    sequencer.bassStepPitches,
+    sequencer.bassGuitarStepPitches,
+    sequencer.melodyStepPitches,
+    bassPalette,
+    bassGuitarPalette,
+    melodyPalette,
+  ]);
 
   useEffect(() => {
     const currentBeat = new URLSearchParams(window.location.search).get(
@@ -666,6 +708,25 @@ export function App() {
     applySequencerState(updateSequencerMelodyStepPitch(sequencer, stepIndex, degree));
   }
 
+  function setPianoRollNote(
+    instrument: PitchedInstrumentId,
+    stepIndex: number,
+    degree: number,
+  ) {
+    applySequencerState(
+      setSequencerPitchedStepNote(sequencer, instrument, stepIndex, degree),
+    );
+  }
+
+  function clearPianoRollStep(
+    instrument: PitchedInstrumentId,
+    stepIndex: number,
+  ) {
+    applySequencerState(
+      clearSequencerPitchedStep(sequencer, instrument, stepIndex),
+    );
+  }
+
   function restoreSequencerSnapshot(snapshot: ReturnType<typeof getHistorySnapshot>) {
     const next = restoreHistorySnapshot(sequencer, snapshot);
     setSequencer(next);
@@ -988,6 +1049,15 @@ export function App() {
               onExit={() => setLessonId(null)}
             />
           </div>
+        );
+      case "notes":
+        return (
+          <PianoRollPanel
+            lanes={pianoRollLanes}
+            activeStep={activeStep}
+            onSetNote={setPianoRollNote}
+            onClearStep={clearPianoRollStep}
+          />
         );
       case "arrange":
         return (

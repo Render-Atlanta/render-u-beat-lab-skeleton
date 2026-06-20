@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { createDefaultSequencerState } from "./patternState";
-import { updateSequencerBassStepPitch, updateSequencerStep } from "./sequencerDomain";
+import {
+  updateSequencerBassGuitarStepPitch,
+  updateSequencerBassStepPitch,
+  updateSequencerStep,
+} from "./sequencerDomain";
 import {
   HISTORY_LIMIT,
   createHistoryState,
@@ -31,6 +35,24 @@ describe("sequencer history", () => {
 
     const redo = redoHistory(undo.history, undo.snapshot);
     expect(redo.snapshot).toEqual(getHistorySnapshot(secondEdit));
+  });
+
+  it("undoes a bass-guitar pitch move", () => {
+    const initial = createDefaultSequencerState("trap");
+    const edit = updateSequencerBassGuitarStepPitch(initial, 0, 2);
+    const history = pushHistorySnapshot(createHistoryState(), initial, edit);
+
+    // A bass-guitar pitch change must register as an undoable snapshot.
+    expect(history.undo).toHaveLength(1);
+
+    const undo = undoHistory(history, getHistorySnapshot(edit));
+    const restored = restoreHistorySnapshot(edit, undo.snapshot);
+    expect(restored.bassGuitarStepPitches).toEqual(
+      initial.bassGuitarStepPitches,
+    );
+    expect(restored.bassGuitarStepPitches).not.toEqual(
+      edit.bassGuitarStepPitches,
+    );
   });
 
   it("clears redo when a new snapshot is pushed after undo", () => {

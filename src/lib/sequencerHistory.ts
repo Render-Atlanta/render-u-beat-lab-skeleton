@@ -6,6 +6,10 @@ import {
   type BassStepPitches,
   type MelodyStepPitches,
 } from "./stepPitch";
+import {
+  cloneBassGuitarStepPitches,
+  type BassGuitarStepPitches,
+} from "./bassGuitarPitch";
 import { cloneStepVelocities, type StepVelocities } from "./stepVelocity";
 
 export const HISTORY_LIMIT = 40;
@@ -14,6 +18,7 @@ export interface SequencerHistorySnapshot {
   pattern: Pattern;
   stepVelocities: StepVelocities;
   bassStepPitches: BassStepPitches;
+  bassGuitarStepPitches: BassGuitarStepPitches;
   melodyStepPitches: MelodyStepPitches;
 }
 
@@ -33,6 +38,9 @@ export function getHistorySnapshot(
     pattern: clonePattern(sequencer.pattern),
     stepVelocities: cloneStepVelocities(sequencer.stepVelocities),
     bassStepPitches: cloneBassStepPitches(sequencer.bassStepPitches),
+    bassGuitarStepPitches: cloneBassGuitarStepPitches(
+      sequencer.bassGuitarStepPitches,
+    ),
     melodyStepPitches: cloneMelodyStepPitches(sequencer.melodyStepPitches),
   };
 }
@@ -46,6 +54,9 @@ export function restoreHistorySnapshot(
     pattern: clonePattern(snapshot.pattern),
     stepVelocities: cloneStepVelocities(snapshot.stepVelocities),
     bassStepPitches: cloneBassStepPitches(snapshot.bassStepPitches),
+    bassGuitarStepPitches: cloneBassGuitarStepPitches(
+      snapshot.bassGuitarStepPitches,
+    ),
     melodyStepPitches: cloneMelodyStepPitches(snapshot.melodyStepPitches),
   };
 }
@@ -109,6 +120,9 @@ function cloneSnapshot(
     pattern: clonePattern(snapshot.pattern),
     stepVelocities: cloneStepVelocities(snapshot.stepVelocities),
     bassStepPitches: cloneBassStepPitches(snapshot.bassStepPitches),
+    bassGuitarStepPitches: cloneBassGuitarStepPitches(
+      snapshot.bassGuitarStepPitches,
+    ),
     melodyStepPitches: cloneMelodyStepPitches(snapshot.melodyStepPitches),
   };
 }

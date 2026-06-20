@@ -240,3 +240,6 @@ export function isPitchedLane(instrument: InstrumentId): boolean {
     instrument === "melody"
   );
 }
+
+/** The lanes that carry a per-step pitch (vs. the boolean drum lanes). */
+export type PitchedInstrumentId = "808" | "bassGuitar" | "melody";
