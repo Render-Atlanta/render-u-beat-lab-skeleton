@@ -46,6 +46,15 @@ Top picks:
       as you build on the grid (pure predicates over `SequencerState`). The
       "feel" lesson reinforces the Vary/Fill/Humanize/Swing controls. Active
       lesson persists via `lessonPrefs`; progress is derived live.
+- [x] ~~**Piano-roll-lite** — a grid note-editor for the pitched lanes.~~ Shipped
+      as the **Piano Roll** tool tab (`pianoRoll.ts` + `PianoRollPanel`): a
+      7-degree × 16-step grid per focused lane (808 / Bass Gtr / Melody), click
+      to place / move / clear a note. In-house, no new deps, zero engine
+      changes; shares state with the main grid + autosave + share URLs via
+      `setSequencerPitchedStepNote` / `clearSequencerPitchedStep` (one undo
+      entry each, exhaustive over the pitched lanes). The review also surfaced
+      and fixed a pre-existing undo bug — the history snapshot omitted
+      `bassGuitarStepPitches`, so Bass Gtr pitch moves couldn't be undone.
 - [ ] **Waveform view + onset markers** (`wavesurfer.js`) — for the upload/sample features.
 - [x] ~~**Drummer-style variations & fills** — perturb the current pocket within its style profile.~~
       Shipped as the **Vary** / **Fill** buttons (`beatVariation.ts` + seeded
@@ -58,7 +67,7 @@ Top picks:
       seeded velocity dynamics (accent the pulse, ghost the in-between 16ths),
       drums only; timing-feel stays the Swing control. Reuses `seededRng` and
       the `applyDrummerAction` helper from the Vary/Fill round.
-- [ ] Still open: MIDI controller input, piano-roll-lite, FX sends, kit selection (`smplr`), music theory (`tonal`).
+- [ ] Still open: MIDI controller input, FX sends, kit selection (`smplr`), music theory (`tonal`).
 - [ ] **Analysis upgrade**: `essentia.js` (robust BPM/beat/key) could raise PR-39 accuracy.
 - [ ] **Sampled / realistic instruments** (incl. the parked sampled bass via `smplr`/soundfonts)
       — requires solving offline/OfflineAudioContext sample rendering first, since
