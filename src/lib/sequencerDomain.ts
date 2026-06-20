@@ -233,7 +233,7 @@ function clampRoundedNumber(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, Math.round(value)));
 }
 
-function isPitchedLane(instrument: InstrumentId): boolean {
+export function isPitchedLane(instrument: InstrumentId): boolean {
   return (
     instrument === "808" ||
     instrument === "bassGuitar" ||

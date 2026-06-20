@@ -82,6 +82,7 @@ import {
 } from "./lib/producerTag";
 import { decodeProducerTagSample } from "./lib/producerTagSample";
 import { renderBeatWav } from "./lib/exportBeat";
+import { renderBeatMidi } from "./lib/exportMidi";
 import {
   createPlayableStyle,
   getSequencerLoopDurationMs,
@@ -193,6 +194,21 @@ function readInitialSequencerState(): SequencerState {
     new URLSearchParams(window.location.search),
     getLocalStorage(),
   );
+}
+
+/** Save `bytes` to the user's machine via a transient object-URL anchor. */
+function triggerDownload(bytes: Uint8Array, filename: string, mimeType: string): void {
+  // Pass the view itself, not `bytes.buffer` — a view with a non-zero offset
+  // or partial length would otherwise leak unrelated bytes into the download.
+  const blob = new Blob([bytes as BlobPart], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  URL.revokeObjectURL(url);
 }
 
 export function App() {
@@ -788,19 +804,30 @@ export function App() {
         tag,
       });
 
-      const blob = new Blob([bytes.buffer as ArrayBuffer], { type: "audio/wav" });
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement("a");
-      anchor.href = url;
-      anchor.download = "render-u-beat.wav";
-      document.body.appendChild(anchor);
-      anchor.click();
-      document.body.removeChild(anchor);
-      URL.revokeObjectURL(url);
+      triggerDownload(bytes, "render-u-beat.wav", "audio/wav");
       setExportMessage("WAV download started.");
     } catch (error) {
       setExportMessage(
         error instanceof Error ? error.message : "WAV export failed.",
+      );
+    }
+  }
+
+  function downloadMidi() {
+    try {
+      // MIDI needs no kit — it carries notes, not synthesized audio. Build the
+      // style from `sequencer` directly so the export is the unmasked beat.
+      const bytes = renderBeatMidi({
+        pattern: sequencer.pattern,
+        style: createPlayableStyle(sequencer),
+        loops: 2,
+      });
+
+      triggerDownload(bytes, "render-u-beat.mid", "audio/midi");
+      setExportMessage("MIDI download started.");
+    } catch (error) {
+      setExportMessage(
+        error instanceof Error ? error.message : "MIDI export failed.",
       );
     }
   }
@@ -923,6 +950,7 @@ export function App() {
               onToggleLaneMute={toggleArrangementLaneMute}
               onExportProject={exportProject}
               onDownloadWav={downloadWav}
+              onDownloadMidi={downloadMidi}
             />
           </div>
         );

@@ -1,7 +1,6 @@
 import { useRef } from "react";
 import type { InstrumentId } from "../lib/patterns";
-
-const PITCHED_LANES = new Set<InstrumentId>(["808", "melody"]);
+import { isPitchedLane } from "../lib/sequencerDomain";
 
 export function useStepPaint(
   onPaintStep: (instrument: InstrumentId, stepIndex: number) => void,
@@ -18,7 +17,7 @@ export function useStepPaint(
     stepIndex: number,
     event: React.PointerEvent<HTMLButtonElement>,
   ) {
-    if (event.button !== 0 || PITCHED_LANES.has(instrument)) {
+    if (event.button !== 0 || isPitchedLane(instrument)) {
       return;
     }
 
@@ -42,7 +41,7 @@ export function useStepPaint(
     if (
       !instrument ||
       instrument !== start.instrument ||
-      PITCHED_LANES.has(instrument) ||
+      isPitchedLane(instrument) ||
       !Number.isInteger(stepIndex)
     ) {
       return;

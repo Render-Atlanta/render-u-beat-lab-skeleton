@@ -1,7 +1,9 @@
 # Beat Lab — Remaining Work
 
 Snapshot as of 2026-06-20, after the brief-fidelity + bass-guitar round
-(PR-A beat ruler #94, PR-B guided mode #96, PR-C bass guitar #97 — all merged).
+(PR-A beat ruler #94, PR-B guided mode #96, PR-C bass guitar #97 — all merged),
+plus a follow-up round: bass-guitar drag-paint fix + MIDI export (branch
+`feat/midi-export`).
 
 ## A. Near-term follow-ups (small, from the recent rounds)
 
@@ -9,12 +11,15 @@ Snapshot as of 2026-06-20, after the brief-fidelity + bass-guitar round
       Run `npm run dev`, open with `?songlab=1`, drop in real tracks, and record
       BPM accuracy + kick/snare/hat separation. This is the **go/no-go input for
       PR-39 Phase B** — it's a human-audition task (the AI can't judge audio).
-- [ ] **Sync the primary checkout.** `/Users/.../render-u-beat-lab` is a few
-      commits behind `origin/main` (left alone during the concurrent
-      `ai-beat-commands` work). A `git pull` when convenient.
-- [ ] **Surface bass-guitar in more coach copy (optional polish).** The Beat Coach
-      per-instrument summary now includes Bass Gtr; double-check other coach
-      surfaces (style notes, guided tips) read well with the new lane.
+- [x] ~~**Sync the primary checkout.**~~ Done — fast-forwarded to `origin/main`
+      (through #98). Picked up the bass-guitar round + this doc.
+- [x] ~~**Surface bass-guitar in more coach copy (optional polish).**~~ Audited the
+      coach/guided/style surfaces: per-instrument copy, labels, ordering, and
+      guided sequence all already cover Bass Gtr, and the style "feel notes" are
+      drum-pocket prose by design (no lane inventory to update). The audit turned
+      up a real bug instead — `useStepPaint` left bass guitar out of its pitched-
+      lane guard, so drag-paint was wrongly active on it. Fixed by reusing the
+      canonical `isPitchedLane`, with a regression test.
 - [x] ~~Fix the round spec's PR-C drift (said smplr; shipped synth).~~ Done.
 
 ## B. PR-39 Phase B — Song decompose (GATED on the findings doc above)
@@ -30,7 +35,11 @@ Only build if the spike findings justify it:
 
 DAW-inspired features + integrations, filtered for a beginner education tool.
 Top picks:
-- [ ] **MIDI export** (`@tonejs/midi`) — let learners take a beat into a real DAW.
+- [x] ~~**MIDI export** — let learners take a beat into a real DAW.~~ Shipped as
+      "Download MIDI". Used an in-house Standard MIDI File writer/reader
+      (`midiFile.ts` + `midiReader.ts` + `exportMidi.ts`) rather than
+      `@tonejs/midi`, which is ~4 years stale (last publish 2022-04) and pulls in
+      two transitive deps; the format is frozen, so there's nothing to maintain.
 - [ ] **"Learn to Play" lessons** — turn guided-mode one-liners into multi-step lessons.
 - [ ] **Waveform view + onset markers** (`wavesurfer.js`) — for the upload/sample features.
 - [ ] **Drummer-style variations & fills** — perturb the current pocket within its style profile.

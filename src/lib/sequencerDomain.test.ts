@@ -4,6 +4,7 @@ import {
   createPlayableStyle,
   getSequencerLoopDurationMs,
   getSwingPercent,
+  isPitchedLane,
   paintSequencerStep,
   toggleSequencerLaneMute,
   updateSequencerStep,
@@ -15,6 +16,17 @@ import { createDefaultSequencerState } from "./patternState";
 import { createDefaultStepVelocities } from "./stepVelocity";
 
 describe("sequencer domain helpers", () => {
+  it("treats every pitch-editable lane (incl. bass guitar) as pitched, drums as not", () => {
+    // Single source of truth shared with the step-paint guard, so drag-paint
+    // is suppressed on exactly the lanes that show a pitch dropdown.
+    expect(isPitchedLane("808")).toBe(true);
+    expect(isPitchedLane("bassGuitar")).toBe(true);
+    expect(isPitchedLane("melody")).toBe(true);
+    expect(isPitchedLane("kick")).toBe(false);
+    expect(isPitchedLane("snare")).toBe(false);
+    expect(isPitchedLane("hat")).toBe(false);
+  });
+
   it("creates a playable style without exposing caller-owned pattern rows", () => {
     const sequencer = createDefaultSequencerState("trap");
     const playable = createPlayableStyle(sequencer);
