@@ -37,6 +37,8 @@ export interface FakeAudioEngine extends AudioEngine {
   /** The producer tag config currently set, or null. */
   readonly producerTagConfig: ProducerTagConfigInput | null;
   setProducerTagConfig(config: ProducerTagConfigInput | null): void;
+  readonly clickCalls: readonly boolean[];
+  readonly metronomeEnabled: boolean;
 }
 
 export function createFakeAudioEngine(): FakeAudioEngine {
@@ -48,6 +50,8 @@ export function createFakeAudioEngine(): FakeAudioEngine {
   let activeStep: number | null = null;
   let tagSample: ProducerTagSample | null = null;
   let tagConfig: ProducerTagConfigInput | null = null;
+  const clickCalls: boolean[] = [];
+  let metronomeEnabled = false;
 
   return {
     // Cast keeps the fake distinguishable in tests without widening the public
@@ -107,6 +111,18 @@ export function createFakeAudioEngine(): FakeAudioEngine {
     },
     getFrequencyData() {
       return false;
+    },
+    playClick(accent = false) {
+      clickCalls.push(accent);
+    },
+    setMetronomeEnabled(enabled: boolean) {
+      metronomeEnabled = enabled;
+    },
+    get clickCalls() {
+      return clickCalls;
+    },
+    get metronomeEnabled() {
+      return metronomeEnabled;
     },
     setActiveStepForTest(step: number | null) {
       activeStep = step;

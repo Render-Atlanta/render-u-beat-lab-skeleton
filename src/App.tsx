@@ -11,6 +11,8 @@ import { BeatCoachPanel } from "./components/BeatCoachPanel";
 import { CapturePanel } from "./components/CapturePanel";
 import { ProducerTagControls, type RecordedState } from "./components/ProducerTagControls";
 import { SequencerPanel } from "./components/SequencerPanel";
+import { CountInOverlay } from "./components/CountInOverlay";
+import { usePracticeAids } from "./components/usePracticeAids";
 import { StyleSelector } from "./components/StyleSelector";
 import {
   createBeatLabProject,
@@ -416,20 +418,39 @@ export function App() {
     return engine;
   }
 
-  async function togglePlayback() {
-    const engine = await getEngine();
-    if (isPlaying) {
-      engine.stop();
+  const playableStyleRef = useRef(playableStyle);
+  playableStyleRef.current = playableStyle;
+  const producerTagConfigRef = useRef(producerTagConfig);
+  producerTagConfigRef.current = producerTagConfig;
+
+  const practiceAids = usePracticeAids({
+    bpm: sequencer.bpm,
+    isPlaying,
+    activeStep,
+    getEngine,
+    onStartPlayback: async (metronomeOn) => {
+      const engine = await getEngine();
+      engine.setMetronomeEnabled(metronomeOn);
+      engine.start(playableStyleRef.current);
+      setIsPlaying(true);
+
+      const tagConfig = producerTagConfigRef.current;
+      if (tagConfig.enabled && tagConfig.trigger === "intro") {
+        engine.playProducerTag(tagConfig);
+      }
+    },
+    onStopPlayback: () => {
+      void getEngine().then((engine) => {
+        engine.stop();
+        engine.setMetronomeEnabled(false);
+      });
       setIsPlaying(false);
-      return;
-    }
+    },
+  });
+  const transportActive = isPlaying || practiceAids.isCountingIn;
 
-    engine.start(playableStyle);
-    setIsPlaying(true);
-
-    if (producerTagConfig.enabled && producerTagConfig.trigger === "intro") {
-      engine.playProducerTag(producerTagConfig);
-    }
+  async function togglePlayback() {
+    await practiceAids.handlePlayRequest();
   }
 
   async function playProducerTag() {
@@ -877,6 +898,7 @@ export function App() {
       data-layout={layout}
       data-mobile={isMobile}
     >
+      <CountInOverlay beat={practiceAids.countInBeat} />
       <nav className="site-nav" aria-label="Primary">
         <a className="brand-lockup" href="#top">
           <span aria-hidden="true">★</span>
@@ -965,6 +987,10 @@ export function App() {
               onUndo={undoSequencer}
               onRedo={redoSequencer}
               onShare={shareBeat}
+              countInEnabled={practiceAids.countInEnabled}
+              metronomeEnabled={practiceAids.metronomeEnabled}
+              onCountInToggle={practiceAids.toggleCountIn}
+              onMetronomeToggle={practiceAids.toggleMetronome}
               onToggleStep={toggleStep}
               onPaintStep={paintStep}
               onBassStepPitchChange={updateBassStepPitch}
@@ -1005,14 +1031,14 @@ export function App() {
           <button
             type="button"
             className="transport__play"
-            aria-label={isPlaying ? "Stop" : "Play"}
-            aria-pressed={isPlaying}
+            aria-label={transportActive ? "Stop" : "Play"}
+            aria-pressed={transportActive}
             onClick={togglePlayback}
           >
-            {isPlaying ? "❚❚" : "▶"}
+            {transportActive ? "❚❚" : "▶"}
           </button>
           <span
-            className={`transport__metro ${isPlaying ? "on" : ""}`}
+            className={`transport__metro ${practiceAids.metronomeEnabled && practiceAids.metroPulse ? "on" : ""}`}
             aria-hidden="true"
             title="Metronome"
           />

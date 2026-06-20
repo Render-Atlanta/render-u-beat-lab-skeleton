@@ -32,6 +32,8 @@ export interface AudioEngineProbe {
   scheduledHitCount(): number;
   /** Number of producer-tag playbacks observed. */
   producerTagPlayCount(): number;
+  /** Number of click voice playbacks observed. */
+  clickPlayCount(): number;
 }
 
 export interface AudioEngineContractHarness {
@@ -169,6 +171,21 @@ export function runAudioEngineContract(
       const { engine } = makeHarness();
       engine.setProducerTagConfig({ source: "recorded", trigger: "loop" });
       engine.setProducerTagConfig(null);
+    });
+
+    it("plays a click without throwing", () => {
+      const { engine, probe } = makeHarness();
+
+      engine.playClick(true);
+
+      expect(probe.clickPlayCount()).toBe(1);
+    });
+
+    it("accepts metronome enable/disable without throwing", () => {
+      const { engine } = makeHarness();
+
+      engine.setMetronomeEnabled(true);
+      engine.setMetronomeEnabled(false);
     });
   });
 }

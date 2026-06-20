@@ -5,6 +5,7 @@ import type { InstrumentId } from "../lib/patterns";
 import type { ProducerTagConfigInput } from "../lib/producerTag";
 import type { AudioEngine, ProducerTagSample } from "./audioEngine";
 import { getStepEvents } from "./transport";
+import { getMetronomeClickAccent } from "../lib/metronome";
 import { createToneVoices, playVoice } from "./toneVoices";
 import { getDefaultToneRuntime } from "./toneRuntime";
 
@@ -48,6 +49,7 @@ export interface ToneRuntimePort {
   createBassSynth?(destination?: LaneVolumePort): ToneVoicePort;
   createMelodySynth?(destination?: LaneVolumePort): ToneVoicePort;
   createNoiseSynth(options?: unknown, destination?: LaneVolumePort): ToneVoicePort;
+  onClickPlayed?: () => void;
 }
 
 export type ToneSampleUrls = Partial<Record<InstrumentId, string>>;
@@ -69,6 +71,12 @@ export function createToneSampleBeatEngine(
   let visualStep: number | null = null;
   let tagSample: ProducerTagSample | null = null;
   let tagConfig: ProducerTagConfigInput | null = null;
+  let metronomeEnabled = false;
+  const clickVoice = runtime.createNoiseSynth(
+    {
+      envelope: { attack: 0.001, decay: 0.04, sustain: 0, release: 0.01 },
+    },
+  );
 
   async function ready() {
     await runtime.start();
@@ -84,6 +92,9 @@ export function createToneSampleBeatEngine(
     transport.swingSubdivision = "16n";
     eventId = transport.scheduleRepeat((time) => {
       scheduleStep(style, stepIndex, time);
+      if (metronomeEnabled && stepIndex % 4 === 0) {
+        playClickAt(time, getMetronomeClickAccent(stepIndex));
+      }
       if (stepIndex === 0 && tagConfig?.enabled !== false && tagConfig?.trigger === "loop" && tagConfig.source === "recorded" && tagSample) {
         if (voices.openHat.start) {
           voices.openHat.start(time);
@@ -111,6 +122,7 @@ export function createToneSampleBeatEngine(
     for (const voice of Object.values(voices)) {
       voice.dispose?.();
     }
+    clickVoice.dispose?.();
     disposeLaneVolumes();
   }
 
@@ -120,6 +132,19 @@ export function createToneSampleBeatEngine(
 
   function setProducerTagConfig(config: ProducerTagConfigInput | null) {
     tagConfig = config;
+  }
+
+  function playClick(accent = false) {
+    playClickAt(undefined, accent);
+  }
+
+  function setMetronomeEnabled(enabled: boolean) {
+    metronomeEnabled = enabled;
+  }
+
+  function playClickAt(time: number | undefined, accent: boolean) {
+    clickVoice.triggerAttackRelease?.("32n", time, undefined, accent ? 0.55 : 0.35);
+    runtime.onClickPlayed?.();
   }
 
   function playProducerTag(input: ProducerTagConfigInput | string) {
@@ -164,5 +189,7 @@ export function createToneSampleBeatEngine(
     getFrequencyData: () => false,
     setProducerTagSample,
     setProducerTagConfig,
+    playClick,
+    setMetronomeEnabled,
   };
 }

@@ -14,6 +14,10 @@ export interface SequencerControlsProps {
   onClear: () => void;
   onReset: () => void;
   onShare: () => void;
+  countInEnabled: boolean;
+  metronomeEnabled: boolean;
+  onCountInToggle: () => void;
+  onMetronomeToggle: () => void;
 }
 
 export function SequencerControls({
@@ -30,6 +34,10 @@ export function SequencerControls({
   onClear,
   onReset,
   onShare,
+  countInEnabled,
+  metronomeEnabled,
+  onCountInToggle,
+  onMetronomeToggle,
 }: SequencerControlsProps) {
   return (
     <div className="sequencer-controls" aria-label="Sequencer controls">
@@ -104,21 +112,21 @@ export function SequencerControls({
           Share link
         </button>
       </div>
-      {/* Count-in + metronome arrive in PR-35; rendered inert for now. */}
+      {/* Count-in + metronome practice aids */}
       <div className="control-buttons" aria-label="Practice aids">
         <button
-          className="button secondary compact"
+          className={`button secondary compact ${countInEnabled ? "active" : ""}`}
           type="button"
-          disabled
-          title="Count-in arrives in a follow-up update"
+          aria-pressed={countInEnabled}
+          onClick={onCountInToggle}
         >
           Count-in
         </button>
         <button
-          className="button secondary compact"
+          className={`button secondary compact ${metronomeEnabled ? "active" : ""}`}
           type="button"
-          disabled
-          title="Metronome arrives in a follow-up update"
+          aria-pressed={metronomeEnabled}
+          onClick={onMetronomeToggle}
         >
           Metronome
         </button>

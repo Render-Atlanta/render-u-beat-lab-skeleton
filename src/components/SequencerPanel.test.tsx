@@ -42,6 +42,10 @@ function renderPanel(extra: Partial<Parameters<typeof SequencerPanel>[0]> = {}) 
       onUndo={noop}
       onRedo={noop}
       onShare={noop}
+      countInEnabled={false}
+      metronomeEnabled={false}
+      onCountInToggle={noop}
+      onMetronomeToggle={noop}
       onToggleStep={noop}
       onPaintStep={noop}
       onBassStepPitchChange={noop}
@@ -105,8 +109,8 @@ describe("SequencerPanel control row", () => {
     const html = renderPanel();
     expect(html).toContain(">Clear</button>");
     expect(html).toContain(">Reset</button>");
-    // Tap, Count-in, and Metronome stay inert until their follow-up PRs.
-    expect(html.match(/disabled/g)).toHaveLength(5);
+    // Tap stays inert until PR-36; Undo and Redo disable when history is empty.
+    expect(html.match(/disabled/g)).toHaveLength(3);
   });
 });
 

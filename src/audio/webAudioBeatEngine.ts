@@ -19,6 +19,7 @@ import {
   type StepPitch,
   type StepQueueEntry,
 } from "./transport";
+import { getMetronomeClickAccent } from "../lib/metronome";
 
 type DrumVoice = (time: number, accent?: number, pitch?: StepPitch) => void;
 
@@ -27,6 +28,7 @@ export interface WebAudioBeatEngineRuntime {
   webkitAudioContext?: typeof AudioContext;
   setInterval?: typeof globalThis.setInterval;
   clearInterval?: typeof globalThis.clearInterval;
+  onClickPlayed?: () => void;
 }
 
 export function createWebAudioBeatEngine(
@@ -47,9 +49,13 @@ export function createWebAudioBeatEngine(
   let stepQueue: StepQueueEntry[] = [];
   let tagSample: ProducerTagSample | null = null;
   let tagConfig: ProducerTagConfigInput | null = null;
+  let metronomeEnabled = false;
 
   const master = context.createGain();
   master.gain.value = 0.65;
+  const metronomeGain = context.createGain();
+  metronomeGain.gain.value = 0;
+  metronomeGain.connect(master);
   const laneBuses = Object.fromEntries(
     INSTRUMENT_IDS.map((id) => {
       const bus = context.createGain();
@@ -93,6 +99,9 @@ export function createWebAudioBeatEngine(
     timer = setRuntimeInterval(() => {
       while (nextStepTime < context.currentTime + SCHEDULE_AHEAD_SECONDS) {
         scheduleStep(style, step, nextStepTime);
+        if (metronomeEnabled && step % 4 === 0) {
+          playClickAt(nextStepTime, getMetronomeClickAccent(step));
+        }
         if (step === 0 && tagConfig?.enabled !== false && tagConfig?.trigger === "loop" && tagConfig.source === "recorded" && tagSample) {
           playTagSample(nextStepTime);
         }
@@ -164,6 +173,33 @@ export function createWebAudioBeatEngine(
 
   function setProducerTagConfig(config: ProducerTagConfigInput | null) {
     tagConfig = config;
+  }
+
+  function playClick(accent = false) {
+    playClickAt(context.currentTime, accent, master);
+  }
+
+  function setMetronomeEnabled(enabled: boolean) {
+    metronomeEnabled = enabled;
+    metronomeGain.gain.cancelScheduledValues(context.currentTime);
+    metronomeGain.gain.setValueAtTime(enabled ? 1 : 0, context.currentTime);
+  }
+
+  function playClickAt(
+    time: number,
+    accent: boolean,
+    destination: GainNode = metronomeGain,
+  ) {
+    const osc = context.createOscillator();
+    const gain = context.createGain();
+    osc.type = "square";
+    osc.frequency.setValueAtTime(accent ? 1_200 : 900, time);
+    gain.gain.setValueAtTime(accent ? 0.22 : 0.14, time);
+    gain.gain.exponentialRampToValueAtTime(0.001, time + 0.04);
+    osc.connect(gain).connect(destination);
+    osc.start(time);
+    osc.stop(time + 0.05);
+    runtime.onClickPlayed?.();
   }
 
   function playProducerTag(input: ProducerTagConfigInput | string) {
@@ -330,6 +366,8 @@ export function createWebAudioBeatEngine(
     getFrequencyData,
     setProducerTagSample,
     setProducerTagConfig,
+    playClick,
+    setMetronomeEnabled,
   };
 }
 

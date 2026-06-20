@@ -22,6 +22,10 @@ function renderControls(
       onClear={noop}
       onReset={noop}
       onShare={noop}
+      countInEnabled={false}
+      metronomeEnabled={false}
+      onCountInToggle={noop}
+      onMetronomeToggle={noop}
       {...extra}
     />,
   );
@@ -34,8 +38,16 @@ describe("SequencerControls history and share buttons", () => {
 
     expect(empty).toContain('aria-label="Undo"');
     expect(empty).toContain('aria-label="Redo"');
-    expect(empty.match(/disabled=""/g)).toHaveLength(5);
-    expect(ready.match(/disabled=""/g)).toHaveLength(3);
+    expect(empty.match(/disabled=""/g)).toHaveLength(3);
+    expect(ready.match(/disabled=""/g)).toHaveLength(1);
+  });
+
+  it("renders active count-in and metronome toggles", () => {
+    const html = renderControls({ countInEnabled: true, metronomeEnabled: true });
+
+    expect(html.match(/aria-pressed="true"/g)).toHaveLength(2);
+    expect(html).toContain(">Count-in</button>");
+    expect(html).toContain(">Metronome</button>");
   });
 
   it("renders a share link action", () => {

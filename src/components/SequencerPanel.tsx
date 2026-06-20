@@ -36,6 +36,10 @@ export interface SequencerPanelProps {
   onUndo: () => void;
   onRedo: () => void;
   onShare: () => void;
+  countInEnabled: boolean;
+  metronomeEnabled: boolean;
+  onCountInToggle: () => void;
+  onMetronomeToggle: () => void;
   onToggleStep: (instrument: InstrumentId, stepIndex: number) => void;
   onPaintStep: (instrument: InstrumentId, stepIndex: number) => void;
   onBassStepPitchChange: (stepIndex: number, degree: number) => void;
@@ -69,6 +73,10 @@ export function SequencerPanel({
   onUndo,
   onRedo,
   onShare,
+  countInEnabled,
+  metronomeEnabled,
+  onCountInToggle,
+  onMetronomeToggle,
   onToggleStep,
   onPaintStep,
   onBassStepPitchChange,
@@ -111,6 +119,10 @@ export function SequencerPanel({
         onClear={onClear}
         onReset={onReset}
         onShare={onShare}
+        countInEnabled={countInEnabled}
+        metronomeEnabled={metronomeEnabled}
+        onCountInToggle={onCountInToggle}
+        onMetronomeToggle={onMetronomeToggle}
       />
 
       <div

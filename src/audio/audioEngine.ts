@@ -35,6 +35,10 @@ export interface AudioEngine {
   setProducerTagSample(sample: ProducerTagSample | null): void;
   /** Store the active producer tag config; the engine uses it to fire at loop boundaries. null clears it. */
   setProducerTagConfig(config: ProducerTagConfigInput | null): void;
+  /** Play a short metronome/count-in click without altering the pattern schedule. */
+  playClick(accent?: boolean): void;
+  /** When enabled, the engine plays quarter-note clicks during playback. */
+  setMetronomeEnabled(enabled: boolean): void;
 }
 
 export interface AudioEngineOptions {

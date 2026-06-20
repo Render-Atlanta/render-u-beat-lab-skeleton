@@ -108,6 +108,29 @@ describe("web audio beat engine adapter", () => {
     // Tag engine must start strictly more buffer sources than control (the extra is the tag)
     expect(tagCount).toBeGreaterThan(controlCount);
   });
+
+  it("plays click voice on demand and during metronome quarter notes", () => {
+    const runtime = createFakeRuntime();
+    const engine = createWebAudioBeatEngine(runtime);
+    let clickCount = 0;
+    runtime.onClickPlayed = () => {
+      clickCount += 1;
+    };
+
+    engine.playClick(true);
+    expect(clickCount).toBe(1);
+
+    engine.setMetronomeEnabled(true);
+    engine.start(BEAT_STYLES.trap);
+    const before = clickCount;
+    runtime.runTimer(1);
+    expect(clickCount).toBeGreaterThan(before);
+
+    engine.setMetronomeEnabled(false);
+    const afterDisable = clickCount;
+    runtime.runTimer(1);
+    expect(clickCount).toBe(afterDisable);
+  });
 });
 
 function createFakeRuntime() {
@@ -127,6 +150,7 @@ function createFakeRuntime() {
     contexts,
     intervalCallbacks,
     clearedTimerIds,
+    onClickPlayed: undefined as (() => void) | undefined,
     AudioContext: RuntimeAudioContext as unknown as typeof AudioContext,
     setInterval: ((callback: () => void) => {
       const timerId = nextTimerId;
@@ -209,6 +233,7 @@ class FakeGainNode extends FakeAudioNode {
       this.context.gainSetValues.push(value);
     },
     exponentialRampToValueAtTime: () => undefined,
+    cancelScheduledValues: () => undefined,
   };
 }
 

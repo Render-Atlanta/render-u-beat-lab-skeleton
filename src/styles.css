@@ -1313,6 +1313,31 @@ button:disabled {
   height: 30px;
 }
 
+.bx-count {
+  align-items: center;
+  background: hsl(var(--ink) / 0.82);
+  border-radius: 999px;
+  color: hsl(var(--cream));
+  display: flex;
+  font-size: clamp(3rem, 12vw, 5rem);
+  font-weight: 900;
+  height: clamp(7rem, 24vw, 10rem);
+  inset: 0;
+  justify-content: center;
+  letter-spacing: -0.04em;
+  margin: auto;
+  pointer-events: none;
+  position: fixed;
+  width: clamp(7rem, 24vw, 10rem);
+  z-index: 80;
+}
+
+.sequencer-controls .button.secondary.compact.active {
+  background: hsl(var(--accent));
+  border-color: hsl(var(--accent));
+  color: hsl(var(--cream));
+}
+
 /* Mobile tab bar */
 .mobile-tabs {
   backdrop-filter: blur(8px);
