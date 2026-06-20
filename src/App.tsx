@@ -9,6 +9,7 @@ import { getKitSampleUrls } from "./audio/sampleKit";
 import { ArrangementPanel } from "./components/ArrangementPanel";
 import { BeatCoachPanel } from "./components/BeatCoachPanel";
 import { CapturePanel } from "./components/CapturePanel";
+import { SongDecomposePanel } from "./components/SongDecomposePanel";
 import { ProducerTagControls, type RecordedState } from "./components/ProducerTagControls";
 import { SequencerPanel } from "./components/SequencerPanel";
 import { CountInOverlay } from "./components/CountInOverlay";
@@ -120,6 +121,12 @@ import { readGuidedPref, writeGuidedPref } from "./lib/guidedModePrefs";
  * the pattern is masked to the revealed lanes; otherwise it is the full pattern.
  * Pure — it closes over nothing, so callers always pass fresh state/guided values.
  */
+// Dev-only spike harness (PR-39). Read once at module load; the flag only
+// changes on a full reload, so there's no need to re-read it every render.
+const SONGLAB_ENABLED =
+  typeof window !== "undefined" &&
+  new URLSearchParams(window.location.search).get("songlab") === "1";
+
 function audibleStyle(state: SequencerState, guided: GuidedModeState) {
   const pattern = guided.active
     ? maskPatternToLanes(state.pattern, getRevealedLaneIds(guided))
@@ -918,6 +925,7 @@ export function App() {
       data-mobile={isMobile}
     >
       <CountInOverlay beat={practiceAids.countInBeat} />
+      {SONGLAB_ENABLED && <SongDecomposePanel onLoad={applySequencerState} />}
       <nav className="site-nav" aria-label="Primary">
         <a className="brand-lockup" href="#top">
           <span aria-hidden="true">★</span>
