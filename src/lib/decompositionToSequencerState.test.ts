@@ -6,6 +6,7 @@ import type { SongDecomposition } from "./songDecompose";
 const decomp: SongDecomposition = {
   bpm: 124,
   bpmConfidence: 0.8,
+  tempoCandidates: [{ bpm: 124, weight: 4 }],
   window: { startMs: 0, bars: 1 },
   pattern: {
     kick: [true, false, false, false, true, false, false, false, true, false, false, false, true, false, false, false],

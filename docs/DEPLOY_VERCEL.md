@@ -17,6 +17,15 @@ output so the project detects identically on CI and the dashboard:
 emitting the static site to `dist/` (including the bundled CC0 drum kit under
 `dist/kit/`).
 
+The Vite config intentionally splits heavier optional paths into named chunks:
+
+- `audio-tone` for the Tone.js sample engine.
+- `analysis-meyda` for Meyda feature extraction.
+- `songlab` for the `?songlab=1` upload/decomposition spike.
+
+The default workshop path should stay in the main app chunk; optional analysis
+and alternate audio runtimes should not be added back to it accidentally.
+
 ## Why Vercel works for this workshop
 
 - The app is a fully static browser app after `npm run build`.
@@ -54,10 +63,13 @@ npm run preview
 Open the preview URL and confirm:
 
 - The page title is `Render U Beat Lab`.
-- The hero says `Turn table taps into a beat`.
-- The style list includes Trap, Crunk, Drill, R&B, and Pop.
-- The grid renders 64 step cells.
-- Pressing `Run it` starts audio after a user gesture.
+- The hero says `Tap out a beat`.
+- The style list includes Atlanta Trap, Crunk Chant, Drill Slide, R&B Pocket,
+  and Pop Bounce.
+- The grid renders 16 visible step cells per revealed lane.
+- Pressing Play starts audio after a user gesture.
+- `?workshop=1` shows the workshop checklist and keeps guided mode off.
+- `?songlab=1` lazy-loads the song decomposition spike panel.
 - `/kit/kick.wav` serves as `audio/wav` (the drum kit loads).
 - No browser console errors appear on first load.
 

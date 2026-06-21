@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import {
   createBeatEngine,
   type AudioEngineKind,
@@ -13,7 +13,6 @@ import { LESSONS, evaluateLesson, getLesson } from "./lib/lessons";
 import { readLessonPref, writeLessonPref } from "./lib/lessonPrefs";
 import { BeatCoachPanel } from "./components/BeatCoachPanel";
 import { CapturePanel } from "./components/CapturePanel";
-import { SongDecomposePanel } from "./components/SongDecomposePanel";
 import { ProducerTagControls, type RecordedState } from "./components/ProducerTagControls";
 import { SequencerPanel } from "./components/SequencerPanel";
 import { CountInOverlay } from "./components/CountInOverlay";
@@ -127,6 +126,7 @@ import { EqVisualizer } from "./components/EqVisualizer";
 import type { DecodedKit } from "./lib/styleRender";
 import { loadKitFromUrls } from "./lib/loadKit.browser";
 import { GuidedModeBanner } from "./components/GuidedModeBanner";
+import { WorkshopChecklist } from "./components/WorkshopChecklist";
 import { INSTRUMENTS } from "./lib/instruments";
 import {
   advanceGuidedStep,
@@ -155,6 +155,11 @@ const SONGLAB_ENABLED =
 const WORKSHOP_MODE =
   typeof window !== "undefined" &&
   new URLSearchParams(window.location.search).get("workshop") === "1";
+const SongDecomposePanel = lazy(() =>
+  import("./components/SongDecomposePanel").then((module) => ({
+    default: module.SongDecomposePanel,
+  })),
+);
 
 function audibleStyle(state: SequencerState, guided: GuidedModeState) {
   const pattern = guided.active
@@ -267,6 +272,7 @@ export function App() {
     useState<AudioEngineKind>("web-audio");
   const [projectJson, setProjectJson] = useState("");
   const [exportMessage, setExportMessage] = useState("");
+  const [exportCompleted, setExportCompleted] = useState(false);
   const [micState, setMicState] = useState<MicCaptureState>({ status: "idle" });
   const engineRef = useRef<BeatEngine | null>(null);
   const [kit, setKit] = useState<DecodedKit | null>(null);
@@ -331,6 +337,11 @@ export function App() {
     () => getArrangementDurationSeconds(arrangement, sequencer.bpm),
     [arrangement, sequencer.bpm],
   );
+  const tagReady =
+    producerTagEnabled &&
+    (producerTagSource === "recorded"
+      ? recordedState === "recorded"
+      : producerTagText.trim().length > 0);
   const captureLoopDurationMs = useMemo(
     () => getSequencerLoopDurationMs(sequencer.bpm),
     [sequencer.bpm],
@@ -429,6 +440,10 @@ export function App() {
   useEffect(() => {
     writeLessonPref(lessonId);
   }, [lessonId]);
+
+  useEffect(() => {
+    setExportCompleted(false);
+  }, [arrangement, producerTagConfig, sequencer]);
 
   useEffect(
     () => () => {
@@ -884,6 +899,7 @@ export function App() {
       arrangement,
     });
     setProjectJson(exportProjectJson(project));
+    setExportCompleted(true);
     setExportMessage("Project JSON is ready.");
   }
 
@@ -903,6 +919,7 @@ export function App() {
 
   function downloadWav() {
     if (!kit) {
+      setExportCompleted(false);
       setExportMessage("Kit is still loading — try again in a moment.");
       return;
     }
@@ -924,8 +941,10 @@ export function App() {
       });
 
       triggerDownload(bytes, "render-u-beat.wav", "audio/wav");
+      setExportCompleted(true);
       setExportMessage("WAV download started.");
     } catch (error) {
+      setExportCompleted(false);
       setExportMessage(
         error instanceof Error ? error.message : "WAV export failed.",
       );
@@ -943,8 +962,10 @@ export function App() {
       });
 
       triggerDownload(bytes, "render-u-beat.mid", "audio/midi");
+      setExportCompleted(true);
       setExportMessage("MIDI download started.");
     } catch (error) {
+      setExportCompleted(false);
       setExportMessage(
         error instanceof Error ? error.message : "MIDI export failed.",
       );
@@ -1140,7 +1161,18 @@ export function App() {
       data-mobile={isMobile}
     >
       <CountInOverlay beat={practiceAids.countInBeat} />
-      {SONGLAB_ENABLED && <SongDecomposePanel onLoad={applySequencerState} />}
+      {SONGLAB_ENABLED ? (
+        <Suspense
+          fallback={
+            <section className="panel songlab-loading" aria-label="Song lab loading">
+              <p className="eyebrow">Song lab</p>
+              <p>Loading analysis tools...</p>
+            </section>
+          }
+        >
+          <SongDecomposePanel onLoad={applySequencerState} />
+        </Suspense>
+      ) : null}
       <nav className="site-nav" aria-label="Primary">
         <a className="brand-lockup" href="#top">
           <span aria-hidden="true">★</span>
@@ -1197,6 +1229,20 @@ export function App() {
       <section className="work-area" aria-label="Beat workbench">
         {showSequencer ? (
           <div className="work-main">
+            {WORKSHOP_MODE ? (
+              <WorkshopChecklist
+                styleName={baseStyle.name}
+                activeSteps={activeSteps}
+                tagReady={tagReady}
+                tagTrigger={producerTagTrigger}
+                arrangementBars={arrangementBars}
+                exportReady={exportCompleted}
+                onOpenTag={() => jumpToTag()}
+                onOpenArrange={() =>
+                  isMobile ? selectMobileTab("arrange") : selectTool("arrange")
+                }
+              />
+            ) : null}
             {guidedState.active ? (
               <GuidedModeBanner
                 instrument={guidedInstrument}

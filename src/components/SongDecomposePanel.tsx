@@ -42,18 +42,16 @@ export function SongDecomposePanel({ onLoad }: Props) {
   }
 
   return (
-    <section
-      aria-label="Song decompose (dev spike)"
-      style={{
-        border: "1px dashed #888",
-        borderRadius: 8,
-        padding: 12,
-        margin: "8px 0",
-        fontSize: 13,
-      }}
-    >
-      <strong>Song decompose (spike)</strong>
-      <div style={{ marginTop: 6 }}>
+    <section className="panel songlab-panel" aria-label="Song decompose spike">
+      <div className="songlab-panel__head">
+        <div>
+          <p className="eyebrow">Song lab</p>
+          <strong>Upload and rebuild</strong>
+        </div>
+        <span>Client-side spike</span>
+      </div>
+      <label className="songlab-file">
+        <span className="eyebrow">Audio file</span>
         <input
           type="file"
           accept="audio/*"
@@ -63,11 +61,32 @@ export function SongDecomposePanel({ onLoad }: Props) {
             if (file) void handleFile(file);
           }}
         />
-      </div>
-      <p style={{ margin: "6px 0" }}>{status}</p>
+      </label>
+      <p className="status-copy">{status}</p>
       {decomp && (
         <>
-          <pre style={{ fontSize: 11, lineHeight: 1.4, overflowX: "auto" }}>
+          <div className="songlab-metrics">
+            <span>
+              <strong>{decomp.bpm}</strong>
+              BPM
+            </span>
+            <span>
+              <strong>{(decomp.bpmConfidence * 100).toFixed(0)}%</strong>
+              tempo
+            </span>
+            <span>
+              <strong>{(decomp.overallConfidence * 100).toFixed(0)}%</strong>
+              overall
+            </span>
+          </div>
+          {decomp.tempoCandidates.length > 0 ? (
+            <p className="songlab-candidates">
+              Candidates: {decomp.tempoCandidates
+                .map((candidate) => `${candidate.bpm} BPM (${candidate.weight})`)
+                .join(", ")}
+            </p>
+          ) : null}
+          <pre className="songlab-pattern">
             {INSTRUMENT_IDS.map(
               (lane) =>
                 `${lane.padEnd(7)} ${decomp.pattern[lane]
@@ -76,6 +95,7 @@ export function SongDecomposePanel({ onLoad }: Props) {
             ).join("\n")}
           </pre>
           <button
+            className="star-button compact"
             type="button"
             onClick={() => onLoad(decompositionToSequencerState(decomp))}
           >

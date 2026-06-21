@@ -43,6 +43,7 @@ describe("decomposeSong", () => {
     const result = decomposeSong(decoded(100), opts);
     expect(result.bpm).toBeGreaterThanOrEqual(90);
     expect(result.bpm).toBeLessThanOrEqual(110);
+    expect(result.tempoCandidates.length).toBeGreaterThan(0);
   });
 
   it("recovers several of the 8 source hits in a one-bar pattern", () => {
@@ -61,6 +62,7 @@ describe("decomposeSong", () => {
       opts,
     );
     expect(result.overallConfidence).toBe(0);
+    expect(result.tempoCandidates).toEqual([]);
     expect(countActiveSteps(result.pattern)).toBe(0);
     expect(result.bpm).toBeGreaterThanOrEqual(60);
     expect(result.bpm).toBeLessThanOrEqual(180);

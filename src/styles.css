@@ -27,10 +27,12 @@ html {
     ui-sans-serif,
     system-ui,
     sans-serif;
+  overflow-x: hidden;
 }
 
 body {
   margin: 0;
+  overflow-x: hidden;
 }
 
 button,
@@ -1397,6 +1399,191 @@ button:disabled {
   min-width: 0;
 }
 
+.workshop-checklist {
+  display: grid;
+  gap: 12px;
+  padding: 14px 18px;
+}
+
+.workshop-checklist__head {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.workshop-checklist__head strong {
+  color: hsl(var(--ink));
+  display: block;
+  font-size: 1rem;
+  margin-top: 4px;
+  text-transform: uppercase;
+}
+
+.workshop-checklist__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.workshop-checklist__items {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.workshop-checklist__items li {
+  align-items: center;
+  background: hsl(var(--bg));
+  border: 1px solid hsl(var(--border));
+  border-radius: 6px;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: auto minmax(0, 1fr);
+  min-width: 0;
+  padding: 10px;
+}
+
+.workshop-checklist__items li.done {
+  border-color: hsl(var(--teal) / 0.72);
+}
+
+.workshop-checklist__items li > span {
+  color: hsl(var(--teal));
+  font-family:
+    "JetBrains Mono",
+    ui-monospace,
+    monospace;
+  font-size: 0.68rem;
+  font-weight: 900;
+}
+
+.workshop-checklist__items strong {
+  color: hsl(var(--ink));
+  display: block;
+  font-size: 0.74rem;
+  text-transform: uppercase;
+}
+
+.workshop-checklist__items small {
+  color: hsl(var(--muted));
+  display: block;
+  font-size: 0.72rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.songlab-loading {
+  margin: 12px auto 0;
+  max-width: 1320px;
+  padding: 14px 18px;
+  width: calc(100% - clamp(32px, 8vw, 80px));
+}
+
+.songlab-loading p:last-child {
+  color: hsl(var(--muted));
+  margin: 6px 0 0;
+}
+
+.songlab-panel {
+  display: grid;
+  gap: 12px;
+  margin: 12px auto 0;
+  max-width: 1320px;
+  padding: 14px 18px;
+  width: calc(100% - clamp(32px, 8vw, 80px));
+}
+
+.songlab-panel__head {
+  align-items: start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.songlab-panel__head strong {
+  color: hsl(var(--ink));
+  display: block;
+  font-size: 1rem;
+  margin-top: 4px;
+  text-transform: uppercase;
+}
+
+.songlab-panel__head > span,
+.songlab-candidates {
+  color: hsl(var(--muted));
+  font-family:
+    "JetBrains Mono",
+    ui-monospace,
+    monospace;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.songlab-file {
+  display: grid;
+  gap: 8px;
+}
+
+.songlab-file input {
+  background: hsl(var(--bg));
+  border: 1px solid hsl(var(--border));
+  border-radius: 6px;
+  color: hsl(var(--ink));
+  min-height: 42px;
+  padding: 9px 10px;
+}
+
+.songlab-metrics {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.songlab-metrics span {
+  background: hsl(var(--bg));
+  border: 1px solid hsl(var(--border));
+  border-radius: 6px;
+  color: hsl(var(--muted));
+  display: grid;
+  font-size: 0.68rem;
+  font-weight: 800;
+  gap: 2px;
+  padding: 10px;
+  text-transform: uppercase;
+}
+
+.songlab-metrics strong {
+  color: hsl(var(--ink));
+  font-size: 1.1rem;
+}
+
+.songlab-candidates {
+  margin: 0;
+}
+
+.songlab-pattern {
+  background: hsl(var(--bg));
+  border: 1px solid hsl(var(--border));
+  border-radius: 6px;
+  color: hsl(var(--ink));
+  font-family:
+    "JetBrains Mono",
+    ui-monospace,
+    monospace;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  margin: 0;
+  overflow-x: auto;
+  padding: 10px;
+}
+
 /* ===========================================================================
    Beat Lab redesign shell (PR-32)
    Nav layout switch · style strip · two-column work area · tabbed tool panel ·
@@ -1742,6 +1929,15 @@ button:disabled {
   padding-bottom: 172px;
 }
 
+[data-mobile="true"] .style-strip {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+[data-mobile="true"] .style-strip__track {
+  max-inline-size: 100%;
+}
+
 [data-mobile="true"] .work-main,
 [data-mobile="true"] .panel,
 [data-mobile="true"] .grid-panel,
@@ -1764,6 +1960,32 @@ button:disabled {
 [data-mobile="true"] .guided-banner__actions .button,
 [data-mobile="true"] .guided-banner__actions .star-button {
   flex: 1 1 150px;
+}
+
+[data-mobile="true"] .workshop-checklist__head {
+  align-items: stretch;
+  flex-direction: column;
+}
+
+[data-mobile="true"] .workshop-checklist__actions .button {
+  flex: 1 1 120px;
+}
+
+[data-mobile="true"] .workshop-checklist__items {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+[data-mobile="true"] .songlab-panel,
+[data-mobile="true"] .songlab-loading {
+  width: calc(100% - 32px);
+}
+
+[data-mobile="true"] .songlab-panel__head {
+  flex-direction: column;
+}
+
+[data-mobile="true"] .songlab-metrics {
+  grid-template-columns: 1fr;
 }
 
 [data-mobile="true"] .sequencer-controls {

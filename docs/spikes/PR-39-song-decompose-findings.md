@@ -7,10 +7,11 @@ accuracy and the Phase B go/no-go are filled in manually below.
 
 1. Start the app: `npm run dev`.
 2. Open it with the dev flag: append `?songlab=1` to the URL.
-3. A dashed "Song decompose (spike)" panel appears at the top. Drop in a
-   `.wav` / `.mp3` / `.m4a` file (nothing uploads — analysis is client-side).
+3. The "Song lab" panel lazy-loads at the top. Drop in a `.wav` / `.mp3` /
+   `.m4a` file (nothing uploads — analysis is client-side).
 4. The panel shows the estimated BPM, an overall confidence %, the chosen
-   one-bar window offset, and the decomposed 16-step pattern per lane.
+   one-bar window offset, top tempo candidates, and the decomposed 16-step
+   pattern per lane.
 5. "Load into grid" drops the decomposition onto the sequencer as a normal,
    editable beat (undo/redo, share, export all work from there).
 
@@ -21,6 +22,9 @@ accuracy and the Phase B go/no-go are filled in manually below.
   unit tests (`src/lib/{tempoEstimation,waveformToLevelFrames,oneBarWindow,
   audioFileDecode,songDecompose,decompositionToSequencerState}.test.ts`). These
   prove the math is right without any bundled audio.
+- **Workshop deploy shape** — the panel is isolated behind `?songlab=1` and the
+  Vite build splits it into the `songlab` / `analysis-meyda` chunks so the main
+  workshop path does not eagerly load the analysis harness.
 - **Perceptual accuracy** — kick/snare/hat separation on real, polyphonic
   masters can only be judged by ear, so it is auditioned manually via the
   `?songlab=1` panel and recorded in the table below.

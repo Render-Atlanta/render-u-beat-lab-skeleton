@@ -20,6 +20,7 @@ import type { DecodedAudio } from "./wav";
 export interface SongDecomposition {
   bpm: number;
   bpmConfidence: number;
+  tempoCandidates: { bpm: number; weight: number }[];
   window: { startMs: number; bars: number };
   pattern: Pattern;
   classifications: BeatboxLaneClassification[];
@@ -47,6 +48,7 @@ export function decomposeSong(
     return {
       bpm: estimateTempo([]).bpm,
       bpmConfidence: 0,
+      tempoCandidates: [],
       window: { startMs: 0, bars: 1 },
       pattern: classifiedHitsToPattern([]),
       classifications: [],
@@ -102,6 +104,7 @@ export function decomposeSong(
   return {
     bpm: tempo.bpm,
     bpmConfidence: tempo.confidence,
+    tempoCandidates: tempo.candidates.slice(0, 3),
     window: { startMs, bars: 1 },
     pattern,
     classifications,
