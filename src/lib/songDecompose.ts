@@ -29,6 +29,13 @@ export interface SongDecomposition {
 
 const DEFAULT_SENSITIVITY = 0.55;
 
+export interface SongDecomposeOptions {
+  sensitivity?: number;
+  provider?: BeatboxAnalysisProvider;
+  bpmOverride?: number;
+  windowStartMs?: number;
+}
+
 /**
  * Decompose decoded audio into an estimated BPM and a quantized one-bar drum
  * pattern, reusing the existing onset→classify pipeline. The only new steps are
@@ -37,7 +44,7 @@ const DEFAULT_SENSITIVITY = 0.55;
  */
 export function decomposeSong(
   decoded: DecodedAudio,
-  opts: { sensitivity?: number; provider?: BeatboxAnalysisProvider } = {},
+  opts: SongDecomposeOptions = {},
 ): SongDecomposition {
   const sensitivity = opts.sensitivity ?? DEFAULT_SENSITIVITY;
   const { samples, sampleRate, durationMs } = decoded;
@@ -62,11 +69,13 @@ export function decomposeSong(
   const onsetTimesMs = fullOnsets.map((onset) => onset.atMs);
 
   // 2. Tempo + one-bar length.
-  const tempo = estimateTempo(onsetTimesMs);
+  const estimatedTempo = estimateTempo(onsetTimesMs);
+  const tempo = normalizeTempoOverride(opts.bpmOverride) ?? estimatedTempo;
   const barMs = getSequencerLoopDurationMs(tempo.bpm);
 
   // 3. Slice the most onset-dense one bar out of the track.
-  const { startMs } = pickOneBarWindow(onsetTimesMs, barMs, durationMs);
+  const pickedWindow = pickOneBarWindow(onsetTimesMs, barMs, durationMs);
+  const startMs = clampWindowStart(opts.windowStartMs ?? pickedWindow.startMs, barMs, durationMs);
   const startSample = Math.round((startMs / 1000) * sampleRate);
   const barSamples = Math.round((barMs / 1000) * sampleRate);
   const windowed = samples.subarray(startSample, startSample + barSamples);
@@ -104,10 +113,40 @@ export function decomposeSong(
   return {
     bpm: tempo.bpm,
     bpmConfidence: tempo.confidence,
-    tempoCandidates: tempo.candidates.slice(0, 3),
+    tempoCandidates: estimatedTempo.candidates.slice(0, 3),
     window: { startMs, bars: 1 },
     pattern,
     classifications,
     overallConfidence,
   };
+}
+
+function normalizeTempoOverride(bpm: number | undefined) {
+  if (!Number.isFinite(bpm)) {
+    return null;
+  }
+
+  const rounded = Math.round(bpm ?? 0);
+  if (rounded < 60 || rounded > 180) {
+    return null;
+  }
+
+  return {
+    bpm: rounded,
+    confidence: 1,
+    candidates: [{ bpm: rounded, weight: 1 }],
+  };
+}
+
+function clampWindowStart(
+  startMs: number,
+  barMs: number,
+  durationMs: number,
+): number {
+  if (!Number.isFinite(startMs)) {
+    return 0;
+  }
+
+  const maxStart = Math.max(0, durationMs - Math.min(barMs, durationMs));
+  return Math.max(0, Math.min(maxStart, startMs));
 }

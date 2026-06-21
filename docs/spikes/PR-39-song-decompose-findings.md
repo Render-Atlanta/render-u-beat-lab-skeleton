@@ -10,9 +10,11 @@ accuracy and the Phase B go/no-go are filled in manually below.
 3. The "Song lab" panel lazy-loads at the top. Drop in a `.wav` / `.mp3` /
    `.m4a` file (nothing uploads — analysis is client-side).
 4. The panel shows the estimated BPM, an overall confidence %, the chosen
-   one-bar window offset, top tempo candidates, and the decomposed 16-step
-   pattern per lane.
-5. "Load into grid" drops the decomposition onto the sequencer as a normal,
+   one-bar window offset, top tempo candidates, a waveform preview with onset
+   markers, and the decomposed 16-step pattern per lane.
+5. Use the Sensitivity / BPM / Start sec controls to re-analyze if the automatic
+   tempo or downbeat pick is visibly off.
+6. "Load into grid" drops the decomposition onto the sequencer as a normal,
    editable beat (undo/redo, share, export all work from there).
 
 ## Methodology
@@ -25,6 +27,10 @@ accuracy and the Phase B go/no-go are filled in manually below.
 - **Workshop deploy shape** — the panel is isolated behind `?songlab=1` and the
   Vite build splits it into the `songlab` / `analysis-meyda` chunks so the main
   workshop path does not eagerly load the analysis harness.
+- **Auditability UI** — the spike now renders a lightweight in-house waveform
+  preview with selected-window shading and classified onset markers. This avoids
+  a new `wavesurfer.js` dependency while still making the automatic pick visible
+  enough for manual audition notes.
 - **Perceptual accuracy** — kick/snare/hat separation on real, polyphonic
   masters can only be judged by ear, so it is auditioned manually via the
   `?songlab=1` panel and recorded in the table below.

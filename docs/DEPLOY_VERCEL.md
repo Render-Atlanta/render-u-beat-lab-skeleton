@@ -69,7 +69,8 @@ Open the preview URL and confirm:
 - The grid renders 16 visible step cells per revealed lane.
 - Pressing Play starts audio after a user gesture.
 - `?workshop=1` shows the workshop checklist and keeps guided mode off.
-- `?songlab=1` lazy-loads the song decomposition spike panel.
+- `?songlab=1` lazy-loads the song decomposition spike panel; after an upload,
+  the panel shows correction controls plus waveform/onset-marker preview.
 - `/kit/kick.wav` serves as `audio/wav` (the drum kit loads).
 - No browser console errors appear on first load.
 

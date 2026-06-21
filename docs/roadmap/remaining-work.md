@@ -55,7 +55,12 @@ Top picks:
       entry each, exhaustive over the pitched lanes). The review also surfaced
       and fixed a pre-existing undo bug — the history snapshot omitted
       `bassGuitarStepPitches`, so Bass Gtr pitch moves couldn't be undone.
-- [ ] **Waveform view + onset markers** (`wavesurfer.js`) — for the upload/sample features.
+- [x] ~~**Waveform view + onset markers** (`wavesurfer.js`) — for the upload/sample features.~~
+      Shipped as an in-house Song Lab preview behind `?songlab=1`: fixed-width
+      waveform bins, selected one-bar window shading, classified onset markers,
+      and Sensitivity / BPM / Start sec re-analysis controls. This keeps the
+      auditability slice dependency-free; revisit `wavesurfer.js` only if Phase
+      B needs richer zoom/scrub behavior.
 - [x] ~~**Drummer-style variations & fills** — perturb the current pocket within its style profile.~~
       Shipped as the **Vary** / **Fill** buttons (`beatVariation.ts` + seeded
       `seededRng.ts`). Variation flips hat movement + an occasional syncopated

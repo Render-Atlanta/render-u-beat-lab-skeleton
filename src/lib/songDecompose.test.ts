@@ -56,6 +56,33 @@ describe("decomposeSong", () => {
     expect(result.overallConfidence).toBeLessThanOrEqual(1);
   });
 
+  it("supports BPM and window-start correction overrides", () => {
+    const result = decomposeSong(decoded(100), {
+      ...opts,
+      bpmOverride: 128,
+      windowStartMs: 500,
+    });
+
+    expect(result.bpm).toBe(128);
+    expect(result.bpmConfidence).toBe(1);
+    expect(result.window.startMs).toBe(500);
+  });
+
+  it("clamps correction overrides to safe workshop ranges", () => {
+    const source = decoded(100);
+    const result = decomposeSong(source, {
+      ...opts,
+      bpmOverride: 240,
+      windowStartMs: 999_999,
+    });
+    const barMs = (60_000 / result.bpm) * 4;
+
+    expect(result.bpm).toBeGreaterThanOrEqual(90);
+    expect(result.bpm).toBeLessThanOrEqual(110);
+    expect(result.window.startMs).toBeLessThanOrEqual(source.durationMs - barMs);
+    expect(result.window.startMs).toBeGreaterThanOrEqual(0);
+  });
+
   it("returns a safe zero-confidence decomposition for an empty decode", () => {
     const result = decomposeSong(
       { samples: new Float32Array(0), sampleRate, durationMs: 0 },

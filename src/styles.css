@@ -1540,6 +1540,126 @@ button:disabled {
   padding: 9px 10px;
 }
 
+.songlab-corrections {
+  align-items: end;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 1.2fr 0.7fr 0.8fr auto;
+}
+
+.songlab-corrections label {
+  display: grid;
+  gap: 6px;
+}
+
+.songlab-corrections input {
+  background: hsl(var(--bg));
+  border: 1px solid hsl(var(--border));
+  border-radius: 6px;
+  color: hsl(var(--ink));
+  min-height: 38px;
+  min-width: 0;
+  padding: 8px;
+}
+
+.songlab-corrections input[type="range"] {
+  accent-color: hsl(var(--accent));
+  padding: 0;
+}
+
+.songlab-corrections small {
+  color: hsl(var(--muted));
+  font-family:
+    "JetBrains Mono",
+    ui-monospace,
+    monospace;
+  font-size: 0.68rem;
+}
+
+.songlab-preview {
+  display: grid;
+  gap: 8px;
+}
+
+.songlab-waveform {
+  background: hsl(var(--bg));
+  border: 1px solid hsl(var(--border));
+  border-radius: 6px;
+  height: 132px;
+  overflow: hidden;
+  position: relative;
+}
+
+.songlab-window {
+  background: hsl(var(--accent) / 0.16);
+  border-inline: 1px solid hsl(var(--ink));
+  bottom: 0;
+  position: absolute;
+  top: 0;
+  z-index: 1;
+}
+
+.songlab-waveform__bar {
+  background: hsl(var(--muted) / 0.42);
+  bottom: 14px;
+  display: block;
+  min-height: 2px;
+  position: absolute;
+  transform: translateX(-50%);
+  width: 3px;
+}
+
+.songlab-waveform__bar.active {
+  background: hsl(var(--teal) / 0.72);
+}
+
+.songlab-marker {
+  align-items: center;
+  background: hsl(var(--ink));
+  border: 1px solid hsl(var(--cream));
+  border-radius: 999px;
+  color: hsl(var(--cream));
+  display: inline-flex;
+  font-family:
+    "JetBrains Mono",
+    ui-monospace,
+    monospace;
+  font-size: 0.62rem;
+  font-weight: 900;
+  height: 22px;
+  justify-content: center;
+  position: absolute;
+  top: 12px;
+  transform: translateX(-50%);
+  width: 22px;
+  z-index: 2;
+}
+
+.songlab-marker.warn {
+  background: hsl(var(--gold));
+  color: hsl(var(--ink));
+}
+
+.songlab-marker-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.songlab-marker-list span {
+  background: hsl(var(--bg));
+  border: 1px solid hsl(var(--border));
+  border-radius: 6px;
+  color: hsl(var(--muted));
+  font-family:
+    "JetBrains Mono",
+    ui-monospace,
+    monospace;
+  font-size: 0.68rem;
+  padding: 6px 8px;
+  text-transform: uppercase;
+}
+
 .songlab-metrics {
   display: grid;
   gap: 8px;
@@ -1982,6 +2102,10 @@ button:disabled {
 
 [data-mobile="true"] .songlab-panel__head {
   flex-direction: column;
+}
+
+[data-mobile="true"] .songlab-corrections {
+  grid-template-columns: 1fr;
 }
 
 [data-mobile="true"] .songlab-metrics {
