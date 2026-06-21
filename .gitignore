@@ -14,3 +14,4 @@ reference-audio/
 # PR-13 drum kit: bundled CC0 one-shots ARE committed (exception to *.wav rule above)
 !public/kit/
 !public/kit/**
+.vercel

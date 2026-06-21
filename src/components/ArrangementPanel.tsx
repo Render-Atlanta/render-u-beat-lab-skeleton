@@ -1,4 +1,6 @@
 import {
+  ARRANGEMENT_MAX_BARS,
+  ARRANGEMENT_MIN_BARS,
   isLaneMutedInSection,
   type Arrangement,
   type ArrangementSectionId,
@@ -8,8 +10,14 @@ import type { InstrumentId } from "../lib/patterns";
 
 export interface ArrangementPanelProps {
   arrangement: Arrangement;
+  totalBars: number;
+  durationSeconds: number;
   exportMessage: string;
   projectJson: string;
+  onSectionBarsChange: (
+    sectionId: ArrangementSectionId,
+    bars: number,
+  ) => void;
   onToggleLaneMute: (
     sectionId: ArrangementSectionId,
     instrument: InstrumentId,
@@ -21,8 +29,11 @@ export interface ArrangementPanelProps {
 
 export function ArrangementPanel({
   arrangement,
+  totalBars,
+  durationSeconds,
   exportMessage,
   projectJson,
+  onSectionBarsChange,
   onToggleLaneMute,
   onExportProject,
   onDownloadWav,
@@ -30,12 +41,50 @@ export function ArrangementPanel({
 }: ArrangementPanelProps) {
   return (
     <div className="arrangement-panel">
-      <p className="eyebrow">Arrangement</p>
+      <div className="arrangement-head">
+        <div>
+          <p className="eyebrow">Arrangement</p>
+          <strong>{totalBars} bars</strong>
+          <span>{durationSeconds.toFixed(1)} sec</span>
+        </div>
+        <div className="export-actions arrangement-head__actions">
+          <button className="button secondary compact" type="button" onClick={onExportProject}>
+            Export JSON
+          </button>
+          <button
+            className="button secondary compact"
+            type="button"
+            onClick={onDownloadWav}
+          >
+            WAV
+          </button>
+          <button
+            className="button secondary compact"
+            type="button"
+            onClick={onDownloadMidi}
+          >
+            MIDI
+          </button>
+        </div>
+      </div>
       <div className="arrangement-grid">
         {arrangement.sections.map((section) => (
           <div className="arrangement-section" key={section.id}>
-            <strong>{section.label}</strong>
-            <span>{section.bars} bar</span>
+            <div className="arrangement-section__top">
+              <strong>{section.label}</strong>
+              <label className="bar-count-field">
+                <span className="eyebrow">Bars</span>
+                <input
+                  type="number"
+                  min={ARRANGEMENT_MIN_BARS}
+                  max={ARRANGEMENT_MAX_BARS}
+                  value={section.bars}
+                  onChange={(event) =>
+                    onSectionBarsChange(section.id, Number(event.target.value))
+                  }
+                />
+              </label>
+            </div>
             <div className="lane-mutes" aria-label={`${section.label} lane mutes`}>
               {INSTRUMENTS.map((instrument) => {
                 const muted = isLaneMutedInSection(

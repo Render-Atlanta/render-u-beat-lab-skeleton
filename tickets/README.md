@@ -85,3 +85,17 @@ redesign.
 | [PR-37](PR-37-new-orleans-bounce-style.md) | New Orleans Bounce style | Feature | PR-02, PR-27 |
 | [PR-38](PR-38-house-music-style.md) | House Music style | Feature | PR-02, PR-27 |
 | [PR-39](PR-39-song-upload-decompose.md) | Song upload, analysis & decomposition | Spike → Feature | PR-05, PR-06, PR-14, PR-08 |
+
+## Workshop readiness audit
+
+Follow-up tickets from the 2026-06-21 Codex audit for the RenderATL University
+Part 2 workshop. These prioritize a reliable "make a basic beat + producer tag"
+path on the deployed Vercel app.
+
+| ID | Title | Type | Depends on |
+| --- | --- | --- | --- |
+| [PR-40](PR-40-mobile-workshop-layout-fixes.md) | Mobile workshop layout fixes | UI polish | PR-32 |
+| [PR-41](PR-41-workshop-happy-path-and-default-state.md) | Workshop happy path and default state | Teaching / UX | PR-29, PR-32, PR-35 |
+| [PR-42](PR-42-arrangement-length-and-export-workflow.md) | Arrangement length and export workflow | Feature | PR-08, PR-26, PR-32 |
+| [PR-43](PR-43-tool-panel-and-control-alignment-polish.md) | Tool panel and control alignment polish | UI polish | PR-32 |
+| [PR-44](PR-44-production-bundle-and-deploy-polish.md) | Production bundle and deploy polish | Quality / Infrastructure | PR-09, PR-32, PR-39 |

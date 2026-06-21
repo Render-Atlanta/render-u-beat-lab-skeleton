@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
+import {
+  ARRANGEMENT_SECTION_IDS,
+  createDefaultArrangement,
+  setSectionBars,
+  setSectionLaneMuted,
+} from "./arrangement";
 import { BEAT_STYLES } from "./beatStyles";
 import { loadKitFromDisk } from "./loadKit.node";
 import { createDefaultLaneVolumes } from "./laneVolumes";
+import { createDefaultSequencerState } from "./patternState";
 import {
   createDefaultBassStepPitches,
   createDefaultMelodyStepPitches,
@@ -11,7 +18,8 @@ import {
 import { patternFromSteps } from "./patterns";
 import { renderPatternToPcm } from "./styleRender";
 import { decodeWav } from "./wav";
-import { renderBeatWav } from "./exportBeat";
+import { renderArrangementWav, renderBeatWav } from "./exportBeat";
+import { createPlayableStyle } from "./sequencerDomain";
 
 describe("renderBeatWav", () => {
   const kit = loadKitFromDisk();
@@ -56,6 +64,55 @@ describe("renderBeatWav", () => {
     // And the last sample of the tag must NOT be zero (i.e. not truncated)
     const lastTagSample = result.samples[loopSamples + longTag.length - 1];
     expect(lastTagSample).not.toBeCloseTo(0, 3);
+  });
+
+  it("renders arrangement bar counts instead of a fixed two-loop repeat", () => {
+    const sequencer = createDefaultSequencerState("trap");
+    const fourBars = decodeWav(renderArrangementWav({
+      sequencer,
+      style: createPlayableStyle(sequencer),
+      kit,
+      arrangement: createDefaultArrangement(),
+    }));
+    const extended = setSectionBars(createDefaultArrangement(), "main", 4);
+    const sevenBars = decodeWav(renderArrangementWav({
+      sequencer,
+      style: createPlayableStyle(sequencer),
+      kit,
+      arrangement: extended,
+    }));
+
+    expect(sevenBars.samples.length).toBeGreaterThan(fourBars.samples.length);
+  });
+
+  it("honors section lane mutes in arrangement WAV export", () => {
+    const baseSequencer = createDefaultSequencerState("trap");
+    const sequencer = {
+      ...baseSequencer,
+      pattern: patternFromSteps({
+        kick: [1],
+        snare: [],
+        hat: [],
+        openHat: [],
+        clap: [],
+        "808": [],
+        bassGuitar: [],
+        melody: [],
+      }),
+    };
+    const mutedArrangement = ARRANGEMENT_SECTION_IDS.reduce(
+      (current, sectionId) => setSectionLaneMuted(current, sectionId, "kick", true),
+      createDefaultArrangement(),
+    );
+    const rendered = decodeWav(renderArrangementWav({
+      sequencer,
+      style: createPlayableStyle(sequencer),
+      kit,
+      arrangement: mutedArrangement,
+    }));
+
+    const energy = rendered.samples.reduce((total, sample) => total + Math.abs(sample), 0);
+    expect(energy).toBe(0);
   });
 
   it("silences a muted lane in the exported PCM", () => {

@@ -24,6 +24,8 @@ export const ARRANGEMENT_SECTION_IDS = [
   "variation",
   "outro",
 ] as const;
+export const ARRANGEMENT_MIN_BARS = 1;
+export const ARRANGEMENT_MAX_BARS = 16;
 
 export type ArrangementSectionId = (typeof ARRANGEMENT_SECTION_IDS)[number];
 
@@ -155,6 +157,42 @@ export function toggleSectionLaneMute(
     instrument,
     !isLaneMutedInSection(arrangement, sectionId, instrument),
   );
+}
+
+export function normalizeArrangementBars(bars: number): number {
+  if (!Number.isFinite(bars)) {
+    return ARRANGEMENT_MIN_BARS;
+  }
+  return Math.max(
+    ARRANGEMENT_MIN_BARS,
+    Math.min(ARRANGEMENT_MAX_BARS, Math.round(bars)),
+  );
+}
+
+export function setSectionBars(
+  arrangement: Arrangement,
+  sectionId: ArrangementSectionId,
+  bars: number,
+): Arrangement {
+  const normalizedBars = normalizeArrangementBars(bars);
+  return {
+    sections: arrangement.sections.map((section) =>
+      section.id === sectionId
+        ? { ...section, bars: normalizedBars, mutedLanes: [...section.mutedLanes] }
+        : { ...section, mutedLanes: [...section.mutedLanes] },
+    ),
+  };
+}
+
+export function getArrangementBarCount(arrangement: Arrangement): number {
+  return arrangement.sections.reduce((total, section) => total + section.bars, 0);
+}
+
+export function getArrangementDurationSeconds(
+  arrangement: Arrangement,
+  bpm: number,
+): number {
+  return getArrangementBarCount(arrangement) * 4 * (60 / bpm);
 }
 
 export function applySectionMutes(
@@ -575,7 +613,13 @@ function readArrangementSection(
 
   const id = readArrangementSectionId(value.id, errors, `${path} id`);
   const label = readString(value.label, errors, `${path} label`);
-  const bars = readIntegerInRange(value.bars, 1, 16, errors, `${path} bars`);
+  const bars = readIntegerInRange(
+    value.bars,
+    ARRANGEMENT_MIN_BARS,
+    ARRANGEMENT_MAX_BARS,
+    errors,
+    `${path} bars`,
+  );
   const mutedLanes = readMutedLanes(value.mutedLanes, errors, `${path} mutedLanes`);
 
   if (!id || label === null || bars === null || !mutedLanes) {

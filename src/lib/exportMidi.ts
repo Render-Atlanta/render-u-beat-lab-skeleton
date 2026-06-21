@@ -1,7 +1,12 @@
 import type { BeatStyle } from "./beatStyles";
+import {
+  createArrangementPlaybackSections,
+  type Arrangement,
+} from "./arrangement";
 import { getBassGuitarPitchForStep } from "./bassGuitarPitch";
 import { getLaneVolumes } from "./laneVolumes";
 import { INSTRUMENT_IDS, type InstrumentId, type Pattern } from "./patterns";
+import type { SequencerState } from "./patternState";
 import { getBassPitchForStep, getMelodyPitchForStep } from "./stepPitch";
 import { getStepVelocities, type StepVelocities } from "./stepVelocity";
 import {
@@ -15,6 +20,12 @@ export interface RenderBeatMidiInput {
   pattern: Pattern;
   style: BeatStyle;
   loops?: number;
+}
+
+export interface RenderArrangementMidiInput {
+  sequencer: SequencerState;
+  style: BeatStyle;
+  arrangement: Arrangement;
 }
 
 const STEPS = 16;
@@ -41,6 +52,11 @@ type LaneMidi =
       label: string;
       midiFor: (style: BeatStyle, step: number) => number;
     };
+
+interface PatternSegment {
+  pattern: Pattern;
+  loops: number;
+}
 
 /**
  * MIDI mapping for every lane, keyed by `InstrumentId`. Because this is a
@@ -84,6 +100,26 @@ const LANE_MIDI: Record<InstrumentId, LaneMidi> = {
 export function renderBeatMidi(input: RenderBeatMidiInput): Uint8Array {
   const { pattern, style } = input;
   const loops = Math.max(1, Math.floor(input.loops ?? 2));
+  return renderPatternSegmentsMidi([{ pattern, loops }], style);
+}
+
+/** Render a multi-section arrangement to MIDI, honoring section lane mutes. */
+export function renderArrangementMidi(input: RenderArrangementMidiInput): Uint8Array {
+  const segments = createArrangementPlaybackSections(
+    input.sequencer,
+    input.arrangement,
+  ).map((section) => ({
+    pattern: section.pattern,
+    loops: section.bars,
+  }));
+
+  return renderPatternSegmentsMidi(segments, input.style);
+}
+
+function renderPatternSegmentsMidi(
+  segments: PatternSegment[],
+  style: BeatStyle,
+): Uint8Array {
   const velocities = getStepVelocities(style);
   const laneVolumes = getLaneVolumes(style);
   const swing = Math.max(0, Math.min(0.5, style.swing));
@@ -97,7 +133,7 @@ export function renderBeatMidi(input: RenderBeatMidiInput): Uint8Array {
     if (laneVolumes[id] === 0) continue;
     const lane = LANE_MIDI[id];
     if (lane.kind === "drum") {
-      collectNotes(pattern[id], loops, (step, loop) => {
+      collectSegmentNotes(segments, id, (step, loop) => {
         drumNotes.push({
           channel: DRUM_CHANNEL,
           note: lane.note,
@@ -108,7 +144,7 @@ export function renderBeatMidi(input: RenderBeatMidiInput): Uint8Array {
       });
     } else {
       const notes: MidiNoteEvent[] = [];
-      collectNotes(pattern[id], loops, (step, loop) => {
+      collectSegmentNotes(segments, id, (step, loop) => {
         const start = startTick(step, loop, swing);
         notes.push({
           channel: lane.channel,
@@ -136,16 +172,24 @@ export function renderBeatMidi(input: RenderBeatMidiInput): Uint8Array {
   return encodeMidiFile(tracks, { bpm: style.bpm });
 }
 
-function collectNotes(
-  row: boolean[] | undefined,
-  loops: number,
+function collectSegmentNotes(
+  segments: PatternSegment[],
+  id: InstrumentId,
   emit: (step: number, loop: number) => void,
 ): void {
-  if (!row) return;
-  for (let loop = 0; loop < loops; loop += 1) {
-    for (let step = 0; step < STEPS; step += 1) {
-      if (row[step]) emit(step, loop);
+  let loopOffset = 0;
+  for (const segment of segments) {
+    const row = segment.pattern[id];
+    if (!row) {
+      loopOffset += segment.loops;
+      continue;
     }
+    for (let loop = 0; loop < segment.loops; loop += 1) {
+      for (let step = 0; step < STEPS; step += 1) {
+        if (row[step]) emit(step, loopOffset + loop);
+      }
+    }
+    loopOffset += segment.loops;
   }
 }
 

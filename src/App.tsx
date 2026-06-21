@@ -26,6 +26,9 @@ import {
   createBeatLabProject,
   createDefaultArrangement,
   exportProjectJson,
+  getArrangementBarCount,
+  getArrangementDurationSeconds,
+  setSectionBars,
   toggleSectionLaneMute,
   type Arrangement,
   type ArrangementSectionId,
@@ -85,8 +88,8 @@ import {
   type ProducerTagTrigger,
 } from "./lib/producerTag";
 import { decodeProducerTagSample } from "./lib/producerTagSample";
-import { renderBeatWav } from "./lib/exportBeat";
-import { renderBeatMidi } from "./lib/exportMidi";
+import { renderArrangementWav } from "./lib/exportBeat";
+import { renderArrangementMidi } from "./lib/exportMidi";
 import {
   addFill,
   humanizeGroove,
@@ -149,6 +152,9 @@ import { readGuidedPref, writeGuidedPref } from "./lib/guidedModePrefs";
 const SONGLAB_ENABLED =
   typeof window !== "undefined" &&
   new URLSearchParams(window.location.search).get("songlab") === "1";
+const WORKSHOP_MODE =
+  typeof window !== "undefined" &&
+  new URLSearchParams(window.location.search).get("workshop") === "1";
 
 function audibleStyle(state: SequencerState, guided: GuidedModeState) {
   const pattern = guided.active
@@ -208,6 +214,10 @@ function getLocalStorage(): Storage | null {
 }
 
 function readInitialSequencerState(): SequencerState {
+  if (WORKSHOP_MODE) {
+    return createDefaultSequencerState("trap");
+  }
+
   return readInitialSequencerStateFromSources(
     new URLSearchParams(window.location.search),
     getLocalStorage(),
@@ -240,7 +250,7 @@ export function App() {
   const [producerTagText, setProducerTagText] = useState(DEFAULT_PRODUCER_TAG_TEXT);
   const [producerTagEnabled, setProducerTagEnabled] = useState(true);
   const [producerTagTrigger, setProducerTagTrigger] =
-    useState<ProducerTagTrigger>("manual");
+    useState<ProducerTagTrigger>(WORKSHOP_MODE ? "intro" : "manual");
   const [producerTagRate, setProducerTagRate] = useState(0.86);
   const [producerTagPitch, setProducerTagPitch] = useState(0.72);
   const [producerTagSource, setProducerTagSource] = useState<ProducerTagSource>("text");
@@ -263,7 +273,7 @@ export function App() {
   const [kitError, setKitError] = useState(false);
   const [activeStep, setActiveStep] = useState<number | null>(null);
   const [guidedState, setGuidedState] = useState<GuidedModeState>(() =>
-    readGuidedPref() === "guided"
+    !WORKSHOP_MODE && readGuidedPref() === "guided"
       ? startGuidedState()
       : { active: false, stepIndex: getGuidedSequence().length - 1 },
   );
@@ -312,6 +322,14 @@ export function App() {
   const activeSteps = useMemo(
     () => countActiveSteps(sequencer.pattern),
     [sequencer.pattern],
+  );
+  const arrangementBars = useMemo(
+    () => getArrangementBarCount(arrangement),
+    [arrangement],
+  );
+  const arrangementSeconds = useMemo(
+    () => getArrangementDurationSeconds(arrangement, sequencer.bpm),
+    [arrangement, sequencer.bpm],
   );
   const captureLoopDurationMs = useMemo(
     () => getSequencerLoopDurationMs(sequencer.bpm),
@@ -390,6 +408,12 @@ export function App() {
     }
 
     const params = writeSequencerStateToParams(sequencer);
+    if (WORKSHOP_MODE) {
+      params.set("workshop", "1");
+    }
+    if (SONGLAB_ENABLED) {
+      params.set("songlab", "1");
+    }
     const nextUrl = `${window.location.pathname}?${params.toString()}`;
     window.history.replaceState(null, "", nextUrl);
   }, [sequencer]);
@@ -889,13 +913,13 @@ export function App() {
           ? { samples: recordedPcm.samples, trigger: producerTagTrigger }
           : undefined;
 
-      const bytes = renderBeatWav({
-        // Export always renders the full stored beat, never the guided-mode mask:
-        // build the style from `sequencer` directly so `style.pattern` is unmasked too.
-        pattern: sequencer.pattern,
+      const bytes = renderArrangementWav({
+        // Export always renders the full stored beat and arrangement, never the
+        // guided-mode mask.
+        sequencer,
         style: createPlayableStyle(sequencer),
         kit,
-        loops: 2,
+        arrangement,
         tag,
       });
 
@@ -912,10 +936,10 @@ export function App() {
     try {
       // MIDI needs no kit — it carries notes, not synthesized audio. Build the
       // style from `sequencer` directly so the export is the unmasked beat.
-      const bytes = renderBeatMidi({
-        pattern: sequencer.pattern,
+      const bytes = renderArrangementMidi({
+        sequencer,
         style: createPlayableStyle(sequencer),
-        loops: 2,
+        arrangement,
       });
 
       triggerDownload(bytes, "render-u-beat.mid", "audio/midi");
@@ -934,6 +958,10 @@ export function App() {
     setArrangement((current) =>
       toggleSectionLaneMute(current, sectionId, instrument),
     );
+  }
+
+  function updateArrangementBars(sectionId: ArrangementSectionId, bars: number) {
+    setArrangement((current) => setSectionBars(current, sectionId, bars));
   }
 
   function toggleGuided() {
@@ -1064,8 +1092,11 @@ export function App() {
           <div className="tool-body">
             <ArrangementPanel
               arrangement={arrangement}
+              totalBars={arrangementBars}
+              durationSeconds={arrangementSeconds}
               exportMessage={exportMessage}
               projectJson={projectJson}
+              onSectionBarsChange={updateArrangementBars}
               onToggleLaneMute={toggleArrangementLaneMute}
               onExportProject={exportProject}
               onDownloadWav={downloadWav}

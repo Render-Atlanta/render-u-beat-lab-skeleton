@@ -77,7 +77,7 @@ export function SequencerControls({
           onChange={(event) => onSwingChange(Number(event.target.value))}
         />
       </label>
-      <label className="control-field">
+      <label className="control-field engine-field">
         <span className="eyebrow">Engine</span>
         <select
           value={audioEngineKind}

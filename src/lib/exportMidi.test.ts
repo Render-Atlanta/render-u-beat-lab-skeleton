@@ -1,9 +1,16 @@
 import { describe, expect, it } from "vitest";
+import {
+  createDefaultArrangement,
+  setSectionBars,
+  setSectionLaneMuted,
+} from "./arrangement";
 import type { BeatStyle } from "./beatStyles";
-import { pitchGateTicks, renderBeatMidi } from "./exportMidi";
+import { pitchGateTicks, renderArrangementMidi, renderBeatMidi } from "./exportMidi";
 import { createDefaultLaneVolumes } from "./laneVolumes";
 import { decodeMidiFile } from "./midiReader";
+import { createDefaultSequencerState } from "./patternState";
 import { patternFromSteps, type Pattern } from "./patterns";
+import { createPlayableStyle } from "./sequencerDomain";
 import { createDefaultStepVelocities } from "./stepVelocity";
 
 const EMPTY_LANES = {
@@ -118,6 +125,35 @@ describe("renderBeatMidi", () => {
     expect(decoded.tracks.map((t) => t.name)).toEqual(["Drums"]);
     expect(decoded.tracks[0].noteOns).toEqual([
       { channel: 9, note: 38, velocity: 100, tick: 480 },
+    ]);
+  });
+
+  it("renders arrangement bars and section mutes to MIDI", () => {
+    const baseSequencer = createDefaultSequencerState("trap");
+    const sequencer = {
+      ...baseSequencer,
+      pattern: patternFromSteps({ ...EMPTY_LANES, kick: [1] }),
+    };
+    const arrangement = setSectionBars(
+      setSectionLaneMuted(
+        setSectionLaneMuted(createDefaultArrangement(), "intro", "kick", true),
+        "outro",
+        "kick",
+        true,
+      ),
+      "main",
+      2,
+    );
+
+    const decoded = decodeMidiFile(renderArrangementMidi({
+      sequencer,
+      style: createPlayableStyle(sequencer),
+      arrangement,
+    }));
+
+    expect(decoded.tracks[0].noteOns).toEqual([
+      { channel: 9, note: 36, velocity: 100, tick: 1920 },
+      { channel: 9, note: 36, velocity: 100, tick: 3840 },
     ]);
   });
 });
