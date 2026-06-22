@@ -5,9 +5,14 @@ import {
   type BeatEngine,
 } from "./audio/beatEngine";
 import type { ProducerTagSample } from "./audio/audioEngine";
-import { getKitSampleUrls } from "./audio/sampleKit";
+import {
+  SAMPLE_KIT_OPTIONS,
+  getKitSampleUrls,
+  type SampleKitId,
+} from "./audio/sampleKit";
 import { ArrangementPanel } from "./components/ArrangementPanel";
 import { LessonsPanel } from "./components/LessonsPanel";
+import { MidiControllerPanel } from "./components/MidiControllerPanel";
 import { PianoRollPanel, type PianoRollLane } from "./components/PianoRollPanel";
 import { LESSONS, evaluateLesson, getLesson } from "./lib/lessons";
 import { readLessonPref, writeLessonPref } from "./lib/lessonPrefs";
@@ -17,6 +22,7 @@ import { ProducerTagControls, type RecordedState } from "./components/ProducerTa
 import { SequencerPanel } from "./components/SequencerPanel";
 import { CountInOverlay } from "./components/CountInOverlay";
 import { usePracticeAids } from "./components/usePracticeAids";
+import { useVoiceCommand } from "./components/useVoiceCommand";
 import { StyleSelector } from "./components/StyleSelector";
 import { CommandBar, type CommandSuggestion } from "./components/CommandBar";
 import { applyAction, describeAction } from "./lib/commandBus";
@@ -100,18 +106,26 @@ import {
   createPlayableStyle,
   getSequencerLoopDurationMs,
   getSwingPercent,
+  resetSequencerPitchedNotes,
   resetSequencerLaneVolume,
   toggleSequencerLaneMute,
+  transposeSequencerPitchedNotes,
   paintSequencerStep,
   updateSequencerBassStepPitch,
   updateSequencerBassGuitarStepPitch,
   updateSequencerBpm,
   updateSequencerLaneVolume,
   updateSequencerMelodyStepPitch,
+  updateSequencerMixEffects,
+  updateSequencerSampleKit,
   updateSequencerStep,
+  updateSequencerStepFromMidi,
   updateSequencerSwing,
   type PitchedInstrumentId,
 } from "./lib/sequencerDomain";
+import type { MixEffects } from "./lib/mixEffects";
+import type { MidiNoteTrigger } from "./lib/midiInput";
+import { countActivePitchedSteps } from "./lib/musicTheory";
 import {
   clearSequencerPitchedStep,
   setSequencerPitchedStepNote,
@@ -124,7 +138,7 @@ import { createDefaultStepVelocities } from "./lib/stepVelocity";
 import { StyleFidelityMeter } from "./components/StyleFidelityMeter";
 import { EqVisualizer } from "./components/EqVisualizer";
 import type { DecodedKit } from "./lib/styleRender";
-import { loadKitFromUrls } from "./lib/loadKit.browser";
+import { loadKitFromSampleUrls } from "./lib/loadKit.browser";
 import { GuidedModeBanner } from "./components/GuidedModeBanner";
 import { WorkshopChecklist } from "./components/WorkshopChecklist";
 import { INSTRUMENTS } from "./lib/instruments";
@@ -176,7 +190,7 @@ function audibleStyle(state: SequencerState, guided: GuidedModeState) {
  */
 type LayoutMode = "rail" | "focus" | "pro";
 /** Which tool occupies the tabbed tool panel on desktop. */
-type ToolTab = "coach" | "lessons" | "notes" | "tag" | "arrange" | "capture";
+type ToolTab = "coach" | "lessons" | "notes" | "midi" | "tag" | "arrange" | "capture";
 /** Mobile view selector — "make" shows the sequencer, the rest mirror the tools. */
 type MobileTab = "make" | ToolTab;
 
@@ -190,6 +204,7 @@ const TOOL_TABS: { id: ToolTab; label: string }[] = [
   { id: "coach", label: "Coach" },
   { id: "lessons", label: "Lessons" },
   { id: "notes", label: "Piano Roll" },
+  { id: "midi", label: "MIDI" },
   { id: "tag", label: "Tag" },
   { id: "arrange", label: "Arrange" },
   { id: "capture", label: "Capture" },
@@ -275,6 +290,7 @@ export function App() {
   const [exportCompleted, setExportCompleted] = useState(false);
   const [micState, setMicState] = useState<MicCaptureState>({ status: "idle" });
   const engineRef = useRef<BeatEngine | null>(null);
+  const toneSampleKeyRef = useRef<string | null>(null);
   const [kit, setKit] = useState<DecodedKit | null>(null);
   const [kitError, setKitError] = useState(false);
   const [activeStep, setActiveStep] = useState<number | null>(null);
@@ -296,6 +312,7 @@ export function App() {
     typeof window === "undefined" ? 1280 : window.innerWidth,
   );
   const [commandStatus, setCommandStatus] = useState<string | null>(null);
+  const voiceCommand = useVoiceCommand(handleCommand);
 
   const baseStyle = BEAT_STYLES[sequencer.styleId];
   const styleCoach = useMemo(
@@ -327,6 +344,10 @@ export function App() {
   const micSupport = useMemo(() => getMicCaptureSupport(), []);
   const activeSteps = useMemo(
     () => countActiveSteps(sequencer.pattern),
+    [sequencer.pattern],
+  );
+  const activePitchedSteps = useMemo(
+    () => countActivePitchedSteps(sequencer.pattern),
     [sequencer.pattern],
   );
   const arrangementBars = useMemo(
@@ -454,8 +475,25 @@ export function App() {
   );
 
   useEffect(() => {
-    void loadKitFromUrls().then(setKit).catch(() => { setKit(null); setKitError(true); });
-  }, []);
+    let cancelled = false;
+    setKit(null);
+    setKitError(false);
+
+    void loadKitFromSampleUrls(getKitSampleUrls(sequencer.styleId, sequencer.sampleKitId))
+      .then((nextKit) => {
+        if (!cancelled) setKit(nextKit);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setKit(null);
+          setKitError(true);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [sequencer.styleId, sequencer.sampleKitId]);
 
   useEffect(() => {
     const onResize = () => setViewportWidth(window.innerWidth);
@@ -533,16 +571,26 @@ export function App() {
   async function getEngine() {
     let engine = engineRef.current;
     let isNewEngine = false;
-    if (!engine || engine.kind !== audioEngineKind) {
+    const toneSampleKey =
+      audioEngineKind === "tone-sample"
+        ? `${sequencer.styleId}:${sequencer.sampleKitId}`
+        : null;
+    if (
+      !engine ||
+      engine.kind !== audioEngineKind ||
+      (audioEngineKind === "tone-sample" &&
+        toneSampleKeyRef.current !== toneSampleKey)
+    ) {
       void engine?.dispose();
       engine = createBeatEngine({
         kind: audioEngineKind,
         toneSampleUrls:
           audioEngineKind === "tone-sample"
-            ? getKitSampleUrls(sequencer.styleId)
+            ? getKitSampleUrls(sequencer.styleId, sequencer.sampleKitId)
             : undefined,
       });
       engineRef.current = engine;
+      toneSampleKeyRef.current = toneSampleKey;
       isNewEngine = true;
     }
     await engine.ready();
@@ -637,7 +685,10 @@ export function App() {
   }
 
   function resetToStyle(styleId = sequencer.styleId) {
-    applySequencerState(createDefaultSequencerState(styleId));
+    applySequencerState({
+      ...createDefaultSequencerState(styleId),
+      sampleKitId: sequencer.sampleKitId,
+    });
   }
 
   // Clear empties every step while keeping the current BPM, swing, and mix —
@@ -699,6 +750,10 @@ export function App() {
     applySequencerState(updateSequencerSwing(sequencer, swingPercent));
   }
 
+  function updateMixEffects(effects: Partial<MixEffects>) {
+    applySequencerState(updateSequencerMixEffects(sequencer, effects));
+  }
+
   function updateAudioEngineKind(kind: AudioEngineKind) {
     if (kind === audioEngineKind) {
       return;
@@ -707,8 +762,23 @@ export function App() {
     engineRef.current?.stop();
     void engineRef.current?.dispose();
     engineRef.current = null;
+    toneSampleKeyRef.current = null;
     setIsPlaying(false);
     setAudioEngineKind(kind);
+  }
+
+  function updateSampleKit(nextKitId: SampleKitId) {
+    if (nextKitId === sequencer.sampleKitId) {
+      return;
+    }
+
+    engineRef.current?.stop();
+    void engineRef.current?.dispose();
+    engineRef.current = null;
+    toneSampleKeyRef.current = null;
+    setIsPlaying(false);
+    setAudioEngineKind("tone-sample");
+    applySequencerState(updateSequencerSampleKit(sequencer, nextKitId));
   }
 
   function toggleStep(instrument: InstrumentId, stepIndex: number) {
@@ -763,6 +833,27 @@ export function App() {
   ) {
     applySequencerState(
       clearSequencerPitchedStep(sequencer, instrument, stepIndex),
+    );
+  }
+
+  function transposePitchedNotes(deltaDegrees: number) {
+    applySequencerUpdate((current) =>
+      transposeSequencerPitchedNotes(current, deltaDegrees),
+    );
+  }
+
+  function resetPitchedNotes() {
+    applySequencerUpdate(resetSequencerPitchedNotes);
+  }
+
+  function triggerMidiNote(trigger: MidiNoteTrigger, stepIndex: number) {
+    applySequencerUpdate((current) =>
+      updateSequencerStepFromMidi(
+        current,
+        trigger.instrument,
+        stepIndex,
+        trigger.stepVelocity,
+      ),
     );
   }
 
@@ -1103,9 +1194,20 @@ export function App() {
         return (
           <PianoRollPanel
             lanes={pianoRollLanes}
+            musicalKey={baseStyle.musicalKey}
             activeStep={activeStep}
+            activePitchedSteps={activePitchedSteps}
+            onTranspose={transposePitchedNotes}
+            onResetPitches={resetPitchedNotes}
             onSetNote={setPianoRollNote}
             onClearStep={clearPianoRollStep}
+          />
+        );
+      case "midi":
+        return (
+          <MidiControllerPanel
+            activeStep={activeStep}
+            onTrigger={triggerMidiNote}
           />
         );
       case "arrange":
@@ -1224,6 +1326,10 @@ export function App() {
         suggestions={COMMAND_SUGGESTIONS}
         statusMessage={commandStatus}
         onSubmit={handleCommand}
+        voiceSupported={voiceCommand.supported}
+        voiceListening={voiceCommand.listening}
+        voiceMessage={voiceCommand.message}
+        onVoiceToggle={voiceCommand.toggle}
       />
 
       <section className="work-area" aria-label="Beat workbench">
@@ -1261,8 +1367,11 @@ export function App() {
               bpm={sequencer.bpm}
               swingPercent={getSwingPercent(sequencer.swing)}
               audioEngineKind={audioEngineKind}
+              sampleKitId={sequencer.sampleKitId}
+              sampleKitOptions={SAMPLE_KIT_OPTIONS}
               pattern={sequencer.pattern}
               laneVolumes={sequencer.laneVolumes}
+              mixEffects={sequencer.mixEffects}
               stepVelocities={sequencer.stepVelocities}
               bassStepPitches={sequencer.bassStepPitches}
               bassPalette={bassPalette}
@@ -1277,9 +1386,11 @@ export function App() {
               onTapTempo={handleTapTempo}
               onSwingChange={updateSwing}
               onAudioEngineKindChange={updateAudioEngineKind}
+              onSampleKitChange={updateSampleKit}
               onLaneVolumeChange={updateLaneVolume}
               onLaneVolumeReset={resetLaneVolume}
               onLaneMuteToggle={toggleLaneMute}
+              onMixEffectsChange={updateMixEffects}
               laneMutes={sequencer.laneMutes}
               onReset={() => resetToStyle()}
               onClear={clearPattern}

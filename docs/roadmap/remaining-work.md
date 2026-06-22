@@ -72,15 +72,33 @@ Top picks:
       seeded velocity dynamics (accent the pulse, ghost the in-between 16ths),
       drums only; timing-feel stays the Swing control. Reuses `seededRng` and
       the `applyDrummerAction` helper from the Vary/Fill round.
-- [ ] Still open: MIDI controller input, FX sends, kit selection (`smplr`), music theory (`tonal`).
+- [x] ~~**FX sends**~~ — shipped as beginner **Space** and **Echo** controls:
+      live Web Audio send buses plus deterministic offline PCM rendering for
+      exported WAVs, share URLs, autosave, and project JSON.
+- [x] ~~**MIDI controller input**~~ — shipped as a **MIDI** tool tab:
+      Web MIDI opt-in, connected input status, General MIDI drum-pad mapping,
+      playhead-follow / step-record modes, and velocity-aware grid writes.
+- [x] ~~**Music theory**~~ — shipped as in-house key/scale support in the
+      **Piano Roll** tab: visible scale-degree note chips, corrected root/third/
+      fifth coloring, and undoable in-key transpose / root-reset controls.
+- [x] ~~**Kit selection**~~ — shipped as a **Kit** selector for the Tone sample
+      engine with three deterministic in-repo CC0 kits: Classic, Punchy, and
+      Airy. Selecting a kit switches to Tone.js playback and reloads the decoded
+      kit used by deterministic WAV export; selected kits persist through share
+      URLs, autosave, undo/redo, and project JSON.
+- [ ] Still open: larger sampled-instrument/offline-rendering work.
 - [ ] **Analysis upgrade**: `essentia.js` (robust BPM/beat/key) could raise PR-39 accuracy.
 - [ ] **Sampled / realistic instruments** (incl. the parked sampled bass via `smplr`/soundfonts)
-      — requires solving offline/OfflineAudioContext sample rendering first, since
-      all audio + WAV export is currently synthesis-only.
+      — requires solving offline/OfflineAudioContext rendering for hosted
+      multi-sample instruments; bundled one-shot kit export is now decoded
+      locally from the selected kit manifest.
 - [ ] Infra: consolidate scheduling on `Tone.Transport` (retire the custom engine's duplicate logic).
 
 ## D. Parallel track — AI beat commands (separate workstream)
 
 A concurrent effort shipped **Plan 1** (deterministic NL command bar) on `main`.
-- [ ] **Plan 2**: Gemini endpoints + voice input (per its own plan/spec docs). Not
-      part of this round; tracked here for visibility.
+- [x] ~~**Plan 2 slice: voice layer**~~ — shipped Web Speech as a thin optional
+      layer over the existing deterministic command bar. Unsupported browsers
+      keep the text-first workflow.
+- [ ] **Plan 2 remainder**: Gemini command endpoint + coach Q&A endpoint (per
+      its own plan/spec docs). Not part of this round; tracked here for visibility.

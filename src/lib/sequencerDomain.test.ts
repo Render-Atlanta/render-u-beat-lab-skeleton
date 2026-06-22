@@ -6,10 +6,15 @@ import {
   getSwingPercent,
   isPitchedLane,
   paintSequencerStep,
+  resetSequencerPitchedNotes,
   toggleSequencerLaneMute,
+  transposeSequencerPitchedNotes,
   updateSequencerStep,
   updateSequencerBassGuitarStepPitch,
   updateSequencerBpm,
+  updateSequencerMixEffects,
+  updateSequencerSampleKit,
+  updateSequencerStepFromMidi,
   updateSequencerSwing,
 } from "./sequencerDomain";
 import { createDefaultSequencerState } from "./patternState";
@@ -33,6 +38,7 @@ describe("sequencer domain helpers", () => {
 
     playable.pattern.kick[0] = false;
     playable.stepVelocities!.kick[0] = 2;
+    playable.mixEffects!.space = 1;
 
     expect(playable).toMatchObject({
       id: "trap",
@@ -41,6 +47,7 @@ describe("sequencer domain helpers", () => {
     });
     expect(sequencer.pattern.kick[0]).toBe(BEAT_STYLES.trap.pattern.kick[0]);
     expect(sequencer.stepVelocities.kick[0]).toBe(1);
+    expect(sequencer.mixEffects.space).toBe(0);
   });
 
   it("silences muted lanes in the playable style while keeping the pattern", () => {
@@ -95,6 +102,16 @@ describe("sequencer domain helpers", () => {
     expect(second.stepVelocities["808"][1]).toBe(1);
   });
 
+  it("records MIDI hits directly into a clamped grid step with velocity", () => {
+    const sequencer = createDefaultSequencerState("trap");
+    const edited = updateSequencerStepFromMidi(sequencer, "snare", 99, 2);
+
+    expect(edited.pattern.snare[15]).toBe(true);
+    expect(edited.stepVelocities.snare[15]).toBe(2);
+    expect(sequencer.pattern.snare[15]).toBe(false);
+    expect(edited.pattern).not.toBe(sequencer.pattern);
+  });
+
   it("treats the bass guitar as a pitched lane (binary toggle, no velocity)", () => {
     const sequencer = createDefaultSequencerState("trap");
     const toggled = updateSequencerStep(sequencer, "bassGuitar", 2);
@@ -109,6 +126,46 @@ describe("sequencer domain helpers", () => {
     // Out-of-range degrees clamp to the palette (7 in-key degrees → max index 6).
     const clamped = updateSequencerBassGuitarStepPitch(sequencer, 0, 99);
     expect(clamped.bassGuitarStepPitches[0]).toBe(6);
+  });
+
+  it("transposes active pitched notes while preserving inactive step defaults", () => {
+    const sequencer = createDefaultSequencerState("trap");
+    const edited = {
+      ...sequencer,
+      pattern: {
+        ...sequencer.pattern,
+        melody: [true, false, ...Array.from({ length: 14 }, () => false)],
+      },
+      bassStepPitches: [6, 5, ...sequencer.bassStepPitches.slice(2)],
+      bassGuitarStepPitches: [1, 2, ...sequencer.bassGuitarStepPitches.slice(2)],
+      melodyStepPitches: [2, 4, ...sequencer.melodyStepPitches.slice(2)],
+    };
+
+    const transposed = transposeSequencerPitchedNotes(edited, 1);
+
+    expect(transposed.bassStepPitches[0]).toBe(0);
+    expect(transposed.bassStepPitches[1]).toBe(5);
+    expect(transposed.bassGuitarStepPitches[0]).toBe(2);
+    expect(transposed.melodyStepPitches[0]).toBe(3);
+    expect(transposed.melodyStepPitches[1]).toBe(4);
+    expect(transposed.pattern).not.toBe(edited.pattern);
+  });
+
+  it("resets active pitched notes to the root", () => {
+    const sequencer = createDefaultSequencerState("trap");
+    const edited = {
+      ...sequencer,
+      pattern: {
+        ...sequencer.pattern,
+        melody: [true, false, ...Array.from({ length: 14 }, () => false)],
+      },
+      melodyStepPitches: [3, 4, ...sequencer.melodyStepPitches.slice(2)],
+    };
+
+    const reset = resetSequencerPitchedNotes(edited);
+
+    expect(reset.melodyStepPitches[0]).toBe(0);
+    expect(reset.melodyStepPitches[1]).toBe(4);
   });
 
   it("paints only unpitched drum lanes at normal velocity", () => {
@@ -138,6 +195,26 @@ describe("sequencer domain helpers", () => {
     expect(updateSequencerSwing(sequencer, 99).swing).toBe(0.3);
     expect(updateSequencerSwing(sequencer, -10).swing).toBe(0);
     expect(getSwingPercent(0.147)).toBe(15);
+  });
+
+  it("updates and clamps mix effects without mutating pattern rows", () => {
+    const sequencer = createDefaultSequencerState("trap");
+    const edited = updateSequencerMixEffects(sequencer, { space: 1.4, echo: 0.25 });
+
+    expect(edited.mixEffects).toEqual({ space: 1, echo: 0.25 });
+    expect(edited.pattern).toEqual(sequencer.pattern);
+    expect(edited.pattern).not.toBe(sequencer.pattern);
+    expect(sequencer.mixEffects).toEqual({ space: 0, echo: 0 });
+  });
+
+  it("updates sample kit selection without mutating pattern rows", () => {
+    const sequencer = createDefaultSequencerState("trap");
+    const edited = updateSequencerSampleKit(sequencer, "airy");
+
+    expect(edited.sampleKitId).toBe("airy");
+    expect(edited.pattern).toEqual(sequencer.pattern);
+    expect(edited.pattern).not.toBe(sequencer.pattern);
+    expect(updateSequencerSampleKit(edited, "airy")).toBe(edited);
   });
 
   it("calculates a four-beat loop duration from clamped BPM", () => {

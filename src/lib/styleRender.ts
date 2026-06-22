@@ -12,6 +12,7 @@ import {
   synthesizeBassGuitarNotePcm,
 } from "./bassGuitarPitch";
 import { getStepVelocities, getStepVelocityFactor } from "./stepVelocity";
+import { applyMixEffectsToPcm, normalizeMixEffects } from "./mixEffects";
 
 export const RENDER_SAMPLE_RATE = 22050;
 const STEPS = 16;
@@ -107,12 +108,18 @@ export function renderPatternToPcm(
     });
   }
 
+  const effected = applyMixEffectsToPcm(
+    out,
+    RENDER_SAMPLE_RATE,
+    normalizeMixEffects(style.mixEffects),
+  );
+
   // Peak-normalize deterministically so the spectral features have a stable scale.
   let peak = 0;
-  for (let i = 0; i < out.length; i += 1) peak = Math.max(peak, Math.abs(out[i]));
+  for (let i = 0; i < effected.length; i += 1) peak = Math.max(peak, Math.abs(effected[i]));
   if (peak > 0) {
     const gain = PEAK_TARGET / peak;
-    for (let i = 0; i < out.length; i += 1) out[i] *= gain;
+    for (let i = 0; i < effected.length; i += 1) effected[i] *= gain;
   }
-  return out;
+  return effected;
 }

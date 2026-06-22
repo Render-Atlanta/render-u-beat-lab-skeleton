@@ -16,6 +16,7 @@ import {
 } from "./stepPitch";
 import { createDefaultBassGuitarStepPitches } from "./bassGuitarPitch";
 import { createDefaultStepVelocities } from "./stepVelocity";
+import { normalizeMixEffects } from "./mixEffects";
 import { GOLDEN_BEAT_STYLE_FIXTURES } from "../test/beatStyleFixtures";
 
 describe("pattern state helpers", () => {
@@ -92,6 +93,8 @@ describe("pattern state helpers", () => {
       pattern: togglePatternStep(state.pattern, "snare", 3),
       laneVolumes: { ...createDefaultLaneVolumes(), hat: 0.5 },
       laneMutes: createDefaultLaneMutes(),
+      sampleKitId: "classic",
+      mixEffects: normalizeMixEffects(),
       stepVelocities,
       bassStepPitches: createDefaultBassStepPitches(),
       bassGuitarStepPitches: createDefaultBassGuitarStepPitches(),
@@ -140,6 +143,30 @@ describe("pattern state helpers", () => {
     expect(readSequencerStateFromParams(params).laneMutes).toEqual(muted.laneMutes);
   });
 
+  it("round-trips mix effects through URL params and omits dry defaults", () => {
+    const state = createDefaultSequencerState("trap");
+
+    expect(writeSequencerStateToParams(state).has("fx")).toBe(false);
+
+    const effected = { ...state, mixEffects: { space: 0.35, echo: 0.2 } };
+    const params = writeSequencerStateToParams(effected);
+
+    expect(params.get("fx")).toBe("35,20");
+    expect(readSequencerStateFromParams(params).mixEffects).toEqual(effected.mixEffects);
+  });
+
+  it("round-trips non-default sample kits through URL params and omits classic", () => {
+    const state = createDefaultSequencerState("trap");
+
+    expect(writeSequencerStateToParams(state).has("kit")).toBe(false);
+
+    const withKit = { ...state, sampleKitId: "airy" as const };
+    const params = writeSequencerStateToParams(withKit);
+
+    expect(params.get("kit")).toBe("airy");
+    expect(readSequencerStateFromParams(params).sampleKitId).toBe("airy");
+  });
+
   it("defaults lane mutes when the mute param is missing or invalid", () => {
     expect(
       readSequencerStateFromParams(new URLSearchParams("style=trap")).laneMutes,
@@ -179,6 +206,8 @@ describe("pattern state helpers", () => {
       pattern: BEAT_STYLES.drill.pattern,
       laneVolumes: createDefaultLaneVolumes(),
       laneMutes: createDefaultLaneMutes(),
+      sampleKitId: "classic",
+      mixEffects: normalizeMixEffects(),
       stepVelocities: createDefaultStepVelocities(),
       bassStepPitches: createDefaultBassStepPitches(),
       bassGuitarStepPitches: createDefaultBassGuitarStepPitches(),
@@ -198,5 +227,13 @@ describe("pattern state helpers", () => {
     const state = readSequencerStateFromParams(new URLSearchParams("style=amapiano"));
 
     expect(state).toEqual(createDefaultSequencerState("amapiano"));
+  });
+
+  it("defaults invalid kit query values to classic", () => {
+    const state = readSequencerStateFromParams(
+      new URLSearchParams("style=trap&kit=wrong"),
+    );
+
+    expect(state.sampleKitId).toBe("classic");
   });
 });

@@ -1,5 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { DEFAULT_SAMPLE_KIT_ID, SAMPLE_KIT_OPTIONS } from "../audio/sampleKit";
+import { normalizeMixEffects } from "../lib/mixEffects";
 import { SequencerControls } from "./SequencerControls";
 
 function noop() {}
@@ -11,13 +13,18 @@ function renderControls(
     <SequencerControls
       bpm={140}
       swingPercent={0}
+      mixEffects={normalizeMixEffects()}
       audioEngineKind="web-audio"
+      sampleKitId={DEFAULT_SAMPLE_KIT_ID}
+      sampleKitOptions={SAMPLE_KIT_OPTIONS}
       canUndo={false}
       canRedo={false}
       onBpmChange={noop}
       onTapTempo={noop}
       onSwingChange={noop}
+      onMixEffectsChange={noop}
       onAudioEngineKindChange={noop}
+      onSampleKitChange={noop}
       onUndo={noop}
       onRedo={noop}
       onClear={noop}
@@ -66,5 +73,13 @@ describe("SequencerControls history and share buttons", () => {
     const html = renderControls();
 
     expect(html).toContain(">Share link</button>");
+  });
+
+  it("renders selectable sample kits", () => {
+    const html = renderControls();
+
+    expect(html).toContain(">Classic</option>");
+    expect(html).toContain(">Punchy</option>");
+    expect(html).toContain(">Airy</option>");
   });
 });

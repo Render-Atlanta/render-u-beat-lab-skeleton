@@ -1,5 +1,6 @@
 import type { BeatStyle } from "../lib/beatStyles";
 import { getLaneVolumes } from "../lib/laneVolumes";
+import { normalizeMixEffects } from "../lib/mixEffects";
 import { INSTRUMENT_IDS, type InstrumentId } from "../lib/patterns";
 import {
   createProducerTagPlaybackPlan,
@@ -53,6 +54,7 @@ export function createWebAudioBeatEngine(
 
   const master = context.createGain();
   master.gain.value = 0.65;
+  const output = context.createGain();
   const metronomeGain = context.createGain();
   metronomeGain.gain.value = 0;
   metronomeGain.connect(master);
@@ -64,13 +66,36 @@ export function createWebAudioBeatEngine(
       return [id, bus] as const;
     }),
   ) as Record<InstrumentId, GainNode>;
+  const echoDelay = context.createDelay(1);
+  const echoFeedback = context.createGain();
+  const echoWet = context.createGain();
+  echoDelay.delayTime.value = 0.19;
+  echoFeedback.gain.value = 0.18;
+  echoWet.gain.value = 0;
+  master.connect(echoDelay);
+  echoDelay.connect(echoFeedback);
+  echoFeedback.connect(echoDelay);
+  echoDelay.connect(echoWet);
+  echoWet.connect(output);
+  const spaceTaps = [0.023, 0.041, 0.067, 0.109].map((seconds) => {
+    const delay = context.createDelay(0.2);
+    const gain = context.createGain();
+    delay.delayTime.value = seconds;
+    gain.gain.value = 0;
+    master.connect(delay);
+    delay.connect(gain);
+    gain.connect(output);
+    return gain;
+  });
+  master.connect(output);
+
   const analyser = context.createAnalyser?.() ?? null;
   if (analyser) {
     analyser.fftSize = 256;
-    master.connect(analyser);
+    output.connect(analyser);
     analyser.connect(context.destination);
   } else {
-    master.connect(context.destination);
+    output.connect(context.destination);
   }
 
   const voices: Record<InstrumentId, DrumVoice> = {
@@ -93,6 +118,7 @@ export function createWebAudioBeatEngine(
   function start(style: BeatStyle) {
     stop();
     applyLaneVolumes(style);
+    applyMixEffects(style);
     step = 0;
     nextStepTime = context.currentTime + START_DELAY_SECONDS;
     stepQueue = [];
@@ -134,6 +160,23 @@ export function createWebAudioBeatEngine(
     for (const id of INSTRUMENT_IDS) {
       laneBuses[id].gain.value = volumes[id];
     }
+  }
+
+  function applyMixEffects(style: BeatStyle) {
+    const effects = normalizeMixEffects(style.mixEffects);
+    echoWet.gain.cancelScheduledValues(context.currentTime);
+    echoWet.gain.setTargetAtTime(effects.echo * 0.42, context.currentTime, 0.01);
+    echoFeedback.gain.cancelScheduledValues(context.currentTime);
+    echoFeedback.gain.setTargetAtTime(effects.echo * 0.22, context.currentTime, 0.01);
+    const tapGains = [0.2, 0.16, 0.12, 0.08];
+    spaceTaps.forEach((tap, index) => {
+      tap.gain.cancelScheduledValues(context.currentTime);
+      tap.gain.setTargetAtTime(
+        effects.space * tapGains[index],
+        context.currentTime,
+        0.01,
+      );
+    });
   }
 
   function scheduleStep(style: BeatStyle, stepIndex: number, time: number) {

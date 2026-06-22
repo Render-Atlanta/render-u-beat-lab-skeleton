@@ -77,13 +77,11 @@ export function getDegreeFunction(degree: ScaleDegree, scale: ScaleType): PitchF
     return "root";
   }
 
-  const thirdDegree = scale === "major" ? 2 : 1;
-  if (degree === thirdDegree) {
+  if (degree === 2) {
     return "third";
   }
 
-  const fifthDegree = scale === "major" ? 4 : 3;
-  if (degree === fifthDegree) {
+  if (degree === 4) {
     return "fifth";
   }
 

@@ -4,21 +4,24 @@ import { applyLaneMutes, toggleLaneMute } from "./laneMutes";
 import { clonePattern, togglePatternStep, type SequencerState } from "./patternState";
 import type { InstrumentId } from "./patterns";
 import {
-  updateBassStepPitch,
-  updateMelodyStepPitch,
-  getInKeyPalette,
-  getMelodyPalette,
-  type ScaleDegree,
-} from "./stepPitch";
-import {
-  getBassGuitarPalette,
-  updateBassGuitarStepPitch,
-} from "./bassGuitarPitch";
+  normalizeSampleKitId,
+  type SampleKitId,
+} from "./sampleKitSelection";
 import {
   cloneStepVelocities,
   cycleStepVelocity,
   DEFAULT_STEP_VELOCITY,
+  type StepVelocity,
 } from "./stepVelocity";
+import { normalizeMixEffects, type MixEffects } from "./mixEffects";
+
+export {
+  resetSequencerPitchedNotes,
+  transposeSequencerPitchedNotes,
+  updateSequencerBassGuitarStepPitch,
+  updateSequencerBassStepPitch,
+  updateSequencerMelodyStepPitch,
+} from "./sequencerPitchedNotes";
 
 export const MIN_BPM = 60;
 export const MAX_BPM = 180;
@@ -35,6 +38,7 @@ export function createPlayableStyle(sequencer: SequencerState): BeatStyle {
     swing: sequencer.swing,
     pattern: clonePattern(sequencer.pattern),
     laneVolumes: applyLaneMutes({ ...sequencer.laneVolumes }, sequencer.laneMutes),
+    mixEffects: normalizeMixEffects(sequencer.mixEffects),
     stepVelocities: cloneStepVelocities(sequencer.stepVelocities),
     bassStepPitches: [...sequencer.bassStepPitches],
     bassGuitarStepPitches: [...sequencer.bassGuitarStepPitches],
@@ -64,6 +68,26 @@ export function updateSequencerStep(
 
   pattern[instrument][stepIndex] = next.on;
   stepVelocities[instrument][stepIndex] = next.velocity;
+
+  return {
+    ...sequencer,
+    pattern,
+    stepVelocities,
+  };
+}
+
+export function updateSequencerStepFromMidi(
+  sequencer: SequencerState,
+  instrument: InstrumentId,
+  stepIndex: number,
+  velocity: StepVelocity,
+): SequencerState {
+  const index = Math.max(0, Math.min(sequencer.pattern[instrument].length - 1, Math.round(stepIndex)));
+  const pattern = clonePattern(sequencer.pattern);
+  const stepVelocities = cloneStepVelocities(sequencer.stepVelocities);
+
+  pattern[instrument][index] = true;
+  stepVelocities[instrument][index] = velocity;
 
   return {
     ...sequencer,
@@ -130,59 +154,32 @@ export function toggleSequencerLaneMute(
   };
 }
 
-export function updateSequencerBassStepPitch(
+export function updateSequencerMixEffects(
   sequencer: SequencerState,
-  stepIndex: number,
-  degree: ScaleDegree,
+  effects: Partial<MixEffects>,
 ): SequencerState {
-  const paletteSize = getInKeyPalette(BEAT_STYLES[sequencer.styleId].musicalKey).length;
-
   return {
     ...sequencer,
-    bassStepPitches: updateBassStepPitch(
-      sequencer.bassStepPitches,
-      stepIndex,
-      degree,
-      paletteSize,
-    ),
+    mixEffects: normalizeMixEffects({
+      ...sequencer.mixEffects,
+      ...effects,
+    }),
     pattern: clonePattern(sequencer.pattern),
   };
 }
 
-export function updateSequencerMelodyStepPitch(
+export function updateSequencerSampleKit(
   sequencer: SequencerState,
-  stepIndex: number,
-  degree: ScaleDegree,
+  sampleKitId: SampleKitId,
 ): SequencerState {
-  const paletteSize = getMelodyPalette(BEAT_STYLES[sequencer.styleId].musicalKey).length;
+  const normalized = normalizeSampleKitId(sampleKitId);
+  if (sequencer.sampleKitId === normalized) {
+    return sequencer;
+  }
 
   return {
     ...sequencer,
-    melodyStepPitches: updateMelodyStepPitch(
-      sequencer.melodyStepPitches,
-      stepIndex,
-      degree,
-      paletteSize,
-    ),
-    pattern: clonePattern(sequencer.pattern),
-  };
-}
-
-export function updateSequencerBassGuitarStepPitch(
-  sequencer: SequencerState,
-  stepIndex: number,
-  degree: ScaleDegree,
-): SequencerState {
-  const paletteSize = getBassGuitarPalette(BEAT_STYLES[sequencer.styleId].musicalKey).length;
-
-  return {
-    ...sequencer,
-    bassGuitarStepPitches: updateBassGuitarStepPitch(
-      sequencer.bassGuitarStepPitches,
-      stepIndex,
-      degree,
-      paletteSize,
-    ),
+    sampleKitId: normalized,
     pattern: clonePattern(sequencer.pattern),
   };
 }

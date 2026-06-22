@@ -54,7 +54,7 @@ describe("stepPitch", () => {
 
   it("resolves per-step bass pitch from style key and stored degrees", () => {
     const style = BEAT_STYLES.trap;
-    const pitches = updateBassStepPitch(createDefaultBassStepPitches(), 3, 3, 7);
+    const pitches = updateBassStepPitch(createDefaultBassStepPitches(), 3, 4, 7);
     const root = getBassPitchForStep(style.musicalKey, 0, pitches);
     const fifth = getBassPitchForStep(style.musicalKey, 3, pitches);
 
@@ -66,7 +66,7 @@ describe("stepPitch", () => {
   it("renders different pitched bass notes deterministically", () => {
     const style = BEAT_STYLES.trap;
     const root = getBassPitchForStep(style.musicalKey, 0);
-    const third = getBassPitchForStep(style.musicalKey, 0, updateBassStepPitch(createDefaultBassStepPitches(), 0, 1, 7));
+    const third = getBassPitchForStep(style.musicalKey, 0, updateBassStepPitch(createDefaultBassStepPitches(), 0, 2, 7));
     const rootPcm = synthesizeBassNotePcm(root.frequency, 22050);
     const thirdPcm = synthesizeBassNotePcm(third.frequency, 22050);
 

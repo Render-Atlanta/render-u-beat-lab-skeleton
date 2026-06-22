@@ -14,7 +14,10 @@ export function applyAction(
 ): SequencerState {
   switch (action.kind) {
     case "selectStyle":
-      return createDefaultSequencerState(action.styleId);
+      return {
+        ...createDefaultSequencerState(action.styleId),
+        sampleKitId: sequencer.sampleKitId,
+      };
     case "setTempo": {
       const bpm =
         action.mode === "absolute"

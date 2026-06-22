@@ -1,5 +1,6 @@
 import type {
   LaneVolumePort,
+  ToneEffectsBusPort,
   ToneRuntimePort,
   ToneTransportPort,
   ToneVoicePort,
@@ -18,6 +19,7 @@ export function createFakeToneRuntime() {
   let startCount = 0;
   let loadedCount = 0;
   const laneVolumeFactory = createFakeLaneVolumes();
+  const effectsBuses: FakeToneEffectsBus[] = [];
 
   const runtime: ToneRuntimePort & {
     transport: ReturnType<typeof createFakeTransport>;
@@ -26,11 +28,13 @@ export function createFakeToneRuntime() {
     startCount: number;
     loadedCount: number;
     laneVolumePorts: Array<LaneVolumePort & { linearVolume: number }>;
+    effectsBuses: FakeToneEffectsBus[];
   } = {
     transport,
     voices,
     sampleUrls,
     laneVolumePorts: laneVolumeFactory.ports,
+    effectsBuses,
     get startCount() {
       return startCount;
     },
@@ -44,6 +48,11 @@ export function createFakeToneRuntime() {
       loadedCount += 1;
     },
     getTransport: () => transport,
+    createEffectsBus: () => {
+      const bus = createFakeEffectsBus();
+      effectsBuses.push(bus);
+      return bus;
+    },
     createLaneVolume: () => laneVolumeFactory.create(),
     createSamplePlayer: (url) => {
       sampleUrls.push(url);
@@ -72,6 +81,25 @@ export function createFakeToneRuntime() {
   };
 
   return runtime;
+}
+
+type FakeToneEffectsBus = ToneEffectsBusPort & {
+  disposed: boolean;
+  mixEffects: Parameters<ToneEffectsBusPort["setMixEffects"]>[0] | null;
+};
+
+function createFakeEffectsBus(): FakeToneEffectsBus {
+  return {
+    input: {} as ToneEffectsBusPort["input"],
+    disposed: false,
+    mixEffects: null,
+    setMixEffects(effects) {
+      this.mixEffects = effects;
+    },
+    dispose() {
+      this.disposed = true;
+    },
+  };
 }
 
 export function createFakeVoice(): ToneVoicePort & {

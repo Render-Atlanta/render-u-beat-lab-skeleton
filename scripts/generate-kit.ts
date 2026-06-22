@@ -17,6 +17,13 @@ import { join } from "node:path";
 const SAMPLE_RATE = 22_050;
 const ROOT = join(import.meta.dirname, "..");
 const OUT_DIR = join(ROOT, "public", "kit");
+type KitVariant = "classic" | "punchy" | "airy";
+
+const VARIANT_DIRS: Record<KitVariant, string> = {
+  classic: "",
+  punchy: "punchy",
+  airy: "airy",
+};
 
 /** Deterministic mulberry32 PRNG returning floats in [-1, 1). */
 function createNoise(seed: number): () => number {
@@ -153,6 +160,62 @@ function normalize(samples: Float32Array, peak: number): Float32Array {
   return samples;
 }
 
+function trimTail(samples: Float32Array, ratio: number): Float32Array {
+  const length = Math.max(1, Math.round(samples.length * ratio));
+  const out = new Float32Array(length);
+  for (let i = 0; i < length; i += 1) {
+    const fade = i > length * 0.72 ? 1 - (i - length * 0.72) / (length * 0.28) : 1;
+    out[i] = samples[i] * Math.max(0, fade);
+  }
+  return out;
+}
+
+function softClip(samples: Float32Array, drive: number): Float32Array {
+  const out = new Float32Array(samples.length);
+  for (let i = 0; i < samples.length; i += 1) {
+    out[i] = Math.tanh(samples[i] * drive) / Math.tanh(drive);
+  }
+  return out;
+}
+
+function brighten(samples: Float32Array, amount: number): Float32Array {
+  const out = new Float32Array(samples.length);
+  let previous = 0;
+  for (let i = 0; i < samples.length; i += 1) {
+    const high = samples[i] - previous * 0.72;
+    previous = samples[i];
+    out[i] = samples[i] * (1 - amount) + high * amount;
+  }
+  return out;
+}
+
+function addShortRoom(samples: Float32Array, gain: number): Float32Array {
+  const out = new Float32Array(samples.length + seconds(0.05));
+  out.set(samples);
+  const taps = [
+    { offset: seconds(0.013), gain },
+    { offset: seconds(0.029), gain: gain * 0.55 },
+  ];
+  for (const tap of taps) {
+    for (let i = 0; i < samples.length; i += 1) {
+      out[i + tap.offset] += samples[i] * tap.gain;
+    }
+  }
+  return out;
+}
+
+function renderVariant(name: string, render: () => Float32Array, variant: KitVariant): Float32Array {
+  const source = render();
+  if (variant === "punchy") {
+    const shorter = name === "openHat" || name === "808" ? 0.82 : 0.72;
+    return normalize(softClip(trimTail(source, shorter), 1.8), 0.9);
+  }
+  if (variant === "airy") {
+    return normalize(addShortRoom(brighten(source, 0.42), 0.16), 0.82);
+  }
+  return source;
+}
+
 /** Encode mono float samples [-1, 1] as a 16-bit PCM WAV file. */
 function encodeWav(samples: Float32Array, sampleRate: number): Buffer {
   const numChannels = 1;
@@ -194,14 +257,18 @@ const PIECES: Record<string, () => Float32Array> = {
 function main(): void {
   mkdirSync(OUT_DIR, { recursive: true });
   let total = 0;
-  for (const [name, render] of Object.entries(PIECES)) {
-    const wav = encodeWav(render(), SAMPLE_RATE);
-    const file = join(OUT_DIR, `${name}.wav`);
-    writeFileSync(file, wav);
-    total += wav.byteLength;
-    console.log(`  ${name}.wav  ${wav.byteLength} bytes`);
+  for (const variant of Object.keys(VARIANT_DIRS) as KitVariant[]) {
+    const dir = join(OUT_DIR, VARIANT_DIRS[variant]);
+    mkdirSync(dir, { recursive: true });
+    for (const [name, render] of Object.entries(PIECES)) {
+      const wav = encodeWav(renderVariant(name, render, variant), SAMPLE_RATE);
+      const file = join(dir, `${name}.wav`);
+      writeFileSync(file, wav);
+      total += wav.byteLength;
+      console.log(`  ${variant}/${name}.wav  ${wav.byteLength} bytes`);
+    }
   }
-  console.log(`Wrote ${Object.keys(PIECES).length} samples (${total} bytes total) to public/kit`);
+  console.log(`Wrote ${Object.keys(PIECES).length * Object.keys(VARIANT_DIRS).length} samples (${total} bytes total) to public/kit`);
 }
 
 main();

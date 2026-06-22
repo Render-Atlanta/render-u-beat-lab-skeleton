@@ -1,6 +1,7 @@
 import type * as Tone from "tone";
 import type { BeatStyle } from "../lib/beatStyles";
 import { getLaneVolumes } from "../lib/laneVolumes";
+import { normalizeMixEffects, type MixEffects } from "../lib/mixEffects";
 import type { InstrumentId } from "../lib/patterns";
 import type { ProducerTagConfigInput } from "../lib/producerTag";
 import type { AudioEngine, ProducerTagSample } from "./audioEngine";
@@ -12,6 +13,12 @@ import { getDefaultToneRuntime } from "./toneRuntime";
 export interface LaneVolumePort {
   readonly node: Tone.Volume;
   setLinearVolume(volume: number): void;
+  dispose(): void;
+}
+
+export interface ToneEffectsBusPort {
+  readonly input: Tone.ToneAudioNode;
+  setMixEffects(effects: MixEffects): void;
   dispose(): void;
 }
 
@@ -38,7 +45,8 @@ export interface ToneRuntimePort {
   start(): Promise<void>;
   loaded(): Promise<void>;
   getTransport(): ToneTransportPort;
-  createLaneVolume?(): LaneVolumePort;
+  createEffectsBus?(): ToneEffectsBusPort;
+  createLaneVolume?(destination?: Tone.ToneAudioNode): LaneVolumePort;
   /**
    * Create a sample-player voice for `url`. Returns `null` if the player
    * cannot be constructed/loaded so the engine can fall back to a synth voice
@@ -65,7 +73,12 @@ export function createToneSampleBeatEngine(
 ): AudioEngine {
   const runtime = options.runtime ?? getDefaultToneRuntime();
   const transport = runtime.getTransport();
-  const voiceBundle = createToneVoices(runtime, options.sampleUrls ?? {});
+  const effectsBus = runtime.createEffectsBus?.();
+  const voiceBundle = createToneVoices(
+    runtime,
+    options.sampleUrls ?? {},
+    effectsBus?.input,
+  );
   const { voices, setLaneVolumes, disposeLaneVolumes } = voiceBundle;
   let eventId: number | string | null = null;
   let stepIndex = 0;
@@ -87,6 +100,7 @@ export function createToneSampleBeatEngine(
   function start(style: BeatStyle) {
     stop();
     setLaneVolumes(getLaneVolumes(style));
+    effectsBus?.setMixEffects(normalizeMixEffects(style.mixEffects));
     stepIndex = 0;
     transport.bpm.value = style.bpm;
     transport.swing = Math.max(0, Math.min(0.5, style.swing));
@@ -125,6 +139,7 @@ export function createToneSampleBeatEngine(
     }
     clickVoice.dispose?.();
     disposeLaneVolumes();
+    effectsBus?.dispose();
   }
 
   function setProducerTagSample(sample: ProducerTagSample | null) {

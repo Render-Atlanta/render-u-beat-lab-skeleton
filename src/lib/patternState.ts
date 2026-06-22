@@ -46,6 +46,19 @@ import {
   stepVelocitiesAreDefault,
   type StepVelocities,
 } from "./stepVelocity";
+import {
+  cloneMixEffects,
+  deserializeMixEffects,
+  mixEffectsAreDefault,
+  normalizeMixEffects,
+  serializeMixEffects,
+  type MixEffects,
+} from "./mixEffects";
+import {
+  DEFAULT_SAMPLE_KIT_ID,
+  normalizeSampleKitId,
+  type SampleKitId,
+} from "./sampleKitSelection";
 
 export const INSTRUMENT_ORDER: InstrumentId[] = INSTRUMENT_IDS;
 
@@ -56,6 +69,8 @@ export interface SequencerState {
   pattern: Pattern;
   laneVolumes: LaneVolumes;
   laneMutes: LaneMutes;
+  sampleKitId: SampleKitId;
+  mixEffects: MixEffects;
   stepVelocities: StepVelocities;
   bassStepPitches: BassStepPitches;
   bassGuitarStepPitches: BassGuitarStepPitches;
@@ -71,6 +86,8 @@ export function createDefaultSequencerState(styleId: BeatStyleId): SequencerStat
     pattern: clonePattern(style.pattern),
     laneVolumes: createDefaultLaneVolumes(),
     laneMutes: createDefaultLaneMutes(),
+    sampleKitId: DEFAULT_SAMPLE_KIT_ID,
+    mixEffects: normalizeMixEffects(),
     stepVelocities: createDefaultStepVelocities(),
     bassStepPitches: createDefaultBassStepPitches(),
     bassGuitarStepPitches: createDefaultBassGuitarStepPitches(),
@@ -169,6 +186,9 @@ export function readSequencerStateFromParams(params: URLSearchParams): Sequencer
     deserializeLaneVolumes(params.get("vol")) ?? defaults.laneVolumes;
   const laneMutes =
     deserializeLaneMutes(params.get("mute")) ?? defaults.laneMutes;
+  const sampleKitId = normalizeSampleKitId(params.get("kit"));
+  const mixEffects =
+    deserializeMixEffects(params.get("fx")) ?? defaults.mixEffects;
   const stepVelocities =
     deserializeStepVelocities(params.get("vel")) ?? defaults.stepVelocities;
   const bassStepPitches =
@@ -185,6 +205,8 @@ export function readSequencerStateFromParams(params: URLSearchParams): Sequencer
     pattern,
     laneVolumes,
     laneMutes,
+    sampleKitId,
+    mixEffects,
     stepVelocities,
     bassStepPitches,
     bassGuitarStepPitches,
@@ -203,6 +225,12 @@ export function writeSequencerStateToParams(state: SequencerState): URLSearchPar
   }
   if (!laneMutesAreDefault(state.laneMutes)) {
     params.set("mute", serializeLaneMutes(state.laneMutes));
+  }
+  if (state.sampleKitId !== DEFAULT_SAMPLE_KIT_ID) {
+    params.set("kit", state.sampleKitId);
+  }
+  if (!mixEffectsAreDefault(state.mixEffects)) {
+    params.set("fx", serializeMixEffects(state.mixEffects));
   }
   if (!stepVelocitiesAreDefault(state.stepVelocities)) {
     params.set("vel", serializeStepVelocities(state.stepVelocities));
@@ -227,6 +255,8 @@ export function cloneSequencerState(sequencer: SequencerState): SequencerState {
     pattern: clonePattern(sequencer.pattern),
     laneVolumes: cloneLaneVolumes(sequencer.laneVolumes),
     laneMutes: cloneLaneMutes(sequencer.laneMutes),
+    sampleKitId: normalizeSampleKitId(sequencer.sampleKitId),
+    mixEffects: cloneMixEffects(sequencer.mixEffects),
     stepVelocities: cloneStepVelocities(sequencer.stepVelocities),
     bassStepPitches: cloneBassStepPitches(sequencer.bassStepPitches),
     bassGuitarStepPitches: cloneBassGuitarStepPitches(sequencer.bassGuitarStepPitches),

@@ -56,6 +56,18 @@ describe("Tone.js sample beat engine", () => {
     expect(runtime.laneVolumePorts.map((port) => port.linearVolume)).toContain(0);
   });
 
+  it("applies mix effects when start(style) is called", () => {
+    const runtime = createFakeToneRuntime();
+    const engine = createToneSampleBeatEngine({ runtime });
+
+    engine.start({
+      ...BEAT_STYLES.trap,
+      mixEffects: { space: 0.5, echo: 0.25 },
+    });
+
+    expect(runtime.effectsBuses[0].mixEffects).toEqual({ space: 0.5, echo: 0.25 });
+  });
+
   it("stops and disposes scheduled events and voices", () => {
     const runtime = createFakeToneRuntime();
     const engine = createToneSampleBeatEngine({ runtime });
@@ -67,6 +79,7 @@ describe("Tone.js sample beat engine", () => {
     expect(runtime.transport.clearedIds).toEqual([1]);
     expect(runtime.transport.started).toBe(false);
     expect(Object.values(runtime.voices).every((voice) => voice.disposed)).toBe(true);
+    expect(runtime.effectsBuses[0].disposed).toBe(true);
   });
 
   it("uses sample players when sample URLs are provided", () => {

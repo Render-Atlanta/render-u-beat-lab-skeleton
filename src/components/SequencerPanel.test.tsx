@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
+import { DEFAULT_SAMPLE_KIT_ID, SAMPLE_KIT_OPTIONS } from "../audio/sampleKit";
 import { BEAT_STYLES } from "../lib/beatStyles";
 import { INSTRUMENTS } from "../lib/instruments";
 import { createDefaultLaneVolumes } from "../lib/laneVolumes";
 import { createDefaultLaneMutes } from "../lib/laneMutes";
 import { createDefaultStepVelocities } from "../lib/stepVelocity";
+import { normalizeMixEffects } from "../lib/mixEffects";
 import {
   createDefaultBassStepPitches,
   createDefaultMelodyStepPitches,
@@ -27,6 +29,8 @@ function renderPanel(extra: Partial<Parameters<typeof SequencerPanel>[0]> = {}) 
       bpm={140}
       swingPercent={0}
       audioEngineKind="web-audio"
+      sampleKitId={DEFAULT_SAMPLE_KIT_ID}
+      sampleKitOptions={SAMPLE_KIT_OPTIONS}
       pattern={BEAT_STYLES.trap.pattern}
       laneVolumes={createDefaultLaneVolumes()}
       laneMutes={createDefaultLaneMutes()}
@@ -41,7 +45,10 @@ function renderPanel(extra: Partial<Parameters<typeof SequencerPanel>[0]> = {}) 
       onBpmChange={noop}
       onTapTempo={noop}
       onSwingChange={noop}
+      mixEffects={normalizeMixEffects()}
+      onMixEffectsChange={noop}
       onAudioEngineKindChange={noop}
+      onSampleKitChange={noop}
       onLaneVolumeChange={noop}
       onLaneVolumeReset={noop}
       onLaneMuteToggle={noop}
@@ -125,6 +132,13 @@ describe("SequencerPanel control row", () => {
     expect(html).toContain(">Reset</button>");
     // Tap tempo is wired now; only Undo and Redo disable when history is empty.
     expect(html.match(/disabled/g)).toHaveLength(2);
+  });
+
+  it("renders dry mix effect controls by default", () => {
+    const html = renderPanel();
+
+    expect(html).toContain("Space 0%");
+    expect(html).toContain("Echo 0%");
   });
 });
 

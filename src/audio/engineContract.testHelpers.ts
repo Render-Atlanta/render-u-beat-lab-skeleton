@@ -81,6 +81,10 @@ class WebAudioFakeContext {
     return new WebAudioFakeBiquad();
   }
 
+  createDelay() {
+    return new WebAudioFakeDelay();
+  }
+
   createBuffer(_channels: number, length: number) {
     return {
       getChannelData: () => new Float32Array(length),
@@ -104,6 +108,7 @@ class WebAudioFakeGain extends WebAudioFakeNode {
     setValueAtTime: () => undefined,
     exponentialRampToValueAtTime: () => undefined,
     cancelScheduledValues: () => undefined,
+    setTargetAtTime: () => undefined,
   };
 }
 
@@ -143,6 +148,10 @@ class WebAudioFakeBiquad extends WebAudioFakeNode {
   type: BiquadFilterType = "lowpass";
   frequency = { value: 0 };
   Q = { value: 0 };
+}
+
+class WebAudioFakeDelay extends WebAudioFakeNode {
+  delayTime = { value: 0 };
 }
 
 class WebAudioFakeAnalyser extends WebAudioFakeNode {

@@ -26,4 +26,35 @@ describe("CommandBar", () => {
     );
     expect(html).toContain("Slowed the tempo down.");
   });
+
+  it("hides voice controls when speech input is unsupported", () => {
+    const html = renderToStaticMarkup(
+      <CommandBar
+        suggestions={suggestions}
+        statusMessage={null}
+        onSubmit={noop}
+        voiceSupported={false}
+        onVoiceToggle={noop}
+      />,
+    );
+
+    expect(html).not.toContain("Start voice command");
+  });
+
+  it("renders the voice control and listening status when supported", () => {
+    const html = renderToStaticMarkup(
+      <CommandBar
+        suggestions={suggestions}
+        statusMessage={null}
+        onSubmit={noop}
+        voiceSupported
+        voiceListening
+        voiceMessage="Listening..."
+        onVoiceToggle={noop}
+      />,
+    );
+
+    expect(html).toContain("Stop voice command");
+    expect(html).toContain("Listening...");
+  });
 });

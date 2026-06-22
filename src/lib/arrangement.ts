@@ -6,6 +6,11 @@ import { createDefaultLaneMutes } from "./laneMutes";
 import { normalizeBassStepPitches, normalizeMelodyStepPitches } from "./stepPitch";
 import { normalizeBassGuitarStepPitches } from "./bassGuitarPitch";
 import { normalizeStepVelocities } from "./stepVelocity";
+import { normalizeMixEffects } from "./mixEffects";
+import {
+  DEFAULT_SAMPLE_KIT_ID,
+  isSampleKitId,
+} from "./sampleKitSelection";
 import {
   normalizeProducerTagConfig,
   type ProducerTagConfig,
@@ -294,6 +299,8 @@ function readSequencerState(value: unknown, errors: string[]): SequencerState | 
   const pattern = readPattern(value.pattern, errors, "Sequencer pattern");
   const laneVolumes = readLaneVolumes(value.laneVolumes, errors);
   const laneMutes = readLaneMutes(value.laneMutes, errors);
+  const sampleKitId = readSampleKitId(value.sampleKitId, errors);
+  const mixEffects = readMixEffects(value.mixEffects, errors);
   const stepVelocities = readStepVelocities(value.stepVelocities, errors);
   const bassStepPitches = readBassStepPitches(value.bassStepPitches, errors);
   const bassGuitarStepPitches = readBassGuitarStepPitches(
@@ -309,6 +316,8 @@ function readSequencerState(value: unknown, errors: string[]): SequencerState | 
     !pattern ||
     !laneVolumes ||
     !laneMutes ||
+    !sampleKitId ||
+    !mixEffects ||
     !stepVelocities ||
     !bassStepPitches ||
     !bassGuitarStepPitches ||
@@ -324,11 +333,46 @@ function readSequencerState(value: unknown, errors: string[]): SequencerState | 
     pattern,
     laneVolumes,
     laneMutes,
+    sampleKitId,
+    mixEffects,
     stepVelocities,
     bassStepPitches,
     bassGuitarStepPitches,
     melodyStepPitches,
   };
+}
+
+function readSampleKitId(value: unknown, errors: string[]) {
+  if (value === undefined) {
+    return DEFAULT_SAMPLE_KIT_ID;
+  }
+
+  if (!isSampleKitId(value)) {
+    errors.push("Sequencer sampleKitId must be classic, punchy, or airy.");
+    return null;
+  }
+
+  return value;
+}
+
+function readMixEffects(value: unknown, errors: string[]) {
+  if (value === undefined) {
+    return normalizeMixEffects();
+  }
+
+  if (!isRecord(value)) {
+    errors.push("Sequencer mixEffects must be an object.");
+    return null;
+  }
+
+  const space = readNumberInRange(value.space, 0, 1, errors, "Sequencer mixEffects.space");
+  const echo = readNumberInRange(value.echo, 0, 1, errors, "Sequencer mixEffects.echo");
+
+  if (space === null || echo === null) {
+    return null;
+  }
+
+  return normalizeMixEffects({ space, echo });
 }
 
 function readStepVelocities(value: unknown, errors: string[]) {

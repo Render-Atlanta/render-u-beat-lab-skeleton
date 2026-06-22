@@ -3,6 +3,7 @@ import { patternFromSteps, type Pattern } from "./patterns";
 import type { BassGuitarStepPitches } from "./bassGuitarPitch";
 import type { BassStepPitches, MelodyStepPitches, NoteName, ScaleType } from "./stepPitch";
 import type { StepVelocities } from "./stepVelocity";
+import type { MixEffects } from "./mixEffects";
 
 export interface MusicalKey {
   root: NoteName;
@@ -28,6 +29,7 @@ export interface BeatStyle {
   pattern: Pattern;
   musicalKey: MusicalKey;
   laneVolumes?: LaneVolumes;
+  mixEffects?: MixEffects;
   stepVelocities?: StepVelocities;
   bassStepPitches?: BassStepPitches;
   bassGuitarStepPitches?: BassGuitarStepPitches;

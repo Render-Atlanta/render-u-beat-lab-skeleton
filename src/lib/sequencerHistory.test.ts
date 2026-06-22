@@ -3,6 +3,7 @@ import { createDefaultSequencerState } from "./patternState";
 import {
   updateSequencerBassGuitarStepPitch,
   updateSequencerBassStepPitch,
+  updateSequencerSampleKit,
   updateSequencerStep,
 } from "./sequencerDomain";
 import {
@@ -70,6 +71,22 @@ describe("sequencer history", () => {
     const nextHistory = pushHistorySnapshot(undo.history, firstEdit, divergent);
 
     expect(nextHistory.redo).toHaveLength(0);
+  });
+
+  it("undoes and redoes kit selection changes", () => {
+    const initial = createDefaultSequencerState("trap");
+    const edited = updateSequencerSampleKit(initial, "airy");
+    const history = pushHistorySnapshot(createHistoryState(), initial, edited);
+
+    expect(history.undo).toHaveLength(1);
+
+    const undo = undoHistory(history, getHistorySnapshot(edited));
+    const restoredUndo = restoreHistorySnapshot(edited, undo.snapshot);
+    expect(restoredUndo.sampleKitId).toBe("classic");
+
+    const redo = redoHistory(undo.history, undo.snapshot);
+    const restoredRedo = restoreHistorySnapshot(restoredUndo, redo.snapshot);
+    expect(restoredRedo.sampleKitId).toBe("airy");
   });
 
   it("caps undo history", () => {

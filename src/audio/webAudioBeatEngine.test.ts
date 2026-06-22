@@ -57,6 +57,20 @@ describe("web audio beat engine adapter", () => {
     expect(runtime.contexts[0].gainSetValues).toContain(0.9 * 1.12 * 1.45);
   });
 
+  it("applies mix effects to the live Web Audio send buses", () => {
+    const runtime = createFakeRuntime();
+    const engine = createWebAudioBeatEngine(runtime);
+
+    engine.start({
+      ...BEAT_STYLES.trap,
+      mixEffects: { space: 0.5, echo: 0.25 },
+    });
+
+    expect(runtime.contexts[0].gainTargetValues).toEqual(
+      expect.arrayContaining([0.105, 0.055, 0.1, 0.08, 0.06, 0.04]),
+    );
+  });
+
   it("reports the active step from the scheduled queue and clears on stop", () => {
     const runtime = createFakeRuntime();
     const engine = createWebAudioBeatEngine(runtime);
@@ -178,6 +192,7 @@ class FakeAudioContext {
   oscillatorStarts: number[] = [];
   bufferSourceStarts: number[] = [];
   gainSetValues: number[] = [];
+  gainTargetValues: number[] = [];
 
   async resume() {
     this.resumeCount += 1;
@@ -203,6 +218,10 @@ class FakeAudioContext {
 
   createBiquadFilter() {
     return new FakeBiquadFilterNode();
+  }
+
+  createDelay() {
+    return new FakeDelayNode();
   }
 
   createBuffer(_channels: number, length: number) {
@@ -234,6 +253,9 @@ class FakeGainNode extends FakeAudioNode {
     },
     exponentialRampToValueAtTime: () => undefined,
     cancelScheduledValues: () => undefined,
+    setTargetAtTime: (value: number) => {
+      this.context.gainTargetValues.push(value);
+    },
   };
 }
 
@@ -273,6 +295,10 @@ class FakeBiquadFilterNode extends FakeAudioNode {
   type: BiquadFilterType = "lowpass";
   frequency = { value: 0 };
   Q = { value: 0 };
+}
+
+class FakeDelayNode extends FakeAudioNode {
+  delayTime = { value: 0 };
 }
 
 class FakeAnalyserNode extends FakeAudioNode {

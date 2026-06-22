@@ -4,10 +4,13 @@ import { describe, expect, it } from "vitest";
 import { BEAT_STYLES, type BeatStyleId } from "../lib/beatStyles";
 import { decodeWav } from "../lib/wav";
 import {
+  DEFAULT_SAMPLE_KIT_ID,
   REQUIRED_LANES,
+  SAMPLE_KIT_OPTIONS,
   getKitPieces,
   getKitSampleUrls,
   validateKit,
+  type SampleKitId,
 } from "./sampleKit";
 
 const STYLE_IDS = Object.keys(BEAT_STYLES) as BeatStyleId[];
@@ -19,12 +22,31 @@ function readSample(url: string): Buffer {
 }
 
 describe("sample kit manifest", () => {
+  it("offers three named kit choices", () => {
+    expect(DEFAULT_SAMPLE_KIT_ID).toBe("classic");
+    expect(SAMPLE_KIT_OPTIONS.map((kit) => kit.id)).toEqual([
+      "classic",
+      "punchy",
+      "airy",
+    ]);
+  });
+
   it("covers every required lane for the default kit", () => {
     const urls = getKitSampleUrls();
     for (const lane of REQUIRED_LANES) {
       expect(urls[lane], `default kit missing ${lane}`).toBeTruthy();
     }
     expect(validateKit()).toEqual([]);
+  });
+
+  it.each(SAMPLE_KIT_OPTIONS)("resolves every required lane for kit $id", (kit) => {
+    const urls = getKitSampleUrls(undefined, kit.id);
+    for (const lane of REQUIRED_LANES) {
+      const url = urls[lane];
+      expect(url, `${kit.id}/${lane} URL`).toBeTruthy();
+      expect(url?.startsWith(kit.id === "classic" ? "/kit/" : `/kit/${kit.id}/`)).toBe(true);
+    }
+    expect(validateKit(undefined, kit.id)).toEqual([]);
   });
 
   it.each(STYLE_IDS)("resolves all required lanes for style %s", (styleId) => {
@@ -53,8 +75,8 @@ describe("sample kit manifest", () => {
 });
 
 describe("sample kit files on disk", () => {
-  it("maps every required lane URL to a valid, non-empty WAV", () => {
-    const urls = getKitSampleUrls();
+  it.each(SAMPLE_KIT_OPTIONS)("maps every $id kit URL to a valid, non-empty WAV", (kit) => {
+    const urls = getKitSampleUrls(undefined, kit.id as SampleKitId);
     for (const lane of REQUIRED_LANES) {
       const url = urls[lane] as string;
       const bytes = readSample(url);

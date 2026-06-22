@@ -562,6 +562,57 @@ button:disabled {
   overflow-x: auto;
 }
 
+.theory-card {
+  background: hsl(var(--bg));
+  border: 1px solid hsl(var(--border));
+  border-radius: 7px;
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.theory-card strong {
+  color: hsl(var(--ink));
+  font-size: 1rem;
+}
+
+.scale-chip-row,
+.theory-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.scale-chip {
+  align-items: center;
+  background: hsl(var(--surface));
+  border: 1px solid hsl(var(--border));
+  border-radius: 999px;
+  color: hsl(var(--ink));
+  display: inline-flex;
+  font-size: 0.72rem;
+  font-weight: 800;
+  gap: 5px;
+  min-height: 28px;
+  padding: 0 9px;
+}
+
+.scale-chip.pitch-root {
+  border-color: hsl(42 80% 46%);
+}
+
+.scale-chip.pitch-third {
+  border-color: hsl(198 70% 46%);
+}
+
+.scale-chip.pitch-fifth {
+  border-color: hsl(142 50% 40%);
+}
+
+.scale-chip strong {
+  font-size: 0.68rem;
+}
+
 .pr-row {
   align-items: center;
   display: grid;
@@ -630,6 +681,69 @@ button:disabled {
 
 .pr-cell.on.pitch-other {
   box-shadow: inset 0 0 0 4px hsl(280 58% 62%);
+}
+
+.midi-panel {
+  gap: 12px;
+  padding: 18px;
+}
+
+.midi-status {
+  background: hsl(var(--bg));
+  border: 1px solid hsl(var(--border));
+  border-radius: 7px;
+  color: hsl(var(--ink));
+  font-size: 0.82rem;
+  font-weight: 800;
+  padding: 10px 12px;
+}
+
+.midi-status--listening {
+  border-color: hsl(var(--teal));
+}
+
+.midi-controls {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.midi-toggle {
+  align-items: center;
+  background: hsl(var(--surface));
+  border: 1px solid hsl(var(--border));
+  border-radius: 7px;
+  display: flex;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 10px;
+}
+
+.midi-toggle span {
+  font-size: 0.74rem;
+  font-weight: 900;
+}
+
+.midi-step-field {
+  grid-column: 1 / -1;
+}
+
+.midi-input-list,
+.midi-map {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.midi-input-list span,
+.midi-map span {
+  background: hsl(var(--surface));
+  border: 1px solid hsl(var(--border));
+  border-radius: 999px;
+  color: hsl(var(--ink));
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 6px 9px;
 }
 
 .sr-only {
@@ -2163,6 +2277,10 @@ button:disabled {
 .command-bar__input {
   flex: 1;
   min-width: 0;
+}
+
+.command-bar__voice {
+  min-width: 68px;
 }
 
 .command-bar__chips {

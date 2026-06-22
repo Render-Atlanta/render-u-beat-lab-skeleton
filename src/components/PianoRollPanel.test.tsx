@@ -45,7 +45,11 @@ function render(extra: Partial<Parameters<typeof PianoRollPanel>[0]> = {}) {
   return renderToStaticMarkup(
     <PianoRollPanel
       lanes={makeLanes()}
+      musicalKey={KEY}
       activeStep={null}
+      activePitchedSteps={1}
+      onTranspose={() => {}}
+      onResetPitches={() => {}}
       onSetNote={() => {}}
       onClearStep={() => {}}
       {...extra}
@@ -64,6 +68,16 @@ describe("PianoRollPanel", () => {
   it("defaults to the melody lane", () => {
     const html = render();
     expect(html).toContain('aria-label="Melody notes"');
+  });
+
+  it("renders key scale tones and pitch action controls", () => {
+    const html = render();
+
+    expect(html).toContain('aria-label="A minor scale"');
+    expect(html).toContain(">A minor</strong>");
+    expect(html).toContain(">Down</button>");
+    expect(html).toContain(">Up</button>");
+    expect(html).toContain(">Root notes</button>");
   });
 
   it("offers a button for every pitched lane", () => {
@@ -86,5 +100,10 @@ describe("PianoRollPanel", () => {
   it("can focus a specific lane via initialLaneId", () => {
     const html = render({ initialLaneId: "808" });
     expect(html).toContain('aria-label="808 notes"');
+  });
+
+  it("disables pitch actions when there are no active pitched steps", () => {
+    const html = render({ activePitchedSteps: 0 });
+    expect(html.match(/disabled=""/g)).toHaveLength(3);
   });
 });

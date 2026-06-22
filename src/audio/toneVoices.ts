@@ -2,6 +2,7 @@ import { INSTRUMENT_IDS, type InstrumentId } from "../lib/patterns";
 import type { LaneVolumes } from "../lib/laneVolumes";
 import type {
   LaneVolumePort,
+  ToneEffectsBusPort,
   ToneRuntimePort,
   ToneSampleUrls,
   ToneVoicePort,
@@ -22,9 +23,10 @@ export interface ToneVoiceBundle {
 export function createToneVoices(
   runtime: ToneRuntimePort,
   sampleUrls: ToneSampleUrls,
+  destination?: ToneEffectsBusPort["input"],
 ): ToneVoiceBundle {
   const laneVolumes = Object.fromEntries(
-    INSTRUMENT_IDS.map((id) => [id, createLaneVolume(runtime)]),
+    INSTRUMENT_IDS.map((id) => [id, createLaneVolume(runtime, destination)]),
   ) as Record<InstrumentId, LaneVolumePort>;
 
   const voices = Object.fromEntries(
@@ -49,9 +51,12 @@ export function createToneVoices(
   };
 }
 
-function createLaneVolume(runtime: ToneRuntimePort): LaneVolumePort {
+function createLaneVolume(
+  runtime: ToneRuntimePort,
+  destination?: ToneEffectsBusPort["input"],
+): LaneVolumePort {
   return (
-    runtime.createLaneVolume?.() ?? {
+    runtime.createLaneVolume?.(destination) ?? {
       node: {} as LaneVolumePort["node"],
       setLinearVolume: () => undefined,
       dispose: () => undefined,

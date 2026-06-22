@@ -10,10 +10,23 @@ export interface CommandBarProps {
   suggestions: CommandSuggestion[];
   statusMessage: string | null;
   onSubmit: (text: string) => void;
+  onVoiceToggle?: () => void;
+  voiceListening?: boolean;
+  voiceMessage?: string | null;
+  voiceSupported?: boolean;
 }
 
-export function CommandBar({ suggestions, statusMessage, onSubmit }: CommandBarProps) {
+export function CommandBar({
+  suggestions,
+  statusMessage,
+  onSubmit,
+  onVoiceToggle,
+  voiceListening = false,
+  voiceMessage = null,
+  voiceSupported = false,
+}: CommandBarProps) {
   const [text, setText] = useState("");
+  const visibleStatus = voiceListening ? voiceMessage : statusMessage ?? voiceMessage;
 
   function submit(value: string) {
     const trimmed = value.trim();
@@ -45,6 +58,17 @@ export function CommandBar({ suggestions, statusMessage, onSubmit }: CommandBarP
         <button className="star-button" type="submit">
           Go
         </button>
+        {voiceSupported && onVoiceToggle ? (
+          <button
+            aria-label={voiceListening ? "Stop voice command" : "Start voice command"}
+            aria-pressed={voiceListening}
+            className="button secondary compact command-bar__voice"
+            type="button"
+            onClick={onVoiceToggle}
+          >
+            {voiceListening ? "Stop" : "Voice"}
+          </button>
+        ) : null}
       </form>
       <div className="command-bar__chips">
         {suggestions.map((suggestion) => (
@@ -59,7 +83,7 @@ export function CommandBar({ suggestions, statusMessage, onSubmit }: CommandBarP
         ))}
       </div>
       <p className="command-bar__status" role="status" aria-live="polite">
-        {statusMessage ?? ""}
+        {visibleStatus ?? ""}
       </p>
     </section>
   );

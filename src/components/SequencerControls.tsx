@@ -1,15 +1,22 @@
 import type { AudioEngineKind } from "../audio/audioEngine";
+import type { SampleKitId, SampleKitOption } from "../audio/sampleKit";
+import type { MixEffects } from "../lib/mixEffects";
 
 export interface SequencerControlsProps {
   bpm: number;
   swingPercent: number;
+  mixEffects: MixEffects;
   audioEngineKind: AudioEngineKind;
+  sampleKitId: SampleKitId;
+  sampleKitOptions: readonly SampleKitOption[];
   canUndo: boolean;
   canRedo: boolean;
   onBpmChange: (bpm: number) => void;
   onTapTempo: () => void;
   onSwingChange: (swingPercent: number) => void;
+  onMixEffectsChange: (effects: Partial<MixEffects>) => void;
   onAudioEngineKindChange: (kind: AudioEngineKind) => void;
+  onSampleKitChange: (kitId: SampleKitId) => void;
   onUndo: () => void;
   onRedo: () => void;
   onClear: () => void;
@@ -27,13 +34,18 @@ export interface SequencerControlsProps {
 export function SequencerControls({
   bpm,
   swingPercent,
+  mixEffects,
   audioEngineKind,
+  sampleKitId,
+  sampleKitOptions,
   canUndo,
   canRedo,
   onBpmChange,
   onTapTempo,
   onSwingChange,
+  onMixEffectsChange,
   onAudioEngineKindChange,
+  onSampleKitChange,
   onUndo,
   onRedo,
   onClear,
@@ -77,6 +89,30 @@ export function SequencerControls({
           onChange={(event) => onSwingChange(Number(event.target.value))}
         />
       </label>
+      <label className="control-field">
+        <span className="eyebrow">Space {Math.round(mixEffects.space * 100)}%</span>
+        <input
+          type="range"
+          min="0"
+          max="100"
+          value={Math.round(mixEffects.space * 100)}
+          onChange={(event) =>
+            onMixEffectsChange({ space: Number(event.target.value) / 100 })
+          }
+        />
+      </label>
+      <label className="control-field">
+        <span className="eyebrow">Echo {Math.round(mixEffects.echo * 100)}%</span>
+        <input
+          type="range"
+          min="0"
+          max="100"
+          value={Math.round(mixEffects.echo * 100)}
+          onChange={(event) =>
+            onMixEffectsChange({ echo: Number(event.target.value) / 100 })
+          }
+        />
+      </label>
       <label className="control-field engine-field">
         <span className="eyebrow">Engine</span>
         <select
@@ -87,6 +123,21 @@ export function SequencerControls({
         >
           <option value="web-audio">Web Audio</option>
           <option value="tone-sample">Tone.js</option>
+        </select>
+      </label>
+      <label className="control-field engine-field">
+        <span className="eyebrow">Kit</span>
+        <select
+          value={sampleKitId}
+          onChange={(event) =>
+            onSampleKitChange(event.target.value as SampleKitId)
+          }
+        >
+          {sampleKitOptions.map((kit) => (
+            <option key={kit.id} value={kit.id}>
+              {kit.name}
+            </option>
+          ))}
         </select>
       </label>
       {/* Undo/redo arrive in PR-34; rendered inert for now. Clear + Reset work. */}

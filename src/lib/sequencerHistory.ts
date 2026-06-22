@@ -11,11 +11,13 @@ import {
   type BassGuitarStepPitches,
 } from "./bassGuitarPitch";
 import { cloneStepVelocities, type StepVelocities } from "./stepVelocity";
+import type { SampleKitId } from "./sampleKitSelection";
 
 export const HISTORY_LIMIT = 40;
 
 export interface SequencerHistorySnapshot {
   pattern: Pattern;
+  sampleKitId: SampleKitId;
   stepVelocities: StepVelocities;
   bassStepPitches: BassStepPitches;
   bassGuitarStepPitches: BassGuitarStepPitches;
@@ -36,6 +38,7 @@ export function getHistorySnapshot(
 ): SequencerHistorySnapshot {
   return {
     pattern: clonePattern(sequencer.pattern),
+    sampleKitId: sequencer.sampleKitId,
     stepVelocities: cloneStepVelocities(sequencer.stepVelocities),
     bassStepPitches: cloneBassStepPitches(sequencer.bassStepPitches),
     bassGuitarStepPitches: cloneBassGuitarStepPitches(
@@ -52,6 +55,7 @@ export function restoreHistorySnapshot(
   return {
     ...sequencer,
     pattern: clonePattern(snapshot.pattern),
+    sampleKitId: snapshot.sampleKitId,
     stepVelocities: cloneStepVelocities(snapshot.stepVelocities),
     bassStepPitches: cloneBassStepPitches(snapshot.bassStepPitches),
     bassGuitarStepPitches: cloneBassGuitarStepPitches(
@@ -118,6 +122,7 @@ function cloneSnapshot(
 ): SequencerHistorySnapshot {
   return {
     pattern: clonePattern(snapshot.pattern),
+    sampleKitId: snapshot.sampleKitId,
     stepVelocities: cloneStepVelocities(snapshot.stepVelocities),
     bassStepPitches: cloneBassStepPitches(snapshot.bassStepPitches),
     bassGuitarStepPitches: cloneBassGuitarStepPitches(

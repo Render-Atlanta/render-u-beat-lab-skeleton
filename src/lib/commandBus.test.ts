@@ -6,10 +6,11 @@ import { BEAT_STYLES } from "./beatStyles";
 
 describe("applyAction", () => {
   it("selectStyle loads that style's tempo and pattern", () => {
-    const start = createDefaultSequencerState("trap");
+    const start = { ...createDefaultSequencerState("trap"), sampleKitId: "punchy" as const };
     const next = applyAction({ kind: "selectStyle", styleId: "bounce" }, start);
     expect(next.styleId).toBe("bounce");
     expect(next.bpm).toBe(BEAT_STYLES.bounce.bpm);
+    expect(next.sampleKitId).toBe("punchy");
   });
 
   it("setTempo relative nudges and clamps to the 60-180 range", () => {

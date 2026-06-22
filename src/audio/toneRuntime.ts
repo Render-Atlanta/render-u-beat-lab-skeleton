@@ -1,6 +1,7 @@
 import * as Tone from "tone";
 import type {
   LaneVolumePort,
+  ToneEffectsBusPort,
   ToneRuntimePort,
   ToneVoicePort,
 } from "./toneSampleBeatEngine";
@@ -10,8 +11,11 @@ export function getDefaultToneRuntime(): ToneRuntimePort {
     start: Tone.start,
     loaded: Tone.loaded,
     getTransport: Tone.getTransport,
-    createLaneVolume: () => {
-      const node = new Tone.Volume(0).toDestination();
+    createEffectsBus,
+    createLaneVolume: (destination) => {
+      const node = new Tone.Volume(0);
+      if (destination) node.connect(destination);
+      else node.toDestination();
       return {
         node,
         setLinearVolume: (volume: number) => {
@@ -64,6 +68,33 @@ export function getDefaultToneRuntime(): ToneRuntimePort {
       if (destination) synth.connect(destination.node);
       else synth.toDestination();
       return toToneVoice(synth);
+    },
+  };
+}
+
+function createEffectsBus(): ToneEffectsBusPort {
+  const input = new Tone.Gain(1);
+  const dry = new Tone.Gain(1).toDestination();
+  const echo = new Tone.FeedbackDelay({ delayTime: 0.19, feedback: 0, wet: 0 });
+  const space = new Tone.Reverb({ decay: 1.4, wet: 0 });
+  echo.toDestination();
+  space.toDestination();
+  input.connect(dry);
+  input.connect(echo);
+  input.connect(space);
+
+  return {
+    input,
+    setMixEffects: (effects) => {
+      echo.wet.value = effects.echo * 0.42;
+      echo.feedback.value = effects.echo * 0.22;
+      space.wet.value = effects.space * 0.35;
+    },
+    dispose: () => {
+      input.dispose();
+      dry.dispose();
+      echo.dispose();
+      space.dispose();
     },
   };
 }

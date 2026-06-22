@@ -4,19 +4,16 @@ import type { InstrumentId, Pattern } from "../lib/patterns";
 import type { LaneVolumes } from "../lib/laneVolumes";
 import type { LaneMutes } from "../lib/laneMutes";
 import type { AudioEngineKind } from "../audio/audioEngine";
+import type { SampleKitId, SampleKitOption } from "../audio/sampleKit";
 import type { BassStepPitches, MelodyStepPitches, PaletteEntry } from "../lib/stepPitch";
 import { getVelocityName, type StepVelocities } from "../lib/stepVelocity";
 import type { BassGuitarStepPitches } from "../lib/bassGuitarPitch";
+import type { MixEffects } from "../lib/mixEffects";
 import { BeatRuler } from "./BeatRuler";
 import { StepPitchSelect } from "./StepPitchSelect";
 import { SequencerControls } from "./SequencerControls";
 import { useStepPaint } from "./useStepPaint";
-
-type PitchLaneConfig = {
-  pitches: number[];
-  palette: PaletteEntry[];
-  onChange: (index: number, degree: number) => void;
-};
+type PitchLaneConfig = { pitches: number[]; palette: PaletteEntry[]; onChange: (index: number, degree: number) => void };
 
 export interface SequencerPanelProps {
   styleName: string;
@@ -24,9 +21,12 @@ export interface SequencerPanelProps {
   bpm: number;
   swingPercent: number;
   audioEngineKind: AudioEngineKind;
+  sampleKitId: SampleKitId;
+  sampleKitOptions: readonly SampleKitOption[];
   pattern: Pattern;
   laneVolumes: LaneVolumes;
   laneMutes: LaneMutes;
+  mixEffects: MixEffects;
   stepVelocities: StepVelocities;
   bassStepPitches: BassStepPitches;
   bassPalette: PaletteEntry[];
@@ -37,15 +37,16 @@ export interface SequencerPanelProps {
   activeStep: number | null;
   canUndo: boolean;
   canRedo: boolean;
-  /** Lanes to render, in order. Defaults to all instruments (free-form grid). */
   visibleInstruments?: InstrumentOption[];
   onBpmChange: (bpm: number) => void;
   onTapTempo: () => void;
   onSwingChange: (swingPercent: number) => void;
   onAudioEngineKindChange: (kind: AudioEngineKind) => void;
+  onSampleKitChange: (kitId: SampleKitId) => void;
   onLaneVolumeChange: (instrument: InstrumentId, volume: number) => void;
   onLaneVolumeReset: (instrument: InstrumentId) => void;
   onLaneMuteToggle: (instrument: InstrumentId) => void;
+  onMixEffectsChange: (effects: Partial<MixEffects>) => void;
   onReset: () => void;
   onClear: () => void;
   onUndo: () => void;
@@ -71,9 +72,12 @@ export function SequencerPanel({
   bpm,
   swingPercent,
   audioEngineKind,
+  sampleKitId,
+  sampleKitOptions,
   pattern,
   laneVolumes,
   laneMutes,
+  mixEffects,
   stepVelocities,
   bassStepPitches,
   bassPalette,
@@ -89,9 +93,11 @@ export function SequencerPanel({
   onTapTempo,
   onSwingChange,
   onAudioEngineKindChange,
+  onSampleKitChange,
   onLaneVolumeChange,
   onLaneVolumeReset,
   onLaneMuteToggle,
+  onMixEffectsChange,
   onReset,
   onClear,
   onUndo,
@@ -112,7 +118,6 @@ export function SequencerPanel({
 }: SequencerPanelProps) {
   const stepPaint = useStepPaint(onPaintStep);
 
-  // The pitched lanes share one editor; look up each lane's pitches/palette/handler.
   const pitchLanes: Partial<Record<InstrumentId, PitchLaneConfig>> = {
     "808": { pitches: bassStepPitches, palette: bassPalette, onChange: onBassStepPitchChange },
     bassGuitar: { pitches: bassGuitarStepPitches, palette: bassGuitarPalette, onChange: onBassGuitarStepPitchChange },
@@ -120,10 +125,7 @@ export function SequencerPanel({
   };
 
   function handleStepClick(instrument: InstrumentId, stepIndex: number) {
-    if (stepPaint.shouldSuppressClick()) {
-      return;
-    }
-
+    if (stepPaint.shouldSuppressClick()) return;
     onToggleStep(instrument, stepIndex);
   }
 
@@ -134,22 +136,24 @@ export function SequencerPanel({
           <p className="eyebrow">Pattern</p>
           <h2 className="heading">{styleName}</h2>
         </div>
-        <div className="stat-block">
-          <span>{activeSteps}</span>
-          hits
-        </div>
+        <div className="stat-block"><span>{activeSteps}</span>hits</div>
       </div>
 
       <SequencerControls
         bpm={bpm}
         swingPercent={swingPercent}
+        mixEffects={mixEffects}
         audioEngineKind={audioEngineKind}
+        sampleKitId={sampleKitId}
+        sampleKitOptions={sampleKitOptions}
         canUndo={canUndo}
         canRedo={canRedo}
         onBpmChange={onBpmChange}
         onTapTempo={onTapTempo}
         onSwingChange={onSwingChange}
+        onMixEffectsChange={onMixEffectsChange}
         onAudioEngineKindChange={onAudioEngineKindChange}
+        onSampleKitChange={onSampleKitChange}
         onUndo={onUndo}
         onRedo={onRedo}
         onClear={onClear}
@@ -163,7 +167,6 @@ export function SequencerPanel({
         onCountInToggle={onCountInToggle}
         onMetronomeToggle={onMetronomeToggle}
       />
-
       <div
         className="step-grid"
         aria-label={`${styleName} drum pattern`}
@@ -269,9 +272,7 @@ export function SequencerPanel({
                   }${step ? `, ${velocityName}` : ""}${
                     pitchEntry ? `, note ${pitchEntry.label}` : ""
                   }`}
-                  onPointerDown={(event) =>
-                    stepPaint.beginPaint(instrument.id, index, event)
-                  }
+                  onPointerDown={(event) => stepPaint.beginPaint(instrument.id, index, event)}
                   onClick={() => handleStepClick(instrument.id, index)}
                 />
                 {pitched && step ? (

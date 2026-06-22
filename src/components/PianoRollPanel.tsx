@@ -1,4 +1,10 @@
 import { useState } from "react";
+import type { MusicalKey } from "../lib/beatStyles";
+import {
+  describeMusicalKey,
+  summarizeScalePalette,
+  type ScaleToneSummary,
+} from "../lib/musicTheory";
 import type { PitchedInstrumentId } from "../lib/sequencerDomain";
 import { normalizeBassDegree, type PaletteEntry } from "../lib/stepPitch";
 
@@ -16,7 +22,11 @@ export interface PianoRollLane {
 
 export interface PianoRollPanelProps {
   lanes: PianoRollLane[];
+  musicalKey: MusicalKey;
   activeStep: number | null;
+  activePitchedSteps: number;
+  onTranspose: (deltaDegrees: number) => void;
+  onResetPitches: () => void;
   onSetNote: (
     instrument: PitchedInstrumentId,
     stepIndex: number,
@@ -29,7 +39,11 @@ export interface PianoRollPanelProps {
 
 export function PianoRollPanel({
   lanes,
+  musicalKey,
   activeStep,
+  activePitchedSteps,
+  onTranspose,
+  onResetPitches,
   onSetNote,
   onClearStep,
   initialLaneId,
@@ -47,16 +61,51 @@ export function PianoRollPanel({
 
   // Highest pitch on top, like a real piano roll.
   const rows = [...lane.palette].reverse();
+  const scaleTones = summarizeScalePalette(lane.palette);
 
   return (
     <div className="tool-body piano-roll">
       <div className="tool-tab-head">
         <p className="eyebrow">Piano roll</p>
       </div>
-      <p className="status-copy">
-        Higher rows are higher notes. Click to place a note; click it again to
-        clear; click another row to move it.
-      </p>
+      <div className="theory-card" aria-label={`${describeMusicalKey(musicalKey)} scale`}>
+        <div>
+          <p className="eyebrow">Key</p>
+          <strong>{describeMusicalKey(musicalKey)}</strong>
+        </div>
+        <div className="scale-chip-row">
+          {scaleTones.map((tone) => (
+            <ScaleChip tone={tone} key={tone.degree} />
+          ))}
+        </div>
+      </div>
+
+      <div className="theory-actions" aria-label="Pitch actions">
+        <button
+          className="button secondary compact"
+          type="button"
+          onClick={() => onTranspose(-1)}
+          disabled={activePitchedSteps === 0}
+        >
+          Down
+        </button>
+        <button
+          className="button secondary compact"
+          type="button"
+          onClick={() => onTranspose(1)}
+          disabled={activePitchedSteps === 0}
+        >
+          Up
+        </button>
+        <button
+          className="button secondary compact"
+          type="button"
+          onClick={onResetPitches}
+          disabled={activePitchedSteps === 0}
+        >
+          Root notes
+        </button>
+      </div>
 
       <div
         className="piano-roll__lanes"
@@ -125,5 +174,14 @@ export function PianoRollPanel({
         ))}
       </div>
     </div>
+  );
+}
+
+function ScaleChip({ tone }: { tone: ScaleToneSummary }) {
+  return (
+    <span className={`scale-chip pitch-${tone.function}`}>
+      <strong>{tone.degreeLabel}</strong>
+      {tone.noteLabel}
+    </span>
   );
 }
