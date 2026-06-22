@@ -18,6 +18,33 @@ describe("CommandBar", () => {
     expect(html).toContain("Tell the beat what to do");
     expect(html).toContain("Make it bounce");
     expect(html).toContain("Slower");
+    expect(html).toContain("AI checking");
+  });
+
+  it("renders configured AI setup status", () => {
+    const html = renderToStaticMarkup(
+      <CommandBar
+        suggestions={suggestions}
+        statusMessage={null}
+        onSubmit={noop}
+        aiHealth={{ status: "ready", provider: "gemini", requestId: "req-1" }}
+      />,
+    );
+
+    expect(html).toContain("AI ready: gemini");
+  });
+
+  it("renders missing AI setup status", () => {
+    const html = renderToStaticMarkup(
+      <CommandBar
+        suggestions={suggestions}
+        statusMessage={null}
+        onSubmit={noop}
+        aiHealth={{ status: "missing", provider: "openai", requestId: "req-2" }}
+      />,
+    );
+
+    expect(html).toContain("AI needs key");
   });
 
   it("renders the status message when present", () => {

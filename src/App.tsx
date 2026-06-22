@@ -26,6 +26,7 @@ import { useVoiceCommand } from "./components/useVoiceCommand";
 import { StyleSelector } from "./components/StyleSelector";
 import { CommandBar, type CommandSuggestion } from "./components/CommandBar";
 import { createAiBeatContext } from "./lib/aiBeatContext";
+import { requestAiHealth, type AiHealthState } from "./lib/aiHealthClient";
 import type { CommandAction } from "./lib/commandActions";
 import { requestCommandAction } from "./lib/commandClient";
 import {
@@ -228,9 +229,10 @@ const MOBILE_BREAKPOINT = 760;
 
 const COMMAND_SUGGESTIONS: CommandSuggestion[] = [
   { label: "Make it bounce", command: "make it bounce" },
-  { label: "Slower", command: "slower" },
+  { label: "Add fill", command: "add a fill" },
+  { label: "Extend main", command: "add 4 bars to the main section" },
+  { label: "Mute hats", command: "mute hats" },
   { label: "More swing", command: "more swing" },
-  { label: "Make it trap", command: "make it trap" },
 ];
 
 function getLocalStorage(): Storage | null {
@@ -321,6 +323,7 @@ export function App() {
   );
   const [commandStatus, setCommandStatus] = useState<string | null>(null);
   const [commandBusy, setCommandBusy] = useState(false);
+  const [aiHealth, setAiHealth] = useState<AiHealthState>({ status: "checking" });
   const voiceCommand = useVoiceCommand(handleCommand);
 
   const baseStyle = BEAT_STYLES[sequencer.styleId];
@@ -508,6 +511,18 @@ export function App() {
     const onResize = () => setViewportWidth(window.innerWidth);
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    void requestAiHealth().then((status) => {
+      if (active) {
+        setAiHealth(status);
+      }
+    });
+    return () => {
+      active = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -1360,6 +1375,7 @@ export function App() {
         statusMessage={commandStatus}
         onSubmit={handleCommand}
         busy={commandBusy}
+        aiHealth={aiHealth}
         voiceSupported={voiceCommand.supported}
         voiceListening={voiceCommand.listening}
         voiceMessage={voiceCommand.message}

@@ -59,6 +59,23 @@ describe("parseFastPath", () => {
     expect(parseFastPath("give me a snare roll")).toEqual({ kind: "addFill" });
   });
 
+  it("keeps workshop demo prompts inside supported intents", () => {
+    expect(parseFastPath("make it bounce")).toEqual({
+      kind: "selectStyle",
+      styleId: "bounce",
+    });
+    expect(parseFastPath("mute hats")).toEqual({
+      kind: "setLaneMute",
+      instrumentId: "hat",
+      muted: true,
+    });
+    expect(parseFastPath("add 4 bars to the main section")).toEqual({
+      kind: "adjustArrangementBars",
+      sectionId: "main",
+      deltaBars: 4,
+    });
+  });
+
   it("maps arrangement length phrases", () => {
     expect(parseFastPath("make the main section 8 bars")).toEqual({
       kind: "setSectionBars",

@@ -113,6 +113,8 @@ to `.env.local` or `.env` and fill in your key. `/api/ai-health` reports
 whether the provider is configured without exposing secrets.
 
 See [docs/DEPLOY_VERCEL.md](docs/DEPLOY_VERCEL.md) for the workshop runbook.
+After a deploy, run `npm run smoke:ai -- https://render-u-beat-lab.vercel.app`
+to verify `/api/ai-health`, `/api/command`, and `/api/coach`.
 
 ## Design system notes
 

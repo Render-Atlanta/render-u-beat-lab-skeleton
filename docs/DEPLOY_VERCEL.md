@@ -113,6 +113,15 @@ The `/api/ai-health` endpoint reports the selected provider, whether a key is
 configured, and a request ID. It never returns API keys, model/base URL details,
 prompts, or user text.
 
+Run a deployed AI smoke check with:
+
+```bash
+npm run smoke:ai -- https://render-u-beat-lab.vercel.app
+```
+
+For protected preview deployments, set `AI_SMOKE_BASIC_AUTH_USER` and
+`AI_SMOKE_BASIC_AUTH_PASSWORD` in your shell before running the smoke script.
+
 Plain `npm run dev` serves the Vite client only; use Vercel preview/dev tooling
 when manually testing the live `/api/command` and `/api/coach` functions.
 For local configuration, copy `.env.example` to `.env.local` or `.env` and fill

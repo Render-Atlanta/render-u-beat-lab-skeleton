@@ -1,5 +1,6 @@
 // src/components/CommandBar.tsx
 import { useState } from "react";
+import type { AiHealthState } from "../lib/aiHealthClient";
 
 export interface CommandSuggestion {
   label: string;
@@ -11,6 +12,7 @@ export interface CommandBarProps {
   statusMessage: string | null;
   onSubmit: (text: string) => void;
   busy?: boolean;
+  aiHealth?: AiHealthState;
   onVoiceToggle?: () => void;
   voiceListening?: boolean;
   voiceMessage?: string | null;
@@ -22,6 +24,7 @@ export function CommandBar({
   statusMessage,
   onSubmit,
   busy = false,
+  aiHealth = { status: "checking" },
   onVoiceToggle,
   voiceListening = false,
   voiceMessage = null,
@@ -41,7 +44,10 @@ export function CommandBar({
 
   return (
     <section className="command-bar" aria-label="Tell the beat what to do">
-      <p className="eyebrow">Tell the beat what to do</p>
+      <div className="command-bar__meta">
+        <p className="eyebrow">Tell the beat what to do</p>
+        <AiStatusPill health={aiHealth} />
+      </div>
       <form
         className="command-bar__form"
         onSubmit={(event) => {
@@ -92,4 +98,49 @@ export function CommandBar({
       </p>
     </section>
   );
+}
+
+function AiStatusPill({ health }: { health: AiHealthState }) {
+  const copy = getAiStatusCopy(health);
+  return (
+    <span
+      className={`ai-status-pill ${copy.tone}`}
+      title={copy.title}
+    >
+      {copy.label}
+    </span>
+  );
+}
+
+function getAiStatusCopy(health: AiHealthState): {
+  label: string;
+  title: string;
+  tone: "checking" | "ready" | "missing" | "error";
+} {
+  switch (health.status) {
+    case "checking":
+      return {
+        label: "AI checking",
+        title: "Checking AI provider setup",
+        tone: "checking",
+      };
+    case "ready":
+      return {
+        label: `AI ready: ${health.provider}`,
+        title: `AI provider configured. Request ${health.requestId}`,
+        tone: "ready",
+      };
+    case "missing":
+      return {
+        label: "AI needs key",
+        title: `${health.provider} is selected but not configured. Request ${health.requestId}`,
+        tone: "missing",
+      };
+    case "error":
+      return {
+        label: "AI offline",
+        title: "AI setup status could not be checked",
+        tone: "error",
+      };
+  }
 }
