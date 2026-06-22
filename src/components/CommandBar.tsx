@@ -38,7 +38,7 @@ export function CommandBar({
   }
 
   return (
-    <section className="panel command-bar" aria-label="Tell the beat what to do">
+    <section className="command-bar" aria-label="Tell the beat what to do">
       <p className="eyebrow">Tell the beat what to do</p>
       <form
         className="command-bar__form"
