@@ -1,8 +1,11 @@
+import { useState } from "react";
 import {
   getInstrumentCoach,
   type PatternChangeSummary,
   type StyleCoachMetadata,
 } from "../lib/beatCoach";
+import type { AiBeatContext } from "../lib/aiBeatContext";
+import { requestCoachAnswer } from "../lib/coachClient";
 import { INSTRUMENTS } from "../lib/instruments";
 import {
   formatStyleReferenceMeta,
@@ -14,6 +17,7 @@ export interface BeatCoachPanelProps {
   styleCoach: StyleCoachMetadata;
   patternSummary: PatternChangeSummary;
   references: StyleReferenceTrack[];
+  aiContext: AiBeatContext;
 }
 
 export function BeatCoachPanel({
@@ -21,7 +25,29 @@ export function BeatCoachPanel({
   styleCoach,
   patternSummary,
   references,
+  aiContext,
 }: BeatCoachPanelProps) {
+  const [question, setQuestion] = useState("");
+  const [answer, setAnswer] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function askCoach() {
+    const trimmed = question.trim();
+    if (!trimmed) {
+      return;
+    }
+    setBusy(true);
+    try {
+      const response = await requestCoachAnswer({
+        question: trimmed,
+        context: aiContext,
+      });
+      setAnswer(response.answer);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <>
       <div className="panel-header">
@@ -37,6 +63,32 @@ export function BeatCoachPanel({
       <div className="coach-block">
         <p className="eyebrow">Try this</p>
         <p>{patternSummary.tryThis}</p>
+      </div>
+      <div className="coach-block coach-qa">
+        <p className="eyebrow">Ask the coach</p>
+        <form
+          className="coach-qa__form"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void askCoach();
+          }}
+        >
+          <input
+            aria-label="Beat coach question"
+            disabled={busy}
+            onChange={(event) => setQuestion(event.target.value)}
+            placeholder="What should I add next?"
+            value={question}
+          />
+          <button className="star-button" disabled={busy} type="submit">
+            {busy ? "..." : "Ask"}
+          </button>
+        </form>
+        {answer ? (
+          <p className="coach-qa__answer" role="status">
+            {answer}
+          </p>
+        ) : null}
       </div>
       <div className="reference-panel">
         <p className="eyebrow">Reference tracks</p>

@@ -25,6 +25,8 @@ import { usePracticeAids } from "./components/usePracticeAids";
 import { useVoiceCommand } from "./components/useVoiceCommand";
 import { StyleSelector } from "./components/StyleSelector";
 import { CommandBar, type CommandSuggestion } from "./components/CommandBar";
+import { createAiBeatContext } from "./lib/aiBeatContext";
+import { requestCommandAction } from "./lib/commandClient";
 import { applyAction, describeAction } from "./lib/commandBus";
 import { parseFastPath } from "./lib/commandFastPath";
 import {
@@ -312,6 +314,7 @@ export function App() {
     typeof window === "undefined" ? 1280 : window.innerWidth,
   );
   const [commandStatus, setCommandStatus] = useState<string | null>(null);
+  const [commandBusy, setCommandBusy] = useState(false);
   const voiceCommand = useVoiceCommand(handleCommand);
 
   const baseStyle = BEAT_STYLES[sequencer.styleId];
@@ -725,13 +728,26 @@ export function App() {
     applySequencerState(updateSequencerBpm(sequencer, bpm));
   }
 
-  function handleCommand(text: string) {
-    const action = parseFastPath(text) ?? { kind: "unknown" as const, reason: "no-match" };
-    const next = applyAction(action, sequencer);
-    if (next !== sequencer) {
-      applySequencerState(next);
-    }
+  async function handleCommand(text: string) {
+    const fastAction = parseFastPath(text);
+    const action =
+      fastAction ??
+      (await runAiCommand(text));
+    applySequencerUpdate((current) => applyAction(action, current));
     setCommandStatus(describeAction(action));
+  }
+
+  async function runAiCommand(text: string) {
+    setCommandBusy(true);
+    setCommandStatus("Asking the beat coach...");
+    try {
+      return await requestCommandAction({
+        text,
+        context: createAiBeatContext(sequencer),
+      });
+    } finally {
+      setCommandBusy(false);
+    }
   }
 
   function handleTapTempo() {
@@ -1249,6 +1265,7 @@ export function App() {
               styleCoach={styleCoach}
               patternSummary={patternSummary}
               references={styleReferences}
+              aiContext={createAiBeatContext(sequencer)}
             />
           </div>
         );
@@ -1326,6 +1343,7 @@ export function App() {
         suggestions={COMMAND_SUGGESTIONS}
         statusMessage={commandStatus}
         onSubmit={handleCommand}
+        busy={commandBusy}
         voiceSupported={voiceCommand.supported}
         voiceListening={voiceCommand.listening}
         voiceMessage={voiceCommand.message}

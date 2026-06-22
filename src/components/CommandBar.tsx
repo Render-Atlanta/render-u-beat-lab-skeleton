@@ -10,6 +10,7 @@ export interface CommandBarProps {
   suggestions: CommandSuggestion[];
   statusMessage: string | null;
   onSubmit: (text: string) => void;
+  busy?: boolean;
   onVoiceToggle?: () => void;
   voiceListening?: boolean;
   voiceMessage?: string | null;
@@ -20,6 +21,7 @@ export function CommandBar({
   suggestions,
   statusMessage,
   onSubmit,
+  busy = false,
   onVoiceToggle,
   voiceListening = false,
   voiceMessage = null,
@@ -51,12 +53,13 @@ export function CommandBar({
           className="command-bar__input"
           type="text"
           value={text}
+          disabled={busy}
           placeholder="e.g. make it bounce, slower, more swing"
           aria-label="Beat command"
           onChange={(event) => setText(event.target.value)}
         />
-        <button className="star-button" type="submit">
-          Go
+        <button className="star-button" type="submit" disabled={busy}>
+          {busy ? "..." : "Go"}
         </button>
         {voiceSupported && onVoiceToggle ? (
           <button
@@ -64,6 +67,7 @@ export function CommandBar({
             aria-pressed={voiceListening}
             className="button secondary compact command-bar__voice"
             type="button"
+            disabled={busy}
             onClick={onVoiceToggle}
           >
             {voiceListening ? "Stop" : "Voice"}
@@ -76,6 +80,7 @@ export function CommandBar({
             key={suggestion.command}
             type="button"
             className="button secondary compact"
+            disabled={busy}
             onClick={() => submit(suggestion.command)}
           >
             {suggestion.label}

@@ -74,6 +74,30 @@ Open the preview URL and confirm:
 - `/kit/kick.wav` serves as `audio/wav` (the drum kit loads).
 - No browser console errors appear on first load.
 
+## AI command and coach setup
+
+The `Tell the beat what to do` AI fallback and Beat Coach Q&A run through Vercel
+serverless functions so provider tokens are never exposed to the browser. The
+deterministic fast-path commands still work without these variables.
+
+Set these in the Vercel project environment:
+
+```bash
+AI_PROVIDER=gemini
+GEMINI_API_KEY=...
+GEMINI_MODEL=gemini-2.5-flash
+```
+
+`GOOGLE_GENERATIVE_AI_API_KEY` is also accepted as an alias for
+`GEMINI_API_KEY`. `AI_PROVIDER`/`GEMINI_MODEL` keep the provider boundary
+explicit so future LLM providers can be added without changing the React UI.
+
+Plain `npm run dev` serves the Vite client only; use Vercel preview/dev tooling
+when manually testing the live `/api/command` and `/api/coach` functions.
+For local configuration, copy `.env.example` to `.env.local` or `.env` and fill
+in the real key. Those files are gitignored. If you test through the basic-auth
+middleware locally, also uncomment and fill the basic-auth variables.
+
 ## Microphone readiness check
 
 Verify the deployed site over HTTPS:

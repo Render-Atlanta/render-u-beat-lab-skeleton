@@ -103,6 +103,11 @@ vercel --prod  # deploy main to production
 Vercel serves every deployment over HTTPS automatically, which the future
 microphone-capture work requires.
 
+AI command/coach features use server-side Vercel functions. Set
+`AI_PROVIDER=gemini`, `GEMINI_API_KEY`, and `GEMINI_MODEL=gemini-2.5-flash` in
+the Vercel project environment to use Gemini 2.5 Flash. For local setup, copy
+[.env.example](.env.example) to `.env.local` or `.env` and fill in your key.
+
 See [docs/DEPLOY_VERCEL.md](docs/DEPLOY_VERCEL.md) for the workshop runbook.
 
 ## Design system notes

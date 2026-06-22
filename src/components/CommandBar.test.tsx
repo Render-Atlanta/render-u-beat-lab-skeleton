@@ -57,4 +57,18 @@ describe("CommandBar", () => {
     expect(html).toContain("Stop voice command");
     expect(html).toContain("Listening...");
   });
+
+  it("renders a busy state while an AI command is pending", () => {
+    const html = renderToStaticMarkup(
+      <CommandBar
+        suggestions={suggestions}
+        statusMessage="Asking the beat coach..."
+        onSubmit={noop}
+        busy
+      />,
+    );
+
+    expect(html).toContain("disabled");
+    expect(html).toContain("Asking the beat coach...");
+  });
 });

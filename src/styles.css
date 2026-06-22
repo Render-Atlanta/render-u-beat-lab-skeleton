@@ -1026,6 +1026,37 @@ button:disabled {
   line-height: 1.35;
 }
 
+.coach-qa {
+  gap: 12px;
+}
+
+.coach-qa__form {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.coach-qa__form input {
+  background: hsl(var(--bg));
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+  color: hsl(var(--ink));
+  min-height: 42px;
+  min-width: 0;
+  padding: 0 12px;
+}
+
+.coach-qa__answer {
+  background: hsl(var(--accent) / 0.26);
+  border: 1px solid hsl(var(--accent));
+  border-radius: 8px;
+  color: hsl(var(--ink));
+  font-weight: 700;
+  line-height: 1.4;
+  margin: 0;
+  padding: 12px 14px;
+}
+
 .tag-controls {
   gap: 12px;
 }
