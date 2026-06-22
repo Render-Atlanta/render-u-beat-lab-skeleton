@@ -21,6 +21,7 @@ import { CapturePanel } from "./components/CapturePanel";
 import { ProducerTagControls, type RecordedState } from "./components/ProducerTagControls";
 import { SequencerPanel } from "./components/SequencerPanel";
 import { CountInOverlay } from "./components/CountInOverlay";
+import { DemoModePanel } from "./components/DemoModePanel";
 import { usePracticeAids } from "./components/usePracticeAids";
 import { useVoiceCommand } from "./components/useVoiceCommand";
 import { StyleSelector } from "./components/StyleSelector";
@@ -104,6 +105,11 @@ import {
 import { decodeProducerTagSample } from "./lib/producerTagSample";
 import { renderArrangementWav } from "./lib/exportBeat";
 import { renderArrangementMidi } from "./lib/exportMidi";
+import {
+  DEMO_MODE_STEPS,
+  advanceDemoStepIndex,
+  type DemoModeStep,
+} from "./lib/demoMode";
 import {
   addFill,
   humanizeGroove,
@@ -324,6 +330,7 @@ export function App() {
   const [commandStatus, setCommandStatus] = useState<string | null>(null);
   const [commandBusy, setCommandBusy] = useState(false);
   const [aiHealth, setAiHealth] = useState<AiHealthState>({ status: "checking" });
+  const [demoStepIndex, setDemoStepIndex] = useState(0);
   const voiceCommand = useVoiceCommand(handleCommand);
 
   const baseStyle = BEAT_STYLES[sequencer.styleId];
@@ -765,6 +772,48 @@ export function App() {
     }
     applySequencerUpdate((current) => applyAction(action, current));
     setCommandStatus(describeAction(action));
+  }
+
+  function advanceDemoStep(stepId: DemoModeStep["id"]) {
+    setDemoStepIndex((current) => advanceDemoStepIndex(current, stepId));
+  }
+
+  function runDemoStep(stepId: DemoModeStep["id"]) {
+    switch (stepId) {
+      case "style":
+        applyCommandAction({ kind: "selectStyle", styleId: "bounce" });
+        break;
+      case "fill":
+        applyCommandAction({ kind: "addFill" });
+        break;
+      case "arrange":
+        applyCommandAction({ kind: "setSectionBars", sectionId: "main", bars: 8 });
+        break;
+      case "tag":
+        setProducerTagSource("text");
+        setProducerTagEnabled(true);
+        setProducerTagTrigger("intro");
+        setProducerTagText((current) => current.trim() || DEFAULT_PRODUCER_TAG_TEXT);
+        jumpToTag();
+        setCommandStatus("Producer tag is cued for the intro.");
+        break;
+      case "export":
+        exportProject();
+        if (isMobile) {
+          selectMobileTab("arrange");
+        } else {
+          selectTool("arrange");
+        }
+        break;
+      default:
+        return;
+    }
+    advanceDemoStep(stepId);
+  }
+
+  function resetDemoMode() {
+    setDemoStepIndex(0);
+    setCommandStatus("Demo mode reset.");
   }
 
   async function runAiCommand(text: string) {
@@ -1386,18 +1435,26 @@ export function App() {
         {showSequencer ? (
           <div className="work-main">
             {WORKSHOP_MODE ? (
-              <WorkshopChecklist
-                styleName={baseStyle.name}
-                activeSteps={activeSteps}
-                tagReady={tagReady}
-                tagTrigger={producerTagTrigger}
-                arrangementBars={arrangementBars}
-                exportReady={exportCompleted}
-                onOpenTag={() => jumpToTag()}
-                onOpenArrange={() =>
-                  isMobile ? selectMobileTab("arrange") : selectTool("arrange")
-                }
-              />
+              <>
+                <DemoModePanel
+                  steps={DEMO_MODE_STEPS}
+                  activeIndex={demoStepIndex}
+                  onRunStep={runDemoStep}
+                  onReset={resetDemoMode}
+                />
+                <WorkshopChecklist
+                  styleName={baseStyle.name}
+                  activeSteps={activeSteps}
+                  tagReady={tagReady}
+                  tagTrigger={producerTagTrigger}
+                  arrangementBars={arrangementBars}
+                  exportReady={exportCompleted}
+                  onOpenTag={() => jumpToTag()}
+                  onOpenArrange={() =>
+                    isMobile ? selectMobileTab("arrange") : selectTool("arrange")
+                  }
+                />
+              </>
             ) : null}
             {guidedState.active ? (
               <GuidedModeBanner
