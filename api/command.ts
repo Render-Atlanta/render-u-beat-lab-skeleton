@@ -1,10 +1,14 @@
 import { createJsonProvider } from "./_aiProvider.js";
 import {
+  createRequestId,
+  logApiEvent,
   methodNotAllowed,
   readJsonBody,
+  setRequestIdHeader,
   type ApiRequest,
   type ApiResponse,
 } from "./_http.js";
+import { getAction, isCommandAction } from "./_commandAction.js";
 import { COMMAND_ACTION_RESPONSE_SCHEMA } from "./_schemas.js";
 
 interface CommandBody {
@@ -16,7 +20,10 @@ export default async function handler(
   request: ApiRequest,
   response: ApiResponse,
 ): Promise<void> {
+  const requestId = createRequestId();
+  setRequestIdHeader(response, requestId);
   if (request.method !== "POST") {
+    logApiEvent(requestId, "ai.command.method_not_allowed");
     methodNotAllowed(response);
     return;
   }
@@ -25,17 +32,20 @@ export default async function handler(
   const body =
     typeof rawBody === "object" && rawBody !== null ? (rawBody as CommandBody) : {};
   if (typeof body.text !== "string" || !body.text.trim()) {
+    logApiEvent(requestId, "ai.command.empty");
     response.status(400).json({ action: { kind: "unknown", reason: "empty-command" } });
     return;
   }
 
   const provider = createJsonProvider();
   if (!provider) {
+    logApiEvent(requestId, "ai.command.not_configured");
     response.status(200).json({ action: { kind: "unknown", reason: "ai-not-configured" } });
     return;
   }
 
   try {
+    logApiEvent(requestId, "ai.command.start");
     const payload = await provider.generateJson({
       systemInstruction: COMMAND_SYSTEM_PROMPT,
       prompt: JSON.stringify({ text: body.text, context: body.context }),
@@ -43,69 +53,23 @@ export default async function handler(
       temperature: 0.1,
     });
     const action = getAction(payload);
+    logApiEvent(requestId, "ai.command.complete", {
+      valid: isCommandAction(action),
+      kind:
+        typeof action === "object" &&
+        action !== null &&
+        typeof (action as { kind?: unknown }).kind === "string"
+          ? (action as { kind: string }).kind
+          : "invalid",
+    });
     response.status(200).json({
       action: isCommandAction(action)
         ? action
         : { kind: "unknown", reason: "invalid-ai-action" },
     });
   } catch {
+    logApiEvent(requestId, "ai.command.failed");
     response.status(200).json({ action: { kind: "unknown", reason: "ai-command-failed" } });
-  }
-}
-
-function getAction(payload: unknown): unknown {
-  if (typeof payload !== "object" || payload === null) {
-    return null;
-  }
-  return (payload as { action?: unknown }).action;
-}
-
-const STYLE_IDS = new Set([
-  "trap",
-  "crunk",
-  "drill",
-  "rnb",
-  "pop",
-  "afrobeats",
-  "amapiano",
-  "house",
-  "bounce",
-]);
-
-function isCommandAction(action: unknown): boolean {
-  if (typeof action !== "object" || action === null) {
-    return false;
-  }
-  const value = action as Record<string, unknown>;
-  switch (value.kind) {
-    case "selectStyle":
-      return typeof value.styleId === "string" && STYLE_IDS.has(value.styleId);
-    case "setTempo":
-      return (
-        (value.mode === "absolute" &&
-          typeof value.bpm === "number" &&
-          Number.isFinite(value.bpm) &&
-          value.bpm >= 60 &&
-          value.bpm <= 180) ||
-        (value.mode === "relative" &&
-          typeof value.deltaBpm === "number" &&
-          Number.isFinite(value.deltaBpm))
-      );
-    case "setSwing":
-      return (
-        (value.mode === "absolute" &&
-          typeof value.swingPercent === "number" &&
-          Number.isFinite(value.swingPercent) &&
-          value.swingPercent >= 0 &&
-          value.swingPercent <= 30) ||
-        (value.mode === "relative" &&
-          typeof value.deltaPercent === "number" &&
-          Number.isFinite(value.deltaPercent))
-      );
-    case "unknown":
-      return typeof value.reason === "string";
-    default:
-      return false;
   }
 }
 
@@ -113,7 +77,14 @@ const COMMAND_SYSTEM_PROMPT = [
   "You translate beginner beat-making requests into one JSON action.",
   "Return only the provided schema. Do not explain.",
   "Supported styles: trap, crunk, drill, rnb, pop, afrobeats, amapiano, house, bounce.",
-  "Supported actions: selectStyle, setTempo, setSwing, unknown.",
-  "Use unknown for requests about generating audio, editing unsupported lanes, or anything outside the action schema.",
+  "Supported lanes: kick, snare, hat, openHat, clap, 808, bassGuitar, melody.",
+  "Supported arrangement sections: intro, main, variation, outro.",
+  "Supported actions: selectStyle, setTempo, setSwing, setLaneMute, adjustLaneDensity, addFill, setSectionBars, adjustArrangementBars, doubleArrangement, unknown.",
+  "Use setLaneMute for mute/unmute lane requests, adjustLaneDensity for busier/sparser lane requests, and addFill for one-bar fill requests.",
+  "If the user asks for a busier or sparser beat without naming a lane, use the hat lane.",
+  "Use setSectionBars for exact section length requests, adjustArrangementBars for extend/shorten requests, and doubleArrangement for double-the-song or double-section requests.",
+  "If the user asks to extend the beat without naming a section, use sectionId main and deltaBars 4.",
+  "Use unknown for requests about generating audio files or anything outside the action schema.",
   "Clamp absolute tempo requests to 60-180 BPM and swing to 0-30 percent.",
+  "Clamp arrangement bars to 1-16.",
 ].join(" ");

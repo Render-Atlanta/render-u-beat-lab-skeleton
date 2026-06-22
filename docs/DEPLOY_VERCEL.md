@@ -90,7 +90,28 @@ GEMINI_MODEL=gemini-2.5-flash
 
 `GOOGLE_GENERATIVE_AI_API_KEY` is also accepted as an alias for
 `GEMINI_API_KEY`. `AI_PROVIDER`/`GEMINI_MODEL` keep the provider boundary
-explicit so future LLM providers can be added without changing the React UI.
+explicit so LLM providers can be swapped without changing the React UI.
+
+OpenAI-compatible configuration is also supported:
+
+```bash
+AI_PROVIDER=openai
+OPENAI_API_KEY=...
+OPENAI_MODEL=gpt-4o-mini
+```
+
+For OpenAI-compatible services, set:
+
+```bash
+AI_PROVIDER=openai-compatible
+OPENAI_COMPATIBLE_API_KEY=...
+OPENAI_COMPATIBLE_BASE_URL=https://api.openai.com/v1
+OPENAI_MODEL=gpt-4o-mini
+```
+
+The `/api/ai-health` endpoint reports the selected provider, whether a key is
+configured, and a request ID. It never returns API keys, model/base URL details,
+prompts, or user text.
 
 Plain `npm run dev` serves the Vite client only; use Vercel preview/dev tooling
 when manually testing the live `/api/command` and `/api/coach` functions.

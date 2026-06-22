@@ -1,4 +1,9 @@
-interface GenerateJsonInput {
+import {
+  createOpenAiProvider,
+  getOpenAiProviderStatus,
+} from "./_openAiProvider.js";
+
+export interface GenerateJsonInput {
   systemInstruction: string;
   prompt: string;
   schema: unknown;
@@ -9,6 +14,16 @@ export interface JsonProvider {
   generateJson(input: GenerateJsonInput): Promise<unknown>;
 }
 
+export interface JsonProviderStatus {
+  provider: string;
+  configured: boolean;
+  model?: string;
+  baseUrl?: string;
+  reason?: string;
+}
+
+const DEFAULT_GEMINI_MODEL = "gemini-2.5-flash";
+
 export function createJsonProvider(): JsonProvider | null {
   const provider = (process.env.AI_PROVIDER ?? process.env.LLM_PROVIDER ?? "gemini")
     .toLowerCase()
@@ -16,7 +31,39 @@ export function createJsonProvider(): JsonProvider | null {
   if (provider === "gemini" || provider === "google") {
     return createGeminiProvider();
   }
+  if (
+    provider === "openai" ||
+    provider === "openai-compatible" ||
+    provider === "compatible"
+  ) {
+    return createOpenAiProvider();
+  }
   return null;
+}
+
+export function getJsonProviderStatus(): JsonProviderStatus {
+  const provider = (process.env.AI_PROVIDER ?? process.env.LLM_PROVIDER ?? "gemini")
+    .toLowerCase()
+    .trim();
+  if (provider === "gemini" || provider === "google") {
+    return {
+      provider: "gemini",
+      configured: Boolean(process.env.GEMINI_API_KEY ?? process.env.GOOGLE_GENERATIVE_AI_API_KEY),
+      model: process.env.GEMINI_MODEL ?? process.env.AI_MODEL ?? DEFAULT_GEMINI_MODEL,
+    };
+  }
+  if (
+    provider === "openai" ||
+    provider === "openai-compatible" ||
+    provider === "compatible"
+  ) {
+    return getOpenAiProviderStatus(provider);
+  }
+  return {
+    provider: provider || "unknown",
+    configured: false,
+    reason: "unsupported-provider",
+  };
 }
 
 function createGeminiProvider(): JsonProvider | null {
@@ -25,7 +72,7 @@ function createGeminiProvider(): JsonProvider | null {
   if (!apiKey) {
     return null;
   }
-  const model = process.env.GEMINI_MODEL ?? process.env.AI_MODEL ?? "gemini-2.5-flash";
+  const model = process.env.GEMINI_MODEL ?? process.env.AI_MODEL ?? DEFAULT_GEMINI_MODEL;
   return {
     async generateJson(input: GenerateJsonInput): Promise<unknown> {
       const response = await callGemini({

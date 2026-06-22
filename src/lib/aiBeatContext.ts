@@ -1,3 +1,7 @@
+import {
+  getArrangementBarCount,
+  type Arrangement,
+} from "./arrangement";
 import { getStyleCoach, summarizePatternChange } from "./beatCoach";
 import { BEAT_STYLES } from "./beatStyles";
 import { INSTRUMENT_ORDER, type SequencerState } from "./patternState";
@@ -16,9 +20,14 @@ export interface AiBeatContext {
   tryThis: string;
   activeLanes: string[];
   laneHitCounts: Record<string, number>;
+  arrangementBars?: number;
+  arrangementSections?: Record<string, number>;
 }
 
-export function createAiBeatContext(sequencer: SequencerState): AiBeatContext {
+export function createAiBeatContext(
+  sequencer: SequencerState,
+  arrangement?: Arrangement,
+): AiBeatContext {
   const style = BEAT_STYLES[sequencer.styleId];
   const styleCoach = getStyleCoach(sequencer.styleId);
   const patternSummary = summarizePatternChange(
@@ -31,6 +40,15 @@ export function createAiBeatContext(sequencer: SequencerState): AiBeatContext {
       sequencer.pattern[instrument].filter(Boolean).length,
     ]),
   );
+
+  const arrangementContext = arrangement
+    ? {
+      arrangementBars: getArrangementBarCount(arrangement),
+      arrangementSections: Object.fromEntries(
+        arrangement.sections.map((section) => [section.id, section.bars]),
+      ),
+    }
+    : {};
 
   return {
     styleId: sequencer.styleId,
@@ -46,5 +64,6 @@ export function createAiBeatContext(sequencer: SequencerState): AiBeatContext {
       (instrument) => laneHitCounts[instrument] > 0,
     ),
     laneHitCounts,
+    ...arrangementContext,
   };
 }

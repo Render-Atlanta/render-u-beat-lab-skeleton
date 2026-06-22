@@ -105,8 +105,12 @@ microphone-capture work requires.
 
 AI command/coach features use server-side Vercel functions. Set
 `AI_PROVIDER=gemini`, `GEMINI_API_KEY`, and `GEMINI_MODEL=gemini-2.5-flash` in
-the Vercel project environment to use Gemini 2.5 Flash. For local setup, copy
-[.env.example](.env.example) to `.env.local` or `.env` and fill in your key.
+the Vercel project environment to use Gemini 2.5 Flash. You can also set
+`AI_PROVIDER=openai` with `OPENAI_API_KEY` and `OPENAI_MODEL`, or use
+`AI_PROVIDER=openai-compatible` with `OPENAI_COMPATIBLE_API_KEY` and
+`OPENAI_COMPATIBLE_BASE_URL`. For local setup, copy [.env.example](.env.example)
+to `.env.local` or `.env` and fill in your key. `/api/ai-health` reports
+whether the provider is configured without exposing secrets.
 
 See [docs/DEPLOY_VERCEL.md](docs/DEPLOY_VERCEL.md) for the workshop runbook.
 

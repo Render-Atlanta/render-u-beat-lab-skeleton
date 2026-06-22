@@ -1,4 +1,5 @@
 import type { AiBeatContext } from "./aiBeatContext";
+import { isCommandAction, type CommandAction } from "./commandActions";
 
 export interface CoachClientRequest {
   question: string;
@@ -8,6 +9,7 @@ export interface CoachClientRequest {
 export interface CoachClientResponse {
   answer: string;
   source: "ai" | "fallback";
+  action?: CommandAction;
 }
 
 export async function requestCoachAnswer(
@@ -33,7 +35,12 @@ export async function requestCoachAnswer(
       payload !== null &&
       typeof (payload as { answer?: unknown }).answer === "string"
     ) {
-      return { answer: (payload as { answer: string }).answer, source: "ai" };
+      const action = (payload as { action?: unknown }).action;
+      return {
+        answer: (payload as { answer: string }).answer,
+        source: "ai",
+        ...(isCommandAction(action) ? { action } : {}),
+      };
     }
   } catch {
     return fallbackCoachAnswer(request.context);

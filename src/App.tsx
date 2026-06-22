@@ -26,8 +26,14 @@ import { useVoiceCommand } from "./components/useVoiceCommand";
 import { StyleSelector } from "./components/StyleSelector";
 import { CommandBar, type CommandSuggestion } from "./components/CommandBar";
 import { createAiBeatContext } from "./lib/aiBeatContext";
+import type { CommandAction } from "./lib/commandActions";
 import { requestCommandAction } from "./lib/commandClient";
-import { applyAction, describeAction } from "./lib/commandBus";
+import {
+  applyAction,
+  applyArrangementAction,
+  describeAction,
+  isArrangementAction,
+} from "./lib/commandBus";
 import { parseFastPath } from "./lib/commandFastPath";
 import {
   createBeatLabProject,
@@ -733,6 +739,15 @@ export function App() {
     const action =
       fastAction ??
       (await runAiCommand(text));
+    applyCommandAction(action);
+  }
+
+  function applyCommandAction(action: CommandAction) {
+    if (isArrangementAction(action)) {
+      setArrangement((current) => applyArrangementAction(action, current));
+      setCommandStatus(describeAction(action));
+      return;
+    }
     applySequencerUpdate((current) => applyAction(action, current));
     setCommandStatus(describeAction(action));
   }
@@ -743,7 +758,7 @@ export function App() {
     try {
       return await requestCommandAction({
         text,
-        context: createAiBeatContext(sequencer),
+        context: createAiBeatContext(sequencer, arrangement),
       });
     } finally {
       setCommandBusy(false);
@@ -1265,7 +1280,8 @@ export function App() {
               styleCoach={styleCoach}
               patternSummary={patternSummary}
               references={styleReferences}
-              aiContext={createAiBeatContext(sequencer)}
+              aiContext={createAiBeatContext(sequencer, arrangement)}
+              onApplyAction={applyCommandAction}
             />
           </div>
         );

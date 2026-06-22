@@ -22,6 +22,7 @@ describe("BeatCoachPanel", () => {
 
     expect(html).toContain("Ask the coach");
     expect(html).toContain("What should I add next?");
+    expect(html).toContain("Make this easier to dance to.");
     expect(html).toContain("Pattern read");
   });
 });

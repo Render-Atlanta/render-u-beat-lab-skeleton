@@ -1030,6 +1030,12 @@ button:disabled {
   gap: 12px;
 }
 
+.coach-qa__prompts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .coach-qa__form {
   display: grid;
   gap: 8px;
@@ -1047,14 +1053,44 @@ button:disabled {
 }
 
 .coach-qa__answer {
+  align-items: center;
   background: hsl(var(--accent) / 0.26);
   border: 1px solid hsl(var(--accent));
   border-radius: 8px;
   color: hsl(var(--ink));
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) auto;
   font-weight: 700;
   line-height: 1.4;
   margin: 0;
   padding: 12px 14px;
+}
+
+.coach-qa__answer p {
+  margin: 0;
+}
+
+.coach-qa__history {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.coach-qa__history-item {
+  background: hsl(var(--surface));
+  border: 1px solid hsl(var(--border));
+  border-radius: 999px;
+  color: hsl(var(--muted));
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.76rem;
+  padding: 7px 10px;
+}
+
+.coach-qa__history-item:hover {
+  border-color: hsl(var(--accent));
+  color: hsl(var(--ink));
 }
 
 .tag-controls {
