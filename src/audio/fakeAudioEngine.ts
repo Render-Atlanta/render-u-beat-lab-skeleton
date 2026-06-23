@@ -29,6 +29,8 @@ export interface FakeAudioEngine extends AudioEngine {
   readonly lastStyle: BeatStyle | null;
   /** Every style passed to `start()`, in order. */
   readonly startedStyles: readonly BeatStyle[];
+  /** Every style passed to `queueStyle()`, in order. */
+  readonly queuedStyles: readonly BeatStyle[];
   /** Every producer-tag input passed to `playProducerTag()`, in order. */
   readonly producerTags: readonly (ProducerTagConfigInput | string)[];
   /** The producer tag sample currently set, or null. */
@@ -43,6 +45,7 @@ export interface FakeAudioEngine extends AudioEngine {
 
 export function createFakeAudioEngine(): FakeAudioEngine {
   const startedStyles: BeatStyle[] = [];
+  const queuedStyles: BeatStyle[] = [];
   const producerTags: (ProducerTagConfigInput | string)[] = [];
   let running = false;
   let disposed = false;
@@ -72,6 +75,9 @@ export function createFakeAudioEngine(): FakeAudioEngine {
     get startedStyles() {
       return startedStyles;
     },
+    get queuedStyles() {
+      return queuedStyles;
+    },
     get producerTags() {
       return producerTags;
     },
@@ -93,6 +99,9 @@ export function createFakeAudioEngine(): FakeAudioEngine {
     start(style: BeatStyle) {
       startedStyles.push(style);
       running = true;
+    },
+    queueStyle(style: BeatStyle) {
+      queuedStyles.push(style);
     },
     stop() {
       running = false;

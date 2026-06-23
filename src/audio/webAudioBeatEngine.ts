@@ -51,6 +51,14 @@ export function createWebAudioBeatEngine(
   let tagSample: ProducerTagSample | null = null;
   let tagConfig: ProducerTagConfigInput | null = null;
   let metronomeEnabled = false;
+  // The style the scheduler is currently scheduling from, plus a style queued to
+  // be adopted at the next loop boundary (see start()/queueStyle()).
+  let activeStyle: BeatStyle | null = null;
+  let pendingStyle: BeatStyle | null = null;
+  // Whether any step has been scheduled since the last start(); guards the
+  // boundary swap so a queued style is never adopted on the very first downbeat
+  // (only on a real wrap).
+  let hasScheduledStep = false;
 
   const master = context.createGain();
   master.gain.value = 0.65;
@@ -117,6 +125,9 @@ export function createWebAudioBeatEngine(
 
   function start(style: BeatStyle) {
     stop();
+    activeStyle = style;
+    pendingStyle = null;
+    hasScheduledStep = false;
     applyLaneVolumes(style);
     applyMixEffects(style);
     step = 0;
@@ -125,7 +136,16 @@ export function createWebAudioBeatEngine(
 
     timer = setRuntimeInterval(() => {
       while (nextStepTime < context.currentTime + SCHEDULE_AHEAD_SECONDS) {
-        scheduleStep(style, step, nextStepTime);
+        // Adopt a queued style exactly at a wrap (step 0), never on the first
+        // downbeat, so a section's pattern is scheduled ahead with no phase reset.
+        if (step === 0 && hasScheduledStep && pendingStyle) {
+          activeStyle = pendingStyle;
+          pendingStyle = null;
+          applyLaneVolumes(activeStyle);
+          applyMixEffects(activeStyle);
+        }
+        const current = activeStyle ?? style;
+        scheduleStep(current, step, nextStepTime);
         if (metronomeEnabled && step % 4 === 0) {
           playClickAt(nextStepTime, getMetronomeClickAccent(step));
         }
@@ -136,10 +156,15 @@ export function createWebAudioBeatEngine(
         if (stepQueue.length > 64) {
           stepQueue = stepQueue.slice(-32);
         }
-        nextStepTime += getSwingStepDurationSeconds(style.bpm, style.swing, step);
+        nextStepTime += getSwingStepDurationSeconds(current.bpm, current.swing, step);
         step = getNextStepIndex(step);
+        hasScheduledStep = true;
       }
     }, SCHEDULER_TICK_MS);
+  }
+
+  function queueStyle(style: BeatStyle) {
+    pendingStyle = style;
   }
 
   function stop() {
@@ -147,6 +172,7 @@ export function createWebAudioBeatEngine(
       clearRuntimeInterval(timer);
       timer = null;
     }
+    pendingStyle = null;
     stepQueue = [];
   }
 
@@ -421,6 +447,7 @@ export function createWebAudioBeatEngine(
     kind: "web-audio",
     ready,
     start,
+    queueStyle,
     stop,
     dispose,
     playProducerTag,

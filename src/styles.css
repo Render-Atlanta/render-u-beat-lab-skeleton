@@ -1154,6 +1154,64 @@ button:disabled {
   flex: 1 1 76px;
 }
 
+/* "Play as song" toggle + now-playing indicator (PR-45). */
+.play-as-song {
+  display: grid;
+  gap: 6px;
+}
+
+.play-as-song__row {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+
+.play-as-song__toggle {
+  background: transparent;
+  border: 1px solid hsl(var(--teal));
+  border-radius: 8px;
+  color: hsl(var(--teal));
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  min-height: 36px;
+  padding: 0 14px;
+  text-transform: uppercase;
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.play-as-song__toggle.active {
+  background: hsl(var(--teal));
+  color: hsl(var(--cream));
+}
+
+.play-as-song__toggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.play-as-song__hint {
+  color: hsl(var(--muted));
+  font-size: 0.72rem;
+  margin: 0;
+}
+
+.now-playing {
+  color: hsl(var(--teal));
+  font-family:
+    JetBrains Mono,
+    ui-monospace,
+    monospace;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+.now-playing[hidden] {
+  display: none;
+}
+
 .arrangement-grid {
   display: grid;
   gap: 10px;
@@ -2343,6 +2401,19 @@ button:disabled {
   flex-direction: column;
   gap: 4px;
   min-width: 0;
+}
+
+/* Transport status text: "Stopped" / "Playing" / live "{Section · bar N/total}" (PR-45). */
+.transport__status {
+  color: hsl(var(--muted));
+  font-family:
+    JetBrains Mono,
+    ui-monospace,
+    monospace;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
 }
 
 .transport__beats {

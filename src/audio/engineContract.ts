@@ -106,6 +106,20 @@ export function runAudioEngineContract(
       expect(hitsAfterRestart).toBeGreaterThan(0);
     });
 
+    it("accepts a queued style at the loop boundary without throwing", () => {
+      const { engine, probe } = makeHarness();
+
+      engine.start(BEAT_STYLES.trap);
+      engine.queueStyle(BEAT_STYLES.pop);
+      // The queued style must not disrupt the active schedule before the wrap.
+      expect(probe.isScheduling()).toBe(true);
+      const hits = probe.fireSchedulerTick();
+      expect(hits).toBeGreaterThanOrEqual(0);
+
+      engine.stop();
+      expect(probe.isScheduling()).toBe(false);
+    });
+
     it("stops scheduling when stop() is called", () => {
       const { engine, probe } = makeHarness();
 

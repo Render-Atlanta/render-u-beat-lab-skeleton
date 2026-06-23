@@ -1,11 +1,38 @@
 import { describe, expect, it } from "vitest";
 import { BEAT_STYLES } from "../lib/beatStyles";
 import { createDefaultLaneVolumes } from "../lib/laneVolumes";
+import { createDefaultStepVelocities } from "../lib/stepVelocity";
+import { INSTRUMENT_IDS, type Pattern } from "../lib/patterns";
 import { createToneSampleBeatEngine } from "./toneSampleBeatEngine";
 import {
   createFakeToneRuntime,
   createFakeVoice,
 } from "./toneSampleBeatEngine.testHelpers";
+
+function emptyPattern(): Pattern {
+  return INSTRUMENT_IDS.reduce((pattern, id) => {
+    pattern[id] = Array.from({ length: 16 }, () => false);
+    return pattern;
+  }, {} as Pattern);
+}
+
+function patternWith(hits: Partial<Record<keyof Pattern, number[]>>): Pattern {
+  const pattern = emptyPattern();
+  for (const [id, steps] of Object.entries(hits) as [keyof Pattern, number[]][]) {
+    for (const step of steps) {
+      pattern[id][step] = true;
+    }
+  }
+  return pattern;
+}
+
+function songStyle(pattern: Pattern) {
+  return {
+    ...BEAT_STYLES.trap,
+    pattern,
+    stepVelocities: createDefaultStepVelocities(),
+  };
+}
 
 describe("Tone.js sample beat engine", () => {
   it("starts Tone on ready and reports the tone-sample adapter kind", async () => {
@@ -66,6 +93,23 @@ describe("Tone.js sample beat engine", () => {
     });
 
     expect(runtime.effectsBuses[0].mixEffects).toEqual({ space: 0.5, echo: 0.25 });
+  });
+
+  it("adopts a queued style at the next loop boundary, not the initial downbeat", () => {
+    const runtime = createFakeToneRuntime();
+    const engine = createToneSampleBeatEngine({ runtime });
+    const kickOnly = songStyle(patternWith({ kick: [0] }));
+    const silent = songStyle(emptyPattern());
+
+    engine.start(kickOnly);
+    // Queue silent before any step runs: the guard must keep loop 1 on kickOnly.
+    engine.queueStyle(silent);
+    for (let s = 0; s < 16; s += 1) runtime.transport.run(s); // loop 1
+    const kicksAfterLoop1 = runtime.voices.kick.plays.length;
+    expect(kicksAfterLoop1).toBeGreaterThan(0);
+
+    for (let s = 16; s < 32; s += 1) runtime.transport.run(s); // loop 2 swaps at the wrap
+    expect(runtime.voices.kick.plays.length).toBe(kicksAfterLoop1); // silent from the downbeat
   });
 
   it("stops and disposes scheduled events and voices", () => {

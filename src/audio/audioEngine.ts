@@ -21,6 +21,13 @@ export interface AudioEngine {
   readonly kind: AudioEngineKind;
   ready(): Promise<void>;
   start(style: BeatStyle): void;
+  /**
+   * Queue a style to take effect at the next loop boundary (the next `step 0`),
+   * swapping the pattern in place without a phase-resetting restart. Used by
+   * "Play as song" to chain section mutes gaplessly with a correct downbeat.
+   * Has no effect on the current loop's already-scheduled steps.
+   */
+  queueStyle(style: BeatStyle): void;
   stop(): void;
   dispose(): void | Promise<void>;
   playProducerTag(input: ProducerTagConfigInput | string): void;

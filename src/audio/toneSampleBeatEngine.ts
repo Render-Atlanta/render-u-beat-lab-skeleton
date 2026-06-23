@@ -86,6 +86,14 @@ export function createToneSampleBeatEngine(
   let tagSample: ProducerTagSample | null = null;
   let tagConfig: ProducerTagConfigInput | null = null;
   let metronomeEnabled = false;
+  // The style the transport loop is scheduling from, plus a style queued to be
+  // adopted at the next loop boundary (see start()/queueStyle()).
+  let activeStyle: BeatStyle | null = null;
+  let pendingStyle: BeatStyle | null = null;
+  // Whether any step has been scheduled since the last start(); guards the
+  // boundary swap so a queued style is never adopted on the very first downbeat
+  // (only on a real wrap).
+  let hasScheduledStep = false;
   const clickVoice = runtime.createNoiseSynth(
     {
       envelope: { attack: 0.001, decay: 0.04, sustain: 0, release: 0.01 },
@@ -99,6 +107,9 @@ export function createToneSampleBeatEngine(
 
   function start(style: BeatStyle) {
     stop();
+    activeStyle = style;
+    pendingStyle = null;
+    hasScheduledStep = false;
     setLaneVolumes(getLaneVolumes(style));
     effectsBus?.setMixEffects(normalizeMixEffects(style.mixEffects));
     stepIndex = 0;
@@ -106,7 +117,18 @@ export function createToneSampleBeatEngine(
     transport.swing = Math.max(0, Math.min(0.5, style.swing));
     transport.swingSubdivision = "16n";
     eventId = transport.scheduleRepeat((time) => {
-      scheduleStep(style, stepIndex, time);
+      // Adopt a queued style exactly at a wrap (step 0), never on the first
+      // downbeat, so a section's pattern swaps in with no phase reset.
+      if (stepIndex === 0 && hasScheduledStep && pendingStyle) {
+        activeStyle = pendingStyle;
+        pendingStyle = null;
+        setLaneVolumes(getLaneVolumes(activeStyle));
+        effectsBus?.setMixEffects(normalizeMixEffects(activeStyle.mixEffects));
+        transport.bpm.value = activeStyle.bpm;
+        transport.swing = Math.max(0, Math.min(0.5, activeStyle.swing));
+      }
+      const current = activeStyle ?? style;
+      scheduleStep(current, stepIndex, time);
       if (metronomeEnabled && stepIndex % 4 === 0) {
         playClickAt(time, getMetronomeClickAccent(stepIndex));
       }
@@ -119,8 +141,13 @@ export function createToneSampleBeatEngine(
       }
       visualStep = stepIndex;
       stepIndex = (stepIndex + 1) % 16;
+      hasScheduledStep = true;
     }, "16n");
     transport.start();
+  }
+
+  function queueStyle(style: BeatStyle) {
+    pendingStyle = style;
   }
 
   function stop() {
@@ -129,6 +156,7 @@ export function createToneSampleBeatEngine(
       eventId = null;
     }
     transport.stop();
+    pendingStyle = null;
     visualStep = null;
   }
 
@@ -198,6 +226,7 @@ export function createToneSampleBeatEngine(
     kind: "tone-sample",
     ready,
     start,
+    queueStyle,
     stop,
     dispose,
     playProducerTag,

@@ -170,6 +170,14 @@ import {
   type GuidedModeState,
 } from "./lib/guidedMode";
 import { readGuidedPref, writeGuidedPref } from "./lib/guidedModePrefs";
+import {
+  createSongSectionStyle,
+  formatSongPosition,
+  getSongPosition,
+  getUpcomingSectionChange,
+  isLoopWrap,
+  type SongPosition,
+} from "./lib/songPlayback";
 
 /**
  * Playable style whose pattern is the *audible* one: while guided mode is active
@@ -298,6 +306,10 @@ export function App() {
   const [arrangement, setArrangement] = useState<Arrangement>(() =>
     createDefaultArrangement(),
   );
+  // "Play as song" (PR-45): chain the arrangement sections during live playback,
+  // applying each section's lane mutes. Off = today's single-loop behavior.
+  const [playAsSong, setPlayAsSong] = useState(false);
+  const [songPosition, setSongPosition] = useState<SongPosition | null>(null);
   const [captureSensitivity, setCaptureSensitivity] = useState(0.55);
   const [audioEngineKind, setAudioEngineKind] =
     useState<AudioEngineKind>("web-audio");
@@ -543,6 +555,11 @@ export function App() {
     const tick = () => {
       const next = engineRef.current?.getActiveStep() ?? null;
       if (next !== last) {
+        // Steps run 0→15 monotonically, so a decrease is a loop wrap = one bar.
+        // Drive the song scheduler off that boundary while "Play as song" is on.
+        if (playAsSongRef.current && isLoopWrap(last, next)) {
+          advanceSongBar();
+        }
         last = next;
         setActiveStep(next);
       }
@@ -644,6 +661,86 @@ export function App() {
   const producerTagConfigRef = useRef(producerTagConfig);
   producerTagConfigRef.current = producerTagConfig;
   const tapTimestampsRef = useRef<number[]>([]);
+  // Live song-scheduler state read by the rAF loop and engine-restart paths.
+  // Kept in refs so the rAF effect can stay keyed on [isPlaying] alone.
+  const playAsSongRef = useRef(playAsSong);
+  playAsSongRef.current = playAsSong;
+  const arrangementRef = useRef(arrangement);
+  arrangementRef.current = arrangement;
+  const sequencerRef = useRef(sequencer);
+  sequencerRef.current = sequencer;
+  const barsElapsedRef = useRef(0);
+
+  /**
+   * The style the engine should be playing *right now*: when song mode is on,
+   * the current section's masked style; otherwise the normal audible style
+   * (full or guided-masked). Used by every in-play `engine.start(...)` path so a
+   * pattern edit re-applies the section mask instead of unmuting the song.
+   */
+  function liveStyleFor(state: SequencerState, guided: GuidedModeState) {
+    if (playAsSong) {
+      const position = getSongPosition(arrangement, barsElapsedRef.current);
+      return createSongSectionStyle(state, position.mutedLanes);
+    }
+    return audibleStyle(state, guided);
+  }
+
+  // If the next bar starts a new section, hand the engine that section's masked
+  // style so it swaps in exactly at the upcoming loop boundary — a correct
+  // downbeat with no phase-resetting restart. Queued ~one bar ahead, well within
+  // the engine's lookahead. No-op when the next bar stays in the same section.
+  function queueUpcomingSection() {
+    const engine = engineRef.current;
+    if (!engine) {
+      return;
+    }
+    const change = getUpcomingSectionChange(
+      arrangementRef.current,
+      barsElapsedRef.current,
+    );
+    if (change) {
+      engine.queueStyle(createSongSectionStyle(sequencerRef.current, change.mutedLanes));
+    }
+  }
+
+  // Begin the song from its first section at bar 0, then queue the first upcoming
+  // section change. Shared by play-start and toggling song mode mid-play.
+  function startSongFromTop(engine: BeatEngine) {
+    barsElapsedRef.current = 0;
+    const position = getSongPosition(arrangementRef.current, 0);
+    setSongPosition(position);
+    engine.start(createSongSectionStyle(sequencerRef.current, position.mutedLanes));
+    queueUpcomingSection();
+  }
+
+  // Each loop wrap advances one bar: update the indicator and queue the *next*
+  // section change so the engine swaps it in at the following boundary. The audio
+  // swap itself happens inside the engine (queued during the previous bar), so
+  // this no longer restarts the engine — keeping the downbeat correct.
+  function advanceSongBar() {
+    barsElapsedRef.current += 1;
+    const position = getSongPosition(arrangementRef.current, barsElapsedRef.current);
+    setSongPosition(position);
+    queueUpcomingSection();
+  }
+
+  // Restart the engine with the current live style (used by pattern edits while
+  // playing). In song mode, re-queue the upcoming section since start() clears
+  // any pending swap.
+  function liveRestart(state: SequencerState, guided: GuidedModeState) {
+    if (!isPlaying || !engineRef.current) {
+      return;
+    }
+    engineRef.current.start(liveStyleFor(state, guided));
+    if (playAsSong) {
+      queueUpcomingSection();
+    }
+  }
+
+  function clearSongPlayback() {
+    barsElapsedRef.current = 0;
+    setSongPosition(null);
+  }
 
   const practiceAids = usePracticeAids({
     bpm: sequencer.bpm,
@@ -653,7 +750,11 @@ export function App() {
     onStartPlayback: async (metronomeOn) => {
       const engine = await getEngine();
       engine.setMetronomeEnabled(metronomeOn);
-      engine.start(playableStyleRef.current);
+      if (playAsSongRef.current) {
+        startSongFromTop(engine);
+      } else {
+        engine.start(playableStyleRef.current);
+      }
       setIsPlaying(true);
 
       const tagConfig = producerTagConfigRef.current;
@@ -666,10 +767,17 @@ export function App() {
         engine.stop();
         engine.setMetronomeEnabled(false);
       });
+      clearSongPlayback();
       setIsPlaying(false);
     },
   });
   const transportActive = isPlaying || practiceAids.isCountingIn;
+  // The "{Section · bar N/total}" string while a song is playing; null otherwise.
+  // Shared by the Arrange "Now playing" indicator and the transport status label.
+  const songNowPlaying =
+    playAsSong && isPlaying && songPosition
+      ? formatSongPosition(songPosition)
+      : null;
 
   async function togglePlayback() {
     await practiceAids.handlePlayRequest();
@@ -689,9 +797,7 @@ export function App() {
       setHistory((current) => pushHistorySnapshot(current, sequencer, next));
     }
     setSequencer(next);
-    if (isPlaying && engineRef.current) {
-      engineRef.current.start(audibleStyle(next, guidedState));
-    }
+    liveRestart(next, guidedState);
   }
 
   function applySequencerUpdate(
@@ -708,9 +814,7 @@ export function App() {
           pushHistorySnapshot(historyState, current, next),
         );
       }
-      if (isPlaying && engineRef.current) {
-        engineRef.current.start(audibleStyle(next, guidedState));
-      }
+      liveRestart(next, guidedState);
       return next;
     });
   }
@@ -955,9 +1059,7 @@ export function App() {
   function restoreSequencerSnapshot(snapshot: ReturnType<typeof getHistorySnapshot>) {
     const next = restoreHistorySnapshot(sequencer, snapshot);
     setSequencer(next);
-    if (isPlaying && engineRef.current) {
-      engineRef.current.start(audibleStyle(next, guidedState));
-    }
+    liveRestart(next, guidedState);
   }
 
   function undoSequencer() {
@@ -975,9 +1077,18 @@ export function App() {
   function changeGuidedState(next: GuidedModeState) {
     setGuidedState(next);
     writeGuidedPref(next.active ? "guided" : "free");
-    if (isPlaying && engineRef.current) {
-      engineRef.current.start(audibleStyle(sequencer, next));
+    // Guided masking and song chaining both own the audible pattern, so they are
+    // mutually exclusive: entering guided mode drops song mode (see PR-45 scope).
+    if (next.active && playAsSong) {
+      setPlayAsSong(false);
+      playAsSongRef.current = false;
+      clearSongPlayback();
+      if (isPlaying && engineRef.current) {
+        engineRef.current.start(audibleStyle(sequencer, next));
+      }
+      return;
     }
+    liveRestart(sequencer, next);
   }
 
   function handleGuidedNext() {
@@ -1171,6 +1282,25 @@ export function App() {
     setArrangement((current) => setSectionBars(current, sectionId, bars));
   }
 
+  function togglePlayAsSong() {
+    // Guided masking owns the pattern; the toggle is disabled in that case, but
+    // guard here too so a stray call can never fight guided mode.
+    if (guidedState.active) {
+      return;
+    }
+    const next = !playAsSong;
+    setPlayAsSong(next);
+    playAsSongRef.current = next;
+    if (isPlaying && engineRef.current) {
+      if (next) {
+        startSongFromTop(engineRef.current);
+      } else {
+        clearSongPlayback();
+        engineRef.current.start(playableStyleRef.current);
+      }
+    }
+  }
+
   function toggleGuided() {
     if (guidedState.active) {
       handleGuidedExit();
@@ -1314,8 +1444,12 @@ export function App() {
               durationSeconds={arrangementSeconds}
               exportMessage={exportMessage}
               projectJson={projectJson}
+              playAsSong={playAsSong}
+              playAsSongDisabled={guidedState.active}
+              nowPlaying={songNowPlaying}
               onSectionBarsChange={updateArrangementBars}
               onToggleLaneMute={toggleArrangementLaneMute}
+              onTogglePlayAsSong={togglePlayAsSong}
               onExportProject={exportProject}
               onDownloadWav={downloadWav}
               onDownloadMidi={downloadMidi}
@@ -1564,6 +1698,17 @@ export function App() {
             title="Metronome"
           />
           <div className="transport__meter">
+            {/* Visual-only mirror: the Arrange "Now playing" region owns the
+                aria-live announcement, so this doesn't double-announce per bar. */}
+            <span className="transport__status">
+              {practiceAids.isCountingIn
+                ? "Count-in"
+                : songNowPlaying
+                  ? songNowPlaying
+                  : isPlaying
+                    ? "Playing"
+                    : "Stopped"}
+            </span>
             <div className="transport__beats" aria-hidden="true">
               {Array.from({ length: 16 }, (_, index) => (
                 <span

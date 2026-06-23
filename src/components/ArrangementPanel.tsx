@@ -14,6 +14,11 @@ export interface ArrangementPanelProps {
   durationSeconds: number;
   exportMessage: string;
   projectJson: string;
+  playAsSong: boolean;
+  /** Disabled (with a hint) while guided mode owns the lane masking. */
+  playAsSongDisabled: boolean;
+  /** The "{Section · bar N/total}" string while a song is playing, else null. */
+  nowPlaying: string | null;
   onSectionBarsChange: (
     sectionId: ArrangementSectionId,
     bars: number,
@@ -22,6 +27,7 @@ export interface ArrangementPanelProps {
     sectionId: ArrangementSectionId,
     instrument: InstrumentId,
   ) => void;
+  onTogglePlayAsSong: () => void;
   onExportProject: () => void;
   onDownloadWav: () => void;
   onDownloadMidi: () => void;
@@ -33,12 +39,20 @@ export function ArrangementPanel({
   durationSeconds,
   exportMessage,
   projectJson,
+  playAsSong,
+  playAsSongDisabled,
+  nowPlaying,
   onSectionBarsChange,
   onToggleLaneMute,
+  onTogglePlayAsSong,
   onExportProject,
   onDownloadWav,
   onDownloadMidi,
 }: ArrangementPanelProps) {
+  // Build the chain copy from the live section labels so it never drifts from
+  // what the panel actually renders below.
+  const chainLabels = arrangement.sections.map((section) => section.label).join(" → ");
+
   return (
     <div className="arrangement-panel">
       <div className="arrangement-head">
@@ -66,6 +80,29 @@ export function ArrangementPanel({
             MIDI
           </button>
         </div>
+      </div>
+      <div className="play-as-song">
+        <div className="play-as-song__row">
+          <button
+            type="button"
+            role="switch"
+            aria-checked={playAsSong}
+            className={`play-as-song__toggle ${playAsSong ? "active" : ""}`}
+            disabled={playAsSongDisabled}
+            onClick={onTogglePlayAsSong}
+          >
+            Play as song · {playAsSong ? "On" : "Off"}
+          </button>
+        </div>
+        <p className="play-as-song__hint">
+          {playAsSongDisabled
+            ? "Exit guided build to chain the arrangement as a song."
+            : `Chain ${chainLabels} with each section's mutes.`}
+        </p>
+        {/* Kept mounted (hidden when idle) so SSR snapshots see the indicator. */}
+        <p className="now-playing" aria-live="polite" hidden={!nowPlaying}>
+          ▸ Now playing: {nowPlaying ?? ""}
+        </p>
       </div>
       <div className="arrangement-grid">
         {arrangement.sections.map((section) => (
