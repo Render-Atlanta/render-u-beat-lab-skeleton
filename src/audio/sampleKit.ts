@@ -68,6 +68,11 @@ export const SAMPLE_KIT_OPTIONS: readonly SampleKitOption[] = [
     name: "Airy",
     description: "Brighter hits with a small room tail.",
   },
+  {
+    id: "acoustic",
+    name: "Acoustic",
+    description: "Sampled real drums (VCSL, CC0).",
+  },
 ];
 
 /** The default kit every style starts from. */
@@ -77,6 +82,7 @@ export const SAMPLE_KITS: Record<SampleKitId, Record<SampleKitLane, KitPiece>> =
   classic: DEFAULT_KIT,
   punchy: createKit("punchy", "punchy"),
   airy: createKit("airy", "airy"),
+  acoustic: createKit("acoustic", "acoustic"),
 };
 
 function createKit(id: SampleKitId, directory: string): Record<SampleKitLane, KitPiece> {

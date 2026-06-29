@@ -17,6 +17,7 @@ import {
   createDefaultBassGuitarStepPitches,
   getBassGuitarPalette,
 } from "../lib/bassGuitarPitch";
+import { createDefaultLaneVoiceSelection } from "../lib/laneVoiceSelection";
 import { SequencerPanel } from "./SequencerPanel";
 
 function noop() {}
@@ -31,6 +32,7 @@ function renderPanel(extra: Partial<Parameters<typeof SequencerPanel>[0]> = {}) 
       audioEngineKind="web-audio"
       sampleKitId={DEFAULT_SAMPLE_KIT_ID}
       sampleKitOptions={SAMPLE_KIT_OPTIONS}
+      laneVoices={createDefaultLaneVoiceSelection()}
       pattern={BEAT_STYLES.trap.pattern}
       laneVolumes={createDefaultLaneVolumes()}
       laneMutes={createDefaultLaneMutes()}
@@ -49,6 +51,7 @@ function renderPanel(extra: Partial<Parameters<typeof SequencerPanel>[0]> = {}) 
       onMixEffectsChange={noop}
       onAudioEngineKindChange={noop}
       onSampleKitChange={noop}
+      onLaneVoiceChange={noop}
       onLaneVolumeChange={noop}
       onLaneVolumeReset={noop}
       onLaneMuteToggle={noop}

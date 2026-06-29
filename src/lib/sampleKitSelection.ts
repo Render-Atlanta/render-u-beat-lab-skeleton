@@ -1,4 +1,4 @@
-export const SAMPLE_KIT_IDS = ["classic", "punchy", "airy"] as const;
+export const SAMPLE_KIT_IDS = ["classic", "punchy", "airy", "acoustic"] as const;
 export type SampleKitId = (typeof SAMPLE_KIT_IDS)[number];
 
 export const DEFAULT_SAMPLE_KIT_ID: SampleKitId = "classic";

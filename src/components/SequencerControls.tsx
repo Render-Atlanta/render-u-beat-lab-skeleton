@@ -1,6 +1,9 @@
 import type { AudioEngineKind } from "../audio/audioEngine";
 import type { SampleKitId, SampleKitOption } from "../audio/sampleKit";
 import type { MixEffects } from "../lib/mixEffects";
+import type { LaneVoiceId, LaneVoiceSelection, VoicedLane } from "../lib/laneVoiceSelection";
+import { VOICED_LANES } from "../lib/laneVoiceSelection";
+import { LaneVoicePicker } from "./LaneVoicePicker";
 
 export interface SequencerControlsProps {
   bpm: number;
@@ -9,6 +12,7 @@ export interface SequencerControlsProps {
   audioEngineKind: AudioEngineKind;
   sampleKitId: SampleKitId;
   sampleKitOptions: readonly SampleKitOption[];
+  laneVoices: LaneVoiceSelection;
   canUndo: boolean;
   canRedo: boolean;
   onBpmChange: (bpm: number) => void;
@@ -17,6 +21,7 @@ export interface SequencerControlsProps {
   onMixEffectsChange: (effects: Partial<MixEffects>) => void;
   onAudioEngineKindChange: (kind: AudioEngineKind) => void;
   onSampleKitChange: (kitId: SampleKitId) => void;
+  onLaneVoiceChange: (lane: VoicedLane, id: LaneVoiceId) => void;
   onUndo: () => void;
   onRedo: () => void;
   onClear: () => void;
@@ -38,6 +43,7 @@ export function SequencerControls({
   audioEngineKind,
   sampleKitId,
   sampleKitOptions,
+  laneVoices,
   canUndo,
   canRedo,
   onBpmChange,
@@ -46,6 +52,7 @@ export function SequencerControls({
   onMixEffectsChange,
   onAudioEngineKindChange,
   onSampleKitChange,
+  onLaneVoiceChange,
   onUndo,
   onRedo,
   onClear,
@@ -140,6 +147,14 @@ export function SequencerControls({
           ))}
         </select>
       </label>
+      {VOICED_LANES.map((lane) => (
+        <LaneVoicePicker
+          key={lane}
+          lane={lane}
+          value={laneVoices[lane]}
+          onChange={onLaneVoiceChange}
+        />
+      ))}
       {/* Undo/redo arrive in PR-34; rendered inert for now. Clear + Reset work. */}
       <div className="control-buttons" aria-label="History">
         <button

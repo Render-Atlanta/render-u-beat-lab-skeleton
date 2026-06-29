@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { DEFAULT_SAMPLE_KIT_ID, SAMPLE_KIT_OPTIONS } from "../audio/sampleKit";
 import { normalizeMixEffects } from "../lib/mixEffects";
+import { createDefaultLaneVoiceSelection } from "../lib/laneVoiceSelection";
 import { SequencerControls } from "./SequencerControls";
 
 function noop() {}
@@ -17,6 +18,7 @@ function renderControls(
       audioEngineKind="web-audio"
       sampleKitId={DEFAULT_SAMPLE_KIT_ID}
       sampleKitOptions={SAMPLE_KIT_OPTIONS}
+      laneVoices={createDefaultLaneVoiceSelection()}
       canUndo={false}
       canRedo={false}
       onBpmChange={noop}
@@ -25,6 +27,7 @@ function renderControls(
       onMixEffectsChange={noop}
       onAudioEngineKindChange={noop}
       onSampleKitChange={noop}
+      onLaneVoiceChange={noop}
       onUndo={noop}
       onRedo={noop}
       onClear={noop}

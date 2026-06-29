@@ -53,6 +53,14 @@ export interface ToneRuntimePort {
    * without throwing or logging console errors.
    */
   createSamplePlayer?(url: string, destination?: LaneVolumePort): ToneVoicePort | null;
+  /**
+   * Create a multisampled, pitched voice from a noteName -> URL map. Returns
+   * null if it cannot be constructed so the caller can fall back to a synth.
+   */
+  createSamplerVoice?(
+    samples: Record<string, string>,
+    destination?: LaneVolumePort,
+  ): ToneVoicePort | null;
   createKickSynth(destination?: LaneVolumePort): ToneVoicePort;
   createBassSynth?(destination?: LaneVolumePort): ToneVoicePort;
   createBassGuitarSynth?(destination?: LaneVolumePort): ToneVoicePort;
@@ -66,6 +74,7 @@ export type ToneSampleUrls = Partial<Record<InstrumentId, string>>;
 export interface ToneSampleBeatEngineOptions {
   runtime?: ToneRuntimePort;
   sampleUrls?: ToneSampleUrls;
+  laneVoiceSamples?: Partial<Record<InstrumentId, Record<string, string>>>;
 }
 
 export function createToneSampleBeatEngine(
@@ -78,6 +87,7 @@ export function createToneSampleBeatEngine(
     runtime,
     options.sampleUrls ?? {},
     effectsBus?.input,
+    options.laneVoiceSamples ?? {},
   );
   const { voices, setLaneVolumes, disposeLaneVolumes } = voiceBundle;
   let eventId: number | string | null = null;

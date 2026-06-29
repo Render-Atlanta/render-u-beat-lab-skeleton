@@ -4,6 +4,7 @@ import {
   createWebAudioBeatEngine,
   type WebAudioBeatEngineRuntime,
 } from "./webAudioBeatEngine";
+import type { InstrumentId } from "../lib/patterns";
 import {
   createToneSampleBeatEngine,
   type ToneRuntimePort,
@@ -53,6 +54,7 @@ export interface AudioEngineOptions {
   runtime?: WebAudioBeatEngineRuntime;
   toneRuntime?: ToneRuntimePort;
   toneSampleUrls?: ToneSampleUrls;
+  toneLaneVoiceSamples?: Partial<Record<InstrumentId, Record<string, string>>>;
 }
 
 export function createAudioEngine(options: AudioEngineOptions = {}): AudioEngine {
@@ -63,6 +65,7 @@ export function createAudioEngine(options: AudioEngineOptions = {}): AudioEngine
       return createToneSampleBeatEngine({
         runtime: options.toneRuntime,
         sampleUrls: options.toneSampleUrls,
+        laneVoiceSamples: options.toneLaneVoiceSamples,
       });
   }
 }

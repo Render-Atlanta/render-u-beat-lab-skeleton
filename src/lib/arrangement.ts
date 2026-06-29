@@ -11,6 +11,7 @@ import {
   DEFAULT_SAMPLE_KIT_ID,
   isSampleKitId,
 } from "./sampleKitSelection";
+import { readLaneVoicesFromRecord } from "./instrumentVoices";
 import {
   normalizeProducerTagConfig,
   type ProducerTagConfig,
@@ -308,6 +309,7 @@ function readSequencerState(value: unknown, errors: string[]): SequencerState | 
     errors,
   );
   const melodyStepPitches = readMelodyStepPitches(value.melodyStepPitches, errors);
+  const laneVoices = readLaneVoicesFromRecord(value.laneVoices);
 
   if (
     !styleId ||
@@ -339,6 +341,7 @@ function readSequencerState(value: unknown, errors: string[]): SequencerState | 
     bassStepPitches,
     bassGuitarStepPitches,
     melodyStepPitches,
+    laneVoices,
   };
 }
 

@@ -22,11 +22,14 @@ You may use, modify, and redistribute them for any purpose without attribution.
 | `clap.wav`, `punchy/clap.wav`, `airy/clap.wav` | clap | Original — synthesized by `scripts/generate-kit.ts` | CC0 1.0 |
 | `808.wav`, `punchy/808.wav`, `airy/808.wav` | 808 | Original — synthesized by `scripts/generate-kit.ts` | CC0 1.0 |
 
-The app exposes three generated kit flavors:
+The app exposes three generated kit flavors plus one VCSL-derived acoustic kit:
 
 - `classic` — balanced workshop kit at the root of `public/kit`.
 - `punchy` — shorter, more front-loaded hits in `public/kit/punchy`.
 - `airy` — brighter hits with a small room tail in `public/kit/airy`.
+- `acoustic` — sampled real drums (VCSL, CC0) in `public/kit/acoustic`.
+
+The `acoustic` kit uses one-shots from the [Versilian Community Sample Library](https://github.com/sgossner/VCSL) (CC0), trimmed and downsampled for web use.
 
 `kick`, `snare`, `hat`, `openHat`, `clap`, and `808` are the required lanes the
 Tone.js sample engine resolves from the selected kit (see `src/audio/sampleKit.ts`).

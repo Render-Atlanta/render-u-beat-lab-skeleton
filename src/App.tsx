@@ -10,6 +10,9 @@ import {
   getKitSampleUrls,
   type SampleKitId,
 } from "./audio/sampleKit";
+import { getSelectedLaneVoiceSamples } from "./lib/instrumentVoices";
+import { serializeLaneVoiceSelection } from "./lib/laneVoiceSelection";
+import type { LaneVoiceId, VoicedLane } from "./lib/laneVoiceSelection";
 import { ArrangementPanel } from "./components/ArrangementPanel";
 import { LessonsPanel } from "./components/LessonsPanel";
 import { MidiControllerPanel } from "./components/MidiControllerPanel";
@@ -133,6 +136,7 @@ import {
   updateSequencerMelodyStepPitch,
   updateSequencerMixEffects,
   updateSequencerSampleKit,
+  updateSequencerLaneVoice,
   updateSequencerStep,
   updateSequencerStepFromMidi,
   updateSequencerSwing,
@@ -621,7 +625,7 @@ export function App() {
     let isNewEngine = false;
     const toneSampleKey =
       audioEngineKind === "tone-sample"
-        ? `${sequencer.styleId}:${sequencer.sampleKitId}`
+        ? `${sequencer.styleId}:${sequencer.sampleKitId}:${serializeLaneVoiceSelection(sequencer.laneVoices)}`
         : null;
     if (
       !engine ||
@@ -635,6 +639,10 @@ export function App() {
         toneSampleUrls:
           audioEngineKind === "tone-sample"
             ? getKitSampleUrls(sequencer.styleId, sequencer.sampleKitId)
+            : undefined,
+        toneLaneVoiceSamples:
+          audioEngineKind === "tone-sample"
+            ? getSelectedLaneVoiceSamples(sequencer.laneVoices)
             : undefined,
       });
       engineRef.current = engine;
@@ -978,6 +986,21 @@ export function App() {
     setIsPlaying(false);
     setAudioEngineKind("tone-sample");
     applySequencerState(updateSequencerSampleKit(sequencer, nextKitId));
+  }
+
+  function updateLaneVoice(lane: VoicedLane, voiceId: LaneVoiceId) {
+    const next = updateSequencerLaneVoice(sequencer, lane, voiceId);
+    if (next === sequencer) {
+      return;
+    }
+
+    engineRef.current?.stop();
+    void engineRef.current?.dispose();
+    engineRef.current = null;
+    toneSampleKeyRef.current = null;
+    setIsPlaying(false);
+    setAudioEngineKind("tone-sample");
+    applySequencerState(next);
   }
 
   function toggleStep(instrument: InstrumentId, stepIndex: number) {
@@ -1610,6 +1633,7 @@ export function App() {
               audioEngineKind={audioEngineKind}
               sampleKitId={sequencer.sampleKitId}
               sampleKitOptions={SAMPLE_KIT_OPTIONS}
+              laneVoices={sequencer.laneVoices}
               pattern={sequencer.pattern}
               laneVolumes={sequencer.laneVolumes}
               mixEffects={sequencer.mixEffects}
@@ -1628,6 +1652,7 @@ export function App() {
               onSwingChange={updateSwing}
               onAudioEngineKindChange={updateAudioEngineKind}
               onSampleKitChange={updateSampleKit}
+              onLaneVoiceChange={updateLaneVoice}
               onLaneVolumeChange={updateLaneVolume}
               onLaneVolumeReset={resetLaneVolume}
               onLaneMuteToggle={toggleLaneMute}

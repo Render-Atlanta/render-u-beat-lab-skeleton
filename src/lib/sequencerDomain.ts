@@ -7,6 +7,8 @@ import {
   normalizeSampleKitId,
   type SampleKitId,
 } from "./sampleKitSelection";
+import type { LaneVoiceId, VoicedLane } from "./laneVoiceSelection";
+import { normalizeLaneVoiceSelection } from "./instrumentVoices";
 import {
   cloneStepVelocities,
   cycleStepVelocity,
@@ -180,6 +182,29 @@ export function updateSequencerSampleKit(
   return {
     ...sequencer,
     sampleKitId: normalized,
+    pattern: clonePattern(sequencer.pattern),
+  };
+}
+
+export function updateSequencerLaneVoice(
+  sequencer: SequencerState,
+  lane: VoicedLane,
+  voiceId: LaneVoiceId,
+): SequencerState {
+  const next = normalizeLaneVoiceSelection({
+    ...sequencer.laneVoices,
+    [lane]: voiceId,
+  });
+  if (
+    sequencer.laneVoices.melody === next.melody &&
+    sequencer.laneVoices.bassGuitar === next.bassGuitar
+  ) {
+    return sequencer;
+  }
+
+  return {
+    ...sequencer,
+    laneVoices: next,
     pattern: clonePattern(sequencer.pattern),
   };
 }

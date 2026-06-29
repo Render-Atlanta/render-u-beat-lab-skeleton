@@ -9,12 +9,12 @@ import type { BassStepPitches, MelodyStepPitches, PaletteEntry } from "../lib/st
 import { getVelocityName, type StepVelocities } from "../lib/stepVelocity";
 import type { BassGuitarStepPitches } from "../lib/bassGuitarPitch";
 import type { MixEffects } from "../lib/mixEffects";
+import type { LaneVoiceId, LaneVoiceSelection, VoicedLane } from "../lib/laneVoiceSelection";
 import { BeatRuler } from "./BeatRuler";
 import { StepPitchSelect } from "./StepPitchSelect";
 import { SequencerControls } from "./SequencerControls";
 import { useStepPaint } from "./useStepPaint";
 type PitchLaneConfig = { pitches: number[]; palette: PaletteEntry[]; onChange: (index: number, degree: number) => void };
-
 export interface SequencerPanelProps {
   styleName: string;
   activeSteps: number;
@@ -23,6 +23,7 @@ export interface SequencerPanelProps {
   audioEngineKind: AudioEngineKind;
   sampleKitId: SampleKitId;
   sampleKitOptions: readonly SampleKitOption[];
+  laneVoices: LaneVoiceSelection;
   pattern: Pattern;
   laneVolumes: LaneVolumes;
   laneMutes: LaneMutes;
@@ -43,6 +44,7 @@ export interface SequencerPanelProps {
   onSwingChange: (swingPercent: number) => void;
   onAudioEngineKindChange: (kind: AudioEngineKind) => void;
   onSampleKitChange: (kitId: SampleKitId) => void;
+  onLaneVoiceChange: (lane: VoicedLane, id: LaneVoiceId) => void;
   onLaneVolumeChange: (instrument: InstrumentId, volume: number) => void;
   onLaneVolumeReset: (instrument: InstrumentId) => void;
   onLaneMuteToggle: (instrument: InstrumentId) => void;
@@ -74,6 +76,7 @@ export function SequencerPanel({
   audioEngineKind,
   sampleKitId,
   sampleKitOptions,
+  laneVoices,
   pattern,
   laneVolumes,
   laneMutes,
@@ -94,6 +97,7 @@ export function SequencerPanel({
   onSwingChange,
   onAudioEngineKindChange,
   onSampleKitChange,
+  onLaneVoiceChange,
   onLaneVolumeChange,
   onLaneVolumeReset,
   onLaneMuteToggle,
@@ -125,10 +129,8 @@ export function SequencerPanel({
   };
 
   function handleStepClick(instrument: InstrumentId, stepIndex: number) {
-    if (stepPaint.shouldSuppressClick()) return;
-    onToggleStep(instrument, stepIndex);
+    if (!stepPaint.shouldSuppressClick()) onToggleStep(instrument, stepIndex);
   }
-
   return (
     <section className="panel grid-panel">
       <div className="panel-header split">
@@ -146,6 +148,7 @@ export function SequencerPanel({
         audioEngineKind={audioEngineKind}
         sampleKitId={sampleKitId}
         sampleKitOptions={sampleKitOptions}
+        laneVoices={laneVoices}
         canUndo={canUndo}
         canRedo={canRedo}
         onBpmChange={onBpmChange}
@@ -154,6 +157,7 @@ export function SequencerPanel({
         onMixEffectsChange={onMixEffectsChange}
         onAudioEngineKindChange={onAudioEngineKindChange}
         onSampleKitChange={onSampleKitChange}
+        onLaneVoiceChange={onLaneVoiceChange}
         onUndo={onUndo}
         onRedo={onRedo}
         onClear={onClear}

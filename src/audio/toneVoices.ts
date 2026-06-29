@@ -24,6 +24,7 @@ export function createToneVoices(
   runtime: ToneRuntimePort,
   sampleUrls: ToneSampleUrls,
   destination?: ToneEffectsBusPort["input"],
+  laneVoiceSamples: Partial<Record<InstrumentId, Record<string, string>>> = {},
 ): ToneVoiceBundle {
   const laneVolumes = Object.fromEntries(
     INSTRUMENT_IDS.map((id) => [id, createLaneVolume(runtime, destination)]),
@@ -32,7 +33,7 @@ export function createToneVoices(
   const voices = Object.fromEntries(
     INSTRUMENT_IDS.map((id) => [
       id,
-      createVoice(runtime, id, sampleUrls[id], laneVolumes[id]),
+      createVoice(runtime, id, sampleUrls[id], laneVolumes[id], laneVoiceSamples[id]),
     ]),
   ) as Record<InstrumentId, ToneVoicePort>;
 
@@ -69,7 +70,17 @@ function createVoice(
   instrument: InstrumentId,
   sampleUrl: string | undefined,
   destination: LaneVolumePort,
+  voiceSamples?: Record<string, string>,
 ): ToneVoicePort {
+  if (
+    (instrument === "melody" || instrument === "bassGuitar") &&
+    voiceSamples &&
+    runtime.createSamplerVoice
+  ) {
+    const sampler = runtime.createSamplerVoice(voiceSamples, destination);
+    if (sampler) return sampler;
+  }
+
   if (
     instrument === "808" ||
     instrument === "bassGuitar" ||

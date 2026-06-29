@@ -22,13 +22,22 @@ function readSample(url: string): Buffer {
 }
 
 describe("sample kit manifest", () => {
-  it("offers three named kit choices", () => {
+  it("offers four named kit choices", () => {
     expect(DEFAULT_SAMPLE_KIT_ID).toBe("classic");
     expect(SAMPLE_KIT_OPTIONS.map((kit) => kit.id)).toEqual([
       "classic",
       "punchy",
       "airy",
+      "acoustic",
     ]);
+  });
+
+  it("offers an acoustic sampled kit", () => {
+    expect(SAMPLE_KIT_OPTIONS.map((k) => k.id)).toContain("acoustic");
+    const urls = getKitSampleUrls(undefined, "acoustic");
+    for (const lane of REQUIRED_LANES) {
+      expect(urls[lane]?.startsWith("/kit/acoustic/")).toBe(true);
+    }
   });
 
   it("covers every required lane for the default kit", () => {

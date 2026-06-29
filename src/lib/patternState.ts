@@ -59,6 +59,12 @@ import {
   normalizeSampleKitId,
   type SampleKitId,
 } from "./sampleKitSelection";
+import {
+  cloneLaneVoiceSelection,
+  createDefaultLaneVoiceSelection,
+  type LaneVoiceSelection,
+} from "./laneVoiceSelection";
+import { readLaneVoicesFromUrl, writeLaneVoicesToUrl } from "./instrumentVoices";
 
 export const INSTRUMENT_ORDER: InstrumentId[] = INSTRUMENT_IDS;
 
@@ -75,6 +81,7 @@ export interface SequencerState {
   bassStepPitches: BassStepPitches;
   bassGuitarStepPitches: BassGuitarStepPitches;
   melodyStepPitches: MelodyStepPitches;
+  laneVoices: LaneVoiceSelection;
 }
 
 export function createDefaultSequencerState(styleId: BeatStyleId): SequencerState {
@@ -92,6 +99,7 @@ export function createDefaultSequencerState(styleId: BeatStyleId): SequencerStat
     bassStepPitches: createDefaultBassStepPitches(),
     bassGuitarStepPitches: createDefaultBassGuitarStepPitches(),
     melodyStepPitches: createDefaultMelodyStepPitches(),
+    laneVoices: createDefaultLaneVoiceSelection(),
   };
 }
 
@@ -211,6 +219,7 @@ export function readSequencerStateFromParams(params: URLSearchParams): Sequencer
     bassStepPitches,
     bassGuitarStepPitches,
     melodyStepPitches,
+    laneVoices: readLaneVoicesFromUrl(params.get("voices")),
   };
 }
 
@@ -244,6 +253,8 @@ export function writeSequencerStateToParams(state: SequencerState): URLSearchPar
   if (!melodyStepPitchesAreDefault(state.melodyStepPitches)) {
     params.set("melody", serializeMelodyStepPitches(state.melodyStepPitches));
   }
+  const voices = writeLaneVoicesToUrl(state.laneVoices);
+  if (voices) params.set("voices", voices);
   return params;
 }
 
@@ -261,6 +272,7 @@ export function cloneSequencerState(sequencer: SequencerState): SequencerState {
     bassStepPitches: cloneBassStepPitches(sequencer.bassStepPitches),
     bassGuitarStepPitches: cloneBassGuitarStepPitches(sequencer.bassGuitarStepPitches),
     melodyStepPitches: cloneMelodyStepPitches(sequencer.melodyStepPitches),
+    laneVoices: cloneLaneVoiceSelection(sequencer.laneVoices),
   };
 }
 

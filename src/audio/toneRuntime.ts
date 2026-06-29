@@ -27,6 +27,8 @@ export function getDefaultToneRuntime(): ToneRuntimePort {
       };
     },
     createSamplePlayer: (url, destination) => createSamplePlayer(url, destination),
+    createSamplerVoice: (samples, destination) =>
+      createSamplerVoice(samples, destination),
     createKickSynth: (destination) => {
       const synth = new Tone.MembraneSynth();
       if (destination) synth.connect(destination.node);
@@ -97,6 +99,26 @@ function createEffectsBus(): ToneEffectsBusPort {
       space.dispose();
     },
   };
+}
+
+function createSamplerVoice(
+  samples: Record<string, string>,
+  destination?: LaneVolumePort,
+): ToneVoicePort | null {
+  if (!samples || Object.keys(samples).length === 0) return null;
+  try {
+    const sampler = new Tone.Sampler({ urls: samples });
+    if (destination) sampler.connect(destination.node);
+    else sampler.toDestination();
+    return {
+      triggerAttackRelease: (...args) => {
+        (sampler.triggerAttackRelease as (...a: unknown[]) => unknown)(...args);
+      },
+      dispose: () => sampler.dispose(),
+    };
+  } catch {
+    return null;
+  }
 }
 
 function createSamplePlayer(

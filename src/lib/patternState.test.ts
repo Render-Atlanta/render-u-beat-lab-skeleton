@@ -99,6 +99,7 @@ describe("pattern state helpers", () => {
       bassStepPitches: createDefaultBassStepPitches(),
       bassGuitarStepPitches: createDefaultBassGuitarStepPitches(),
       melodyStepPitches: createDefaultMelodyStepPitches(),
+      laneVoices: { melody: "synth", bassGuitar: "synth" },
     });
   });
 
@@ -212,6 +213,7 @@ describe("pattern state helpers", () => {
       bassStepPitches: createDefaultBassStepPitches(),
       bassGuitarStepPitches: createDefaultBassGuitarStepPitches(),
       melodyStepPitches: createDefaultMelodyStepPitches(),
+      laneVoices: { melody: "synth", bassGuitar: "synth" },
     });
   });
 
@@ -235,5 +237,34 @@ describe("pattern state helpers", () => {
     );
 
     expect(state.sampleKitId).toBe("classic");
+  });
+});
+
+describe("laneVoices in sequencer state", () => {
+  it("defaults every voiced lane to synth", () => {
+    const state = createDefaultSequencerState("trap");
+    expect(state.laneVoices).toEqual({
+      melody: "synth",
+      bassGuitar: "synth",
+    });
+  });
+
+  it("omits the voices param when default", () => {
+    const params = writeSequencerStateToParams(createDefaultSequencerState("trap"));
+    expect(params.has("voices")).toBe(false);
+  });
+
+  it("round-trips a non-default voice selection", () => {
+    const state = createDefaultSequencerState("trap");
+    state.laneVoices = { melody: "piano", bassGuitar: "electric" };
+    const params = writeSequencerStateToParams(state);
+    expect(params.get("voices")).toBeTruthy();
+    const restored = readSequencerStateFromParams(params);
+    expect(restored.laneVoices).toEqual({ melody: "piano", bassGuitar: "electric" });
+  });
+
+  it("normalizes unknown voice ids from a hostile URL back to synth", () => {
+    const params = new URLSearchParams({ style: "trap", voices: "melody~bogus" });
+    expect(readSequencerStateFromParams(params).laneVoices.melody).toBe("synth");
   });
 });
