@@ -20,6 +20,22 @@ import { renderPatternToPcm } from "./styleRender";
 import { decodeWav } from "./wav";
 import { renderArrangementWav, renderBeatWav } from "./exportBeat";
 import { createPlayableStyle } from "./sequencerDomain";
+import type { DecodedInstrumentVoice } from "./instrumentVoiceRender";
+
+const MELODY_ONLY = patternFromSteps({
+  kick: [],
+  snare: [],
+  hat: [],
+  openHat: [],
+  clap: [],
+  "808": [],
+  bassGuitar: [],
+  melody: [1],
+});
+
+const SAMPLE_VOICE: DecodedInstrumentVoice = {
+  notes: [{ frequency: 440, samples: new Float32Array(4000).fill(0.5) }],
+};
 
 describe("renderBeatWav", () => {
   const kit = loadKitFromDisk();
@@ -184,6 +200,43 @@ describe("renderBeatWav", () => {
       Array.from(pitchedPcm.slice(0, 64)).join(","),
     );
     expect(mutedEnergy).toBe(0);
+  });
+
+  it("renders a sampled melody voice through renderBeatWav", () => {
+    const synth = decodeWav(
+      renderBeatWav({ pattern: MELODY_ONLY, style: BEAT_STYLES.trap, kit, loops: 1 }),
+    );
+    const sampled = decodeWav(
+      renderBeatWav({
+        pattern: MELODY_ONLY,
+        style: BEAT_STYLES.trap,
+        kit,
+        loops: 1,
+        voices: { melody: SAMPLE_VOICE },
+      }),
+    );
+    expect(Array.from(sampled.samples.slice(0, 2000))).not.toEqual(
+      Array.from(synth.samples.slice(0, 2000)),
+    );
+  });
+
+  it("renders a sampled melody voice through renderArrangementWav", () => {
+    const sequencer = { ...createDefaultSequencerState("trap"), pattern: MELODY_ONLY };
+    const style = createPlayableStyle(sequencer);
+    const arrangement = createDefaultArrangement();
+
+    const synth = decodeWav(renderArrangementWav({ sequencer, style, kit, arrangement }));
+    const sampled = decodeWav(
+      renderArrangementWav({
+        sequencer,
+        style,
+        kit,
+        arrangement,
+        voices: { melody: SAMPLE_VOICE },
+      }),
+    );
+    expect(sampled.samples.length).toBe(synth.samples.length);
+    expect(Array.from(sampled.samples)).not.toEqual(Array.from(synth.samples));
   });
 
   it("includes in-key melody notes in the exported PCM and respects lane volume", () => {

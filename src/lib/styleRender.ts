@@ -13,6 +13,10 @@ import {
 } from "./bassGuitarPitch";
 import { getStepVelocities, getStepVelocityFactor } from "./stepVelocity";
 import { applyMixEffectsToPcm, normalizeMixEffects } from "./mixEffects";
+import {
+  renderSampledNotePcm,
+  type DecodedInstrumentVoices,
+} from "./instrumentVoiceRender";
 
 export const RENDER_SAMPLE_RATE = 22050;
 const STEPS = 16;
@@ -22,15 +26,26 @@ const PEAK_TARGET = 0.9;
 type SampledInstrumentId = Exclude<InstrumentId, "melody" | "bassGuitar">;
 export type DecodedKit = Record<SampledInstrumentId, Float32Array>;
 
+/**
+ * Length in samples of a single rendered bar (one 16-step pattern + decay tail).
+ * Content-independent — a pure function of tempo and constants — so callers that
+ * only need the length must not render a throwaway bar to measure it.
+ */
+export function renderedPatternLength(style: BeatStyle): number {
+  const stepSec = 60 / style.bpm / 4;
+  const barSec = STEPS * stepSec;
+  return Math.ceil((barSec + TAIL_SECONDS) * RENDER_SAMPLE_RATE);
+}
+
 export function renderPatternToPcm(
   pattern: Pattern,
   style: BeatStyle,
   kit: DecodedKit,
   lanes: InstrumentId[] = INSTRUMENT_IDS,
+  voices: DecodedInstrumentVoices = {},
 ): Float32Array {
   const stepSec = 60 / style.bpm / 4; // 16th-note duration
-  const barSec = STEPS * stepSec;
-  const length = Math.ceil((barSec + TAIL_SECONDS) * RENDER_SAMPLE_RATE);
+  const length = renderedPatternLength(style);
   const out = new Float32Array(length);
   // Clamp swing to [0, 0.5] to match engine behavior and prevent negative sample start indices.
   const swing = Math.max(0, Math.min(0.5, style.swing));
@@ -59,6 +74,7 @@ export function renderPatternToPcm(
     }
 
     if (lane === "bassGuitar") {
+      const voice = voices.bassGuitar;
       pattern[lane].forEach((on, i) => {
         if (!on) return;
         const pitch = getBassGuitarPitchForStep(
@@ -66,7 +82,10 @@ export function renderPatternToPcm(
           i,
           style.bassGuitarStepPitches,
         );
-        const sample = synthesizeBassGuitarNotePcm(pitch.frequency, RENDER_SAMPLE_RATE);
+        // Bass notes ring for an eighth note (two 16th steps).
+        const sample = voice
+          ? renderSampledNotePcm(voice, pitch.frequency, stepSec * 2, RENDER_SAMPLE_RATE)
+          : synthesizeBassGuitarNotePcm(pitch.frequency, RENDER_SAMPLE_RATE);
         const swungSec = i * stepSec + (i % 2 === 1 ? swing * stepSec : 0);
         const start = Math.round(swungSec * RENDER_SAMPLE_RATE);
         const hitGain = laneVolume * getStepVelocityFactor(stepVelocities[lane][i]);
@@ -78,10 +97,14 @@ export function renderPatternToPcm(
     }
 
     if (lane === "melody") {
+      const voice = voices.melody;
       pattern[lane].forEach((on, i) => {
         if (!on) return;
         const pitch = getMelodyPitchForStep(style.musicalKey, i, style.melodyStepPitches);
-        const sample = synthesizeMelodyNotePcm(pitch.frequency, RENDER_SAMPLE_RATE);
+        // Melody notes ring for a sixteenth note (one step).
+        const sample = voice
+          ? renderSampledNotePcm(voice, pitch.frequency, stepSec, RENDER_SAMPLE_RATE)
+          : synthesizeMelodyNotePcm(pitch.frequency, RENDER_SAMPLE_RATE);
         const swungSec = i * stepSec + (i % 2 === 1 ? swing * stepSec : 0);
         const start = Math.round(swungSec * RENDER_SAMPLE_RATE);
         const hitGain = laneVolume * getStepVelocityFactor(stepVelocities[lane][i]);

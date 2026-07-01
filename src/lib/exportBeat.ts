@@ -7,7 +7,14 @@ import {
 import type { SequencerState } from "./patternState";
 import type { Pattern } from "./patterns";
 import type { ProducerTagTrigger } from "./producerTag";
-import { RENDER_SAMPLE_RATE, renderPatternToPcm, type DecodedKit } from "./styleRender";
+import {
+  RENDER_SAMPLE_RATE,
+  renderPatternToPcm,
+  renderedPatternLength,
+  type DecodedKit,
+} from "./styleRender";
+import { INSTRUMENT_IDS } from "./patterns";
+import type { DecodedInstrumentVoices } from "./instrumentVoiceRender";
 import { mixSampleIntoPcm, tagOffsetsForTrigger } from "./tagMix";
 import { encodeWav } from "./wav";
 
@@ -17,6 +24,8 @@ export interface RenderBeatWavInput {
   kit: DecodedKit;
   loops?: number;
   tag?: { samples: Float32Array; trigger: ProducerTagTrigger };
+  /** Decoded sampled instrument voices; lanes without one fall back to synth. */
+  voices?: DecodedInstrumentVoices;
 }
 
 export interface RenderArrangementWavInput {
@@ -25,12 +34,20 @@ export interface RenderArrangementWavInput {
   kit: DecodedKit;
   arrangement: Arrangement;
   tag?: { samples: Float32Array; trigger: ProducerTagTrigger };
+  /** Decoded sampled instrument voices; lanes without one fall back to synth. */
+  voices?: DecodedInstrumentVoices;
 }
 
 /** Render drums for `loops` bars, mix in the recorded tag, encode to WAV bytes. */
 export function renderBeatWav(input: RenderBeatWavInput): Uint8Array {
   const loops = Math.max(1, Math.floor(input.loops ?? 2));
-  const bar = renderPatternToPcm(input.pattern, input.style, input.kit);
+  const bar = renderPatternToPcm(
+    input.pattern,
+    input.style,
+    input.kit,
+    INSTRUMENT_IDS,
+    input.voices,
+  );
   // One bar's worth of samples (drop the renderer's decay tail when tiling so
   // loops butt up cleanly); use the 16th-grid bar length.
   const loopSamples = Math.round((60 / input.style.bpm / 4) * 16 * RENDER_SAMPLE_RATE);
@@ -59,11 +76,9 @@ export function renderBeatWav(input: RenderBeatWavInput): Uint8Array {
 /** Render the multi-section arrangement, honoring per-section lane mutes. */
 export function renderArrangementWav(input: RenderArrangementWavInput): Uint8Array {
   const loopSamples = getBarSamples(input.style);
-  const tailSamples = Math.max(
-    0,
-    renderPatternToPcm(input.sequencer.pattern, input.style, input.kit).length -
-      loopSamples,
-  );
+  // The rendered bar length is content-independent, so derive the decay tail
+  // arithmetically instead of rendering a throwaway bar just to read its length.
+  const tailSamples = Math.max(0, renderedPatternLength(input.style) - loopSamples);
   const totalBars = getArrangementBarCount(input.arrangement);
   const drumLength = loopSamples * totalBars + tailSamples;
   const tagOffsets = input.tag
@@ -80,7 +95,13 @@ export function renderArrangementWav(input: RenderArrangementWavInput): Uint8Arr
     input.sequencer,
     input.arrangement,
   )) {
-    const sectionBar = renderPatternToPcm(section.pattern, input.style, input.kit);
+    const sectionBar = renderPatternToPcm(
+      section.pattern,
+      input.style,
+      input.kit,
+      INSTRUMENT_IDS,
+      input.voices,
+    );
     for (let bar = 0; bar < section.bars; bar += 1) {
       mixSampleIntoPcm(out, sectionBar, (barOffset + bar) * loopSamples);
     }
