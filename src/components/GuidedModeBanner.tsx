@@ -53,7 +53,7 @@ export function GuidedModeBanner({
           type="button"
           onClick={onSkip}
         >
-          Skip to full grid
+          Skip
         </button>
         <button
           className="button secondary compact"

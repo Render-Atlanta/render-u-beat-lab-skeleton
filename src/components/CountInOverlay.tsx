@@ -8,8 +8,12 @@ export function CountInOverlay({ beat }: CountInOverlayProps) {
   }
 
   return (
-    <div className="bx-count" aria-live="polite" aria-label={`Count-in ${beat}`}>
-      {beat}
+    <div className="count-in" aria-live="polite" aria-label={`Count-in ${beat}`}>
+      {/* key forces a remount each beat so the pop animation replays. */}
+      <span key={beat} className="count-in__number bx-count">
+        {beat}
+      </span>
+      <span className="count-in__caption">Count-in</span>
     </div>
   );
 }

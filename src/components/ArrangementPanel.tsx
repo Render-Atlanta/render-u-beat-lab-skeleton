@@ -58,6 +58,7 @@ export function ArrangementPanel({
       <div className="arrangement-head">
         <div>
           <p className="eyebrow">Arrangement</p>
+          <h3 className="heading">Build the song</h3>
           <strong>{totalBars} bars</strong>
           <span>{durationSeconds.toFixed(1)} sec</span>
         </div>

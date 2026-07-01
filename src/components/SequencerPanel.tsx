@@ -1,5 +1,5 @@
+import { useState } from "react";
 import { INSTRUMENTS, type InstrumentOption } from "../lib/instruments";
-import { DEFAULT_LANE_VOLUME } from "../lib/laneVolumes";
 import type { InstrumentId, Pattern } from "../lib/patterns";
 import type { LaneVolumes } from "../lib/laneVolumes";
 import type { LaneMutes } from "../lib/laneMutes";
@@ -13,6 +13,8 @@ import type { LaneVoiceId, LaneVoiceSelection, VoicedLane } from "../lib/laneVoi
 import { BeatRuler } from "./BeatRuler";
 import { StepPitchSelect } from "./StepPitchSelect";
 import { SequencerControls } from "./SequencerControls";
+import { StepLegend } from "./StepLegend";
+import { TrackLabel } from "./TrackLabel";
 import { useStepPaint } from "./useStepPaint";
 type PitchLaneConfig = { pitches: number[]; palette: PaletteEntry[]; onChange: (index: number, degree: number) => void };
 export interface SequencerPanelProps {
@@ -121,6 +123,9 @@ export function SequencerPanel({
   onMelodyStepPitchChange,
 }: SequencerPanelProps) {
   const stepPaint = useStepPaint(onPaintStep);
+  // Mobile pager: which 8-step half of the bar is visible. Desktop ignores this
+  // (CSS only acts on it under [data-mobile]), so step indices stay absolute.
+  const [page, setPage] = useState<0 | 1>(0);
 
   const pitchLanes: Partial<Record<InstrumentId, PitchLaneConfig>> = {
     "808": { pitches: bassStepPitches, palette: bassPalette, onChange: onBassStepPitchChange },
@@ -171,8 +176,34 @@ export function SequencerPanel({
         onCountInToggle={onCountInToggle}
         onMetronomeToggle={onMetronomeToggle}
       />
+      {activeSteps === 0 ? (
+        <p className="grid-empty-hint">
+          ★ Empty grid — tap any pad to drop a hit, or pick a starting pocket
+          above.
+        </p>
+      ) : null}
+      {/* Mobile-only pager (hidden on desktop via CSS) — swaps the visible 8 steps. */}
+      <div className="beat-pager" role="group" aria-label="Beat page">
+        <button
+          type="button"
+          className={`beat-pager__btn${page === 0 ? " active" : ""}`}
+          aria-pressed={page === 0}
+          onClick={() => setPage(0)}
+        >
+          Beats 1 · 2
+        </button>
+        <button
+          type="button"
+          className={`beat-pager__btn${page === 1 ? " active" : ""}`}
+          aria-pressed={page === 1}
+          onClick={() => setPage(1)}
+        >
+          Beats 3 · 4
+        </button>
+      </div>
       <div
         className="step-grid"
+        data-page={page}
         aria-label={`${styleName} drum pattern`}
         onPointerMove={stepPaint.paintFromPointer}
         onPointerUp={stepPaint.endPaint}
@@ -186,48 +217,14 @@ export function SequencerPanel({
             className={`track-row${muted ? " muted" : ""}`}
             key={instrument.id}
           >
-            <div className="track-label-block">
-              <div className="track-label">
-                <span className="track-label__name">{instrument.label}</span>
-                <span className="track-label__role">{instrument.role}</span>
-                <span className="track-label__explainer">{instrument.explainer}</span>
-              </div>
-              <button
-                className={`button secondary compact track-mute${muted ? " active" : ""}`}
-                type="button"
-                aria-pressed={muted}
-                aria-label={`${muted ? "Unmute" : "Mute"} ${instrument.label} lane`}
-                onClick={() => onLaneMuteToggle(instrument.id)}
-              >
-                {muted ? "Muted" : "Mute"}
-              </button>
-              <div className="track-volume">
-                <label className="track-volume__control">
-                  <span className="eyebrow">{instrument.label} volume</span>
-                  <input
-                    type="range"
-                    min="0"
-                    max="150"
-                    step="1"
-                    value={Math.round(laneVolumes[instrument.id] * 100)}
-                    aria-label={`${instrument.label} volume`}
-                    onChange={(event) =>
-                      onLaneVolumeChange(instrument.id, Number(event.target.value) / 100)
-                    }
-                  />
-                </label>
-                {laneVolumes[instrument.id] !== DEFAULT_LANE_VOLUME ? (
-                  <button
-                    className="button secondary compact track-volume__reset"
-                    type="button"
-                    aria-label={`Reset ${instrument.label} volume`}
-                    onClick={() => onLaneVolumeReset(instrument.id)}
-                  >
-                    Reset
-                  </button>
-                ) : null}
-              </div>
-            </div>
+            <TrackLabel
+              instrument={instrument}
+              muted={muted}
+              volume={laneVolumes[instrument.id]}
+              onMuteToggle={() => onLaneMuteToggle(instrument.id)}
+              onVolumeChange={(volume) => onLaneVolumeChange(instrument.id, volume)}
+              onVolumeReset={() => onLaneVolumeReset(instrument.id)}
+            />
             {pattern[instrument.id].map((step, index) => {
               const pitched = pitchLanes[instrument.id];
               const pitchDegree = pitched ? pitched.pitches[index] : 0;
@@ -295,6 +292,7 @@ export function SequencerPanel({
           );
         })}
       </div>
+      <StepLegend />
     </section>
   );
 }

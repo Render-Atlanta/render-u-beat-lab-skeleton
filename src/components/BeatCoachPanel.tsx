@@ -70,12 +70,12 @@ export function BeatCoachPanel({
         <h2 className="heading">{styleCoach.concept}</h2>
       </div>
       <p>{lesson}</p>
-      <div className="coach-block">
+      <div className="coach-block coach-block--read">
         <p className="eyebrow">Pattern read</p>
         <p>{patternSummary.densitySummary}</p>
         <p>{patternSummary.pocketSummary}</p>
       </div>
-      <div className="coach-block">
+      <div className="coach-block coach-block--try">
         <p className="eyebrow">Try this</p>
         <p>{patternSummary.tryThis}</p>
       </div>
@@ -142,7 +142,7 @@ export function BeatCoachPanel({
         ) : null}
       </div>
       <div className="reference-panel">
-        <p className="eyebrow">Reference tracks</p>
+        <p className="eyebrow">Reference profiles</p>
         <div className="reference-list">
           {references.map((reference) => (
             <a

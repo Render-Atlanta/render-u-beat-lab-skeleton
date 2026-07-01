@@ -221,10 +221,11 @@ type ToolTab = "coach" | "lessons" | "notes" | "midi" | "tag" | "arrange" | "cap
 /** Mobile view selector — "make" shows the sequencer, the rest mirror the tools. */
 type MobileTab = "make" | ToolTab;
 
+// The brief surfaces only Rail and Focus; the "pro" mode aliases to rail and is
+// not offered as its own button.
 const LAYOUT_MODES: { id: LayoutMode; label: string }[] = [
   { id: "rail", label: "Rail" },
   { id: "focus", label: "Focus" },
-  { id: "pro", label: "Pro" },
 ];
 
 const TOOL_TABS: { id: ToolTab; label: string }[] = [
@@ -1555,11 +1556,11 @@ export function App() {
           ) : null}
           <button
             type="button"
-            className={`button compact ${guidedState.active ? "" : "secondary"}`}
+            className={`guided-toggle ${guidedState.active ? "active" : ""}`}
             aria-pressed={guidedState.active}
             onClick={toggleGuided}
           >
-            {guidedState.active ? "Exit guided" : "Start guided"}
+            {guidedState.active ? "Guided · on" : "Guided build"}
           </button>
         </div>
       </nav>

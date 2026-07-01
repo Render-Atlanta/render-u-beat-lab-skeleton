@@ -21,7 +21,12 @@ export function CapturePanel({
 }: CapturePanelProps) {
   return (
     <div className="capture-panel">
-      <p className="eyebrow">Tap capture</p>
+      <p className="eyebrow">Beatbox capture</p>
+      <h3 className="heading">Hum it, we map it</h3>
+      <p>
+        Tap record and beatbox a rhythm. We detect the hits and sort them into
+        drum lanes you can drop onto the grid.
+      </p>
       <p>{getMicStateCopy(micState)}</p>
       <label className="control-field">
         <span className="eyebrow">Sensitivity {Math.round(sensitivity * 100)}%</span>
@@ -40,7 +45,11 @@ export function CapturePanel({
         onClick={onCapture}
         disabled={micState.status === "recording"}
       >
-        {micState.status === "recording" ? "Recording" : "Record 4s"}
+        {micState.status === "recording"
+          ? "Listening…"
+          : micState.status === "captured"
+            ? "Record again"
+            : "● Record beatbox"}
       </button>
       {micState.status === "captured" ? (
         <>
@@ -120,7 +129,7 @@ export function CapturePanel({
             type="button"
             onClick={onSendLanes}
           >
-            Send lanes
+            Drop onto grid
           </button>
         </>
       ) : null}

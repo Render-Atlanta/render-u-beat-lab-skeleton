@@ -32,10 +32,10 @@ describe("ProducerTagControls", () => {
     expect(html.toLowerCase()).toMatch(/record/);
   });
 
-  it("trigger select contains a Loop option", () => {
+  it("offers an 'Every loop' trigger card", () => {
     const html = renderToStaticMarkup(<ProducerTagControls {...baseProps} />);
-    expect(html).toMatch(/[Ll]oop/);
-    expect(html).toContain('value="loop"');
+    expect(html).toMatch(/every loop/i);
+    expect(html).toContain('data-trigger="loop"');
   });
 
   it("shows Re-record and Clear when recordedState is recorded", () => {
