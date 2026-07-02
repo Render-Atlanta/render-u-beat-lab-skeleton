@@ -163,4 +163,60 @@ describe("renderPatternToPcm", () => {
     expect(Array.from(a1)).toEqual(Array.from(a2)); // deterministic
     expect(Array.from(a1)).not.toEqual(Array.from(b)); // voice-specific
   });
+
+  describe("softenBass (generated game-track beds)", () => {
+    // One-pole highpass RMS ~1kHz: a proxy for the raw 808 saw's buzz.
+    function highFreqRms(sig: Float32Array, cutHz = 1000): number {
+      const rc = 1 / (2 * Math.PI * cutHz);
+      const dt = 1 / RENDER_SAMPLE_RATE;
+      const alpha = rc / (rc + dt);
+      let prevIn = 0;
+      let prevOut = 0;
+      let sum = 0;
+      for (let i = 0; i < sig.length; i += 1) {
+        const hp = alpha * (prevOut + sig[i] - prevIn);
+        sum += hp * hp;
+        prevIn = sig[i];
+        prevOut = hp;
+      }
+      return Math.sqrt(sum / sig.length);
+    }
+
+    const bassOnly = patternFromSteps({ ...EMPTY_STEPS, "808": [1] });
+    const style = { ...BEAT_STYLES.trap, swing: 0 };
+
+    it("leaves the render byte-identical when softenBass is unset or false", () => {
+      const base = renderPatternToPcm(bassOnly, style, kit, INSTRUMENT_IDS);
+      const emptyOpts = renderPatternToPcm(bassOnly, style, kit, INSTRUMENT_IDS, {}, {});
+      const off = renderPatternToPcm(bassOnly, style, kit, INSTRUMENT_IDS, {}, { softenBass: false });
+      expect(Array.from(emptyOpts)).toEqual(Array.from(base));
+      expect(Array.from(off)).toEqual(Array.from(base));
+    });
+
+    it("reduces the 808 buzz when enabled", () => {
+      const raw = renderPatternToPcm(bassOnly, style, kit, INSTRUMENT_IDS, {}, { softenBass: false });
+      const soft = renderPatternToPcm(bassOnly, style, kit, INSTRUMENT_IDS, {}, { softenBass: true });
+      // The flag must actually change the render...
+      expect(Array.from(soft)).not.toEqual(Array.from(raw));
+      // ...toward a smoother (less buzzy) bass.
+      expect(highFreqRms(soft)).toBeLessThan(highFreqRms(raw));
+    });
+
+    it("keeps the bass under the drums — the mix peak is a drum hit, not the 808", () => {
+      // Kick on step 1, 808 eight steps later so their peaks never overlap.
+      const mixSteps = patternFromSteps({ ...EMPTY_STEPS, kick: [1], "808": [9] });
+      const mix = renderPatternToPcm(mixSteps, style, kit, INSTRUMENT_IDS, {}, { softenBass: true });
+      let peakIndex = 0;
+      let peakValue = 0;
+      mix.forEach((x, i) => {
+        if (Math.abs(x) > peakValue) {
+          peakValue = Math.abs(x);
+          peakIndex = i;
+        }
+      });
+      const stepSamples = Math.round((60 / style.bpm / 4) * RENDER_SAMPLE_RATE);
+      // The loudest sample lands on the kick (step 1), well before the 808 at step 9.
+      expect(peakIndex).toBeLessThan(stepSamples * 8);
+    });
+  });
 });

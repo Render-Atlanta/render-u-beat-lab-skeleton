@@ -36,6 +36,8 @@ export interface RenderArrangementWavInput {
   tag?: { samples: Float32Array; trigger: ProducerTagTrigger };
   /** Decoded sampled instrument voices; lanes without one fall back to synth. */
   voices?: DecodedInstrumentVoices;
+  /** Soften the synthesized 808 so it sits under the drums (generated game beds). */
+  softenBass?: boolean;
 }
 
 /** Render drums for `loops` bars, mix in the recorded tag, encode to WAV bytes. */
@@ -101,6 +103,7 @@ export function renderArrangementWav(input: RenderArrangementWavInput): Uint8Arr
       input.kit,
       INSTRUMENT_IDS,
       input.voices,
+      { softenBass: input.softenBass },
     );
     for (let bar = 0; bar < section.bars; bar += 1) {
       mixSampleIntoPcm(out, sectionBar, (barOffset + bar) * loopSamples);

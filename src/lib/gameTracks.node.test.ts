@@ -2,9 +2,12 @@ import { describe, expect, it } from "vitest";
 import { loadKitFromDisk } from "./loadKit.node";
 import { getArrangementBarCount } from "./arrangement";
 import { RENDER_SAMPLE_RATE } from "./styleRender";
+import { renderArrangementWav } from "./exportBeat";
+import { createPlayableStyle } from "./sequencerDomain";
 import {
   GAME_TRACK_SPECS,
   buildGameTrackArrangement,
+  buildGameTrackSequencer,
   renderGameTrackWav,
 } from "./gameTracks";
 
@@ -38,5 +41,22 @@ describe("renderGameTrackWav", () => {
       const view = new DataView(wav.buffer, wav.byteOffset, wav.byteLength);
       expect(view.getUint32(40, true)).toBe(loopSamples * 2);
     }
+  });
+
+  it("renders with the softened 808 so the bass sits under the drums", () => {
+    const spec = GAME_TRACK_SPECS.find((s) => s.slug === "connector")!;
+    const sequencer = buildGameTrackSequencer(spec);
+    const style = createPlayableStyle(sequencer);
+    const arrangement = buildGameTrackArrangement(spec);
+
+    const softened = renderArrangementWav({ sequencer, style, kit, arrangement, softenBass: true });
+    const raw = renderArrangementWav({ sequencer, style, kit, arrangement });
+    // The softenBass flag actually changes the rendered audio.
+    expect(Buffer.from(softened).equals(Buffer.from(raw))).toBe(false);
+
+    // The game-track bed must come from the softened path, not the raw one.
+    const bedPcm = renderGameTrackWav(spec, kit).subarray(44); // drop WAV header
+    expect(Buffer.from(bedPcm).equals(Buffer.from(softened.subarray(44, 44 + bedPcm.length)))).toBe(true);
+    expect(Buffer.from(bedPcm).equals(Buffer.from(raw.subarray(44, 44 + bedPcm.length)))).toBe(false);
   });
 });

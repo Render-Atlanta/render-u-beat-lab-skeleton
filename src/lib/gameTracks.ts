@@ -116,6 +116,8 @@ export function renderGameTrackWav(spec: GameTrackSpec, kit: DecodedKit): Uint8A
     style: createPlayableStyle(sequencer),
     kit,
     arrangement,
+    // Tame the raw 808 saw so the bass sits under the drums instead of buzzing.
+    softenBass: true,
   });
   // Drop the decay tail so the file is exactly the loop length and repeats seamlessly.
   const loopSamples = loopSamplesForBpm(spec.bpm) * getArrangementBarCount(arrangement);

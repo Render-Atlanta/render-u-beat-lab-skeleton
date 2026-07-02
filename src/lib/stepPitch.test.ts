@@ -16,11 +16,10 @@ import {
   normalizeMelodyStepPitches,
   serializeBassStepPitches,
   serializeMelodyStepPitches,
-  synthesizeBassNotePcm,
-  synthesizeMelodyNotePcm,
   updateBassStepPitch,
   updateMelodyStepPitch,
 } from "./stepPitch";
+import { synthesizeBassNotePcm, synthesizeMelodyNotePcm } from "./noteSynthesis";
 
 describe("stepPitch", () => {
   it("builds an in-key palette for each style", () => {
@@ -107,5 +106,49 @@ describe("stepPitch", () => {
     expect(Array.from(melodyPcm.slice(0, 32)).join(",")).not.toBe(
       Array.from(bassPcm.slice(0, 32)).join(","),
     );
+  });
+
+  describe("softened 808 (game-track beds)", () => {
+    // One-pole highpass RMS ~1kHz: a "buzz" proxy for the raw saw's upper harmonics.
+    function highFreqRms(sig: Float32Array, cutHz = 1000): number {
+      const rc = 1 / (2 * Math.PI * cutHz);
+      const dt = 1 / 22050;
+      const alpha = rc / (rc + dt);
+      let prevIn = 0;
+      let prevOut = 0;
+      let sum = 0;
+      for (let i = 0; i < sig.length; i += 1) {
+        const hp = alpha * (prevOut + sig[i] - prevIn);
+        sum += hp * hp;
+        prevIn = sig[i];
+        prevOut = hp;
+      }
+      return Math.sqrt(sum / sig.length);
+    }
+
+    it("leaves the raw 808 byte-identical when soften is off (live path untouched)", () => {
+      const raw = synthesizeBassNotePcm(55, 22050);
+      const explicitOff = synthesizeBassNotePcm(55, 22050, undefined, { soften: false });
+      expect(Array.from(explicitOff)).toEqual(Array.from(raw));
+      // Raw saw has an instant onset — first sample is already at full amplitude.
+      expect(Math.abs(raw[0])).toBeGreaterThan(0.5);
+    });
+
+    it("ramps the onset so there is no per-note click", () => {
+      const soft = synthesizeBassNotePcm(55, 22050, undefined, { soften: true });
+      // Attack ramp starts the note from silence instead of the raw saw's click.
+      expect(Math.abs(soft[0])).toBeLessThan(0.01);
+    });
+
+    it("cuts the buzzy high-frequency content versus the raw saw", () => {
+      for (const freq of [41, 55, 82, 110]) {
+        const raw = synthesizeBassNotePcm(freq, 22050);
+        const soft = synthesizeBassNotePcm(freq, 22050, undefined, { soften: true });
+        expect(highFreqRms(soft), `${freq}Hz`).toBeLessThan(highFreqRms(raw) * 0.85);
+        // ...without going silent — it is still a bass note.
+        const peak = soft.reduce((m, x) => Math.max(m, Math.abs(x)), 0);
+        expect(peak, `${freq}Hz`).toBeGreaterThan(0.3);
+      }
+    });
   });
 });

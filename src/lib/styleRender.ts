@@ -1,12 +1,8 @@
 import type { BeatStyle } from "./beatStyles";
 import { getLaneVolumes } from "./laneVolumes";
 import { INSTRUMENT_IDS, type InstrumentId, type Pattern } from "./patterns";
-import {
-  getBassPitchForStep,
-  getMelodyPitchForStep,
-  synthesizeBassNotePcm,
-  synthesizeMelodyNotePcm,
-} from "./stepPitch";
+import { getBassPitchForStep, getMelodyPitchForStep } from "./stepPitch";
+import { synthesizeBassNotePcm, synthesizeMelodyNotePcm } from "./noteSynthesis";
 import {
   getBassGuitarPitchForStep,
   synthesizeBassGuitarNotePcm,
@@ -37,12 +33,22 @@ export function renderedPatternLength(style: BeatStyle): number {
   return Math.ceil((barSec + TAIL_SECONDS) * RENDER_SAMPLE_RATE);
 }
 
+export interface RenderPatternOptions {
+  /**
+   * Soften the synthesized 808 (lowpass + attack ramp) so it sits under the
+   * drums without buzzing. Used by the generated game-track beds; the live
+   * sequencer and the standard beat/arrangement exports leave it off.
+   */
+  softenBass?: boolean;
+}
+
 export function renderPatternToPcm(
   pattern: Pattern,
   style: BeatStyle,
   kit: DecodedKit,
   lanes: InstrumentId[] = INSTRUMENT_IDS,
   voices: DecodedInstrumentVoices = {},
+  options: RenderPatternOptions = {},
 ): Float32Array {
   const stepSec = 60 / style.bpm / 4; // 16th-note duration
   const length = renderedPatternLength(style);
@@ -62,7 +68,9 @@ export function renderPatternToPcm(
       pattern[lane].forEach((on, i) => {
         if (!on) return;
         const pitch = getBassPitchForStep(style.musicalKey, i, style.bassStepPitches);
-        const sample = synthesizeBassNotePcm(pitch.frequency, RENDER_SAMPLE_RATE);
+        const sample = synthesizeBassNotePcm(pitch.frequency, RENDER_SAMPLE_RATE, undefined, {
+          soften: options.softenBass,
+        });
         const swungSec = i * stepSec + (i % 2 === 1 ? swing * stepSec : 0);
         const start = Math.round(swungSec * RENDER_SAMPLE_RATE);
         const hitGain = laneVolume * getStepVelocityFactor(stepVelocities[lane][i]);
