@@ -44,19 +44,56 @@ export interface GameTrackSpec {
   bpm: number;
   /** Bars on the `main` section; the loop is `bars + 3` (intro/variation/outro = 1). */
   bars: number;
+  /** Optional topline overlay. Length 16; `true` = the step sounds. Absent → no melody. */
+  melody?: boolean[];
+  /** Optional per-step scale degree (0–6) in the style's `musicalKey`. Length 16. */
+  melodyStepPitches?: number[];
+}
+
+/**
+ * Build a length-16 melody overlay from a map of 1-indexed step → scale degree.
+ * Inactive steps stay silent (degree 0). Keeps the spec table readable and
+ * guarantees both arrays are exactly 16 long.
+ */
+function topline(
+  stepDegrees: Record<number, number>,
+): Pick<GameTrackSpec, "melody" | "melodyStepPitches"> {
+  const melody = Array.from({ length: 16 }, () => false);
+  const melodyStepPitches = Array.from({ length: 16 }, () => 0);
+  for (const [step, degree] of Object.entries(stepDegrees)) {
+    const index = Number(step) - 1;
+    melody[index] = true;
+    melodyStepPitches[index] = degree;
+  }
+  return { melody, melodyStepPitches };
 }
 
 export const GAME_TRACK_SPECS: GameTrackSpec[] = [
-  { slug: "airport", styleId: "afrobeats", bpm: 108, bars: 4 },
-  { slug: "connector", styleId: "trap", bpm: 140, bars: 4 },
-  { slug: "badge", styleId: "rnb", bpm: 92, bars: 4 },
-  { slug: "vendor", styleId: "bounce", bpm: 98, bars: 4 },
-  { slug: "mainStage", styleId: "crunk", bpm: 80, bars: 4 },
-  { slug: "afterparty", styleId: "amapiano", bpm: 112, bars: 4 },
+  { slug: "airport", styleId: "afrobeats", bpm: 108, bars: 4,
+    ...topline({ 1: 0, 3: 2, 6: 4, 7: 3, 9: 4, 11: 6, 14: 0 }) },
+  { slug: "connector", styleId: "trap", bpm: 140, bars: 4,
+    ...topline({ 1: 0, 8: 6, 11: 4 }) },
+  { slug: "badge", styleId: "rnb", bpm: 92, bars: 4,
+    ...topline({ 1: 4, 4: 2, 7: 0, 9: 6, 12: 4, 15: 2 }) },
+  { slug: "vendor", styleId: "bounce", bpm: 98, bars: 4,
+    ...topline({ 1: 0, 3: 0, 5: 2, 7: 2, 9: 4, 11: 4, 13: 2, 15: 0 }) },
+  { slug: "mainStage", styleId: "crunk", bpm: 80, bars: 4,
+    ...topline({ 1: 0, 7: 0, 9: 4, 15: 4 }) },
+  { slug: "afterparty", styleId: "amapiano", bpm: 112, bars: 4,
+    ...topline({ 1: 0, 4: 2, 6: 4, 9: 6, 12: 4, 14: 2 }) },
 ];
 
 export function buildGameTrackSequencer(spec: GameTrackSpec): SequencerState {
-  return { ...createDefaultSequencerState(spec.styleId), bpm: spec.bpm };
+  const base = createDefaultSequencerState(spec.styleId);
+  const sequencer: SequencerState = { ...base, bpm: spec.bpm };
+  if (spec.melody) {
+    // Fresh pattern object with a copied melody lane — never mutate the shared preset.
+    sequencer.pattern = { ...base.pattern, melody: [...spec.melody] };
+  }
+  if (spec.melodyStepPitches) {
+    sequencer.melodyStepPitches = [...spec.melodyStepPitches];
+  }
+  return sequencer;
 }
 
 export function buildGameTrackArrangement(spec: GameTrackSpec): Arrangement {

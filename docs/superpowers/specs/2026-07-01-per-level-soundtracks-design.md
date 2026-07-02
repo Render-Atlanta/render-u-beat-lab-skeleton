@@ -132,23 +132,23 @@ a few hundred KB per WAV (mono, 16-bit, 22050 Hz). Tunable per stage via `bars`.
 5. **Scenes** — the two real `AudioBus` call sites on `main` (`StageScene.js`,
    `DrivingScene.js`) pass the stage's slug: `new AudioBus(this, this.stage?.music)`.
 
-## Track content caveat (first pass: beat beds, no topline)
-This first pass renders each genre's **built-in drum + 808 + bass pattern** at a
-per-stage tempo — the tracks are distinct, genre-flavored **beat beds**, not
-fully-arranged songs. The built-in `BEAT_STYLES` presets ship **empty `melody`
-lanes**, and `buildGameTrackSequencer` overrides only `bpm`, so **no melody topline
-plays** in any of the six tracks (verified: `melody` = 0 active steps across all
-committed projects). This is intentional for the first pass — the beat-forward
-genres (trap, crunk) read as genre-appropriate as beds, and every track ships as an
-editable `.beatlab.json` so toplines can be added later **in the Beat Lab editor,
-where they can be auditioned** (far more reliable than authoring blind in the spec
-table). A follow-up will add per-genre melody toplines.
+## Track content (toplines shipped in #133)
+Each genre renders its **built-in drum + 808 + bass pattern** at a per-stage tempo,
+now overlaid with a **per-genre melody topline** (#133): `GAME_TRACK_SPECS` carries
+a `melody`/`melodyStepPitches` topline for each of the six stages, and
+`buildGameTrackSequencer` overlays it onto the built-in `BEAT_STYLES` pattern
+without mutating the preset. The melodic stages — afrobeats (`airport`, 7 active
+steps), rnb (`badge`, 6), amapiano (`afterparty`, 6), and bounce (`vendor`, 8) —
+carry flowing lines; the beat-forward genres trap (`connector`, 3) and crunk
+(`mainStage`, 4) stay comparatively sparse, matching how those genres read as beds.
+Every track still ships as an editable `.beatlab.json`, so toplines can be
+further tuned **in the Beat Lab editor, where they can be auditioned** (far more
+reliable than authoring blind in the spec table).
 
 Timbre note: the bass/instrument voices sound their best when the VCSL samples are
 extracted **on the machine running the script** (`scripts/extract-vcsl-*.sh` /
 `npm run generate:kit`); without them those lanes use the synth fallback. Drums +
-808 render identically either way. This affects timbre only — not the (currently
-absent) presence of a melody line.
+808 render identically either way. This affects timbre only.
 
 ## Error handling
 - Script: if `loadKitFromDisk()` throws (missing/wrong-rate samples), fail loudly
