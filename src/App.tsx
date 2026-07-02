@@ -158,6 +158,7 @@ import { StyleFidelityMeter } from "./components/StyleFidelityMeter";
 import { EqVisualizer } from "./components/EqVisualizer";
 import type { DecodedKit } from "./lib/styleRender";
 import { loadKitFromSampleUrls } from "./lib/loadKit.browser";
+import { loadInstrumentVoicesFromUrls } from "./lib/loadInstrumentVoices.browser";
 import { GuidedModeBanner } from "./components/GuidedModeBanner";
 import { WorkshopChecklist } from "./components/WorkshopChecklist";
 import { INSTRUMENTS } from "./lib/instruments";
@@ -321,6 +322,7 @@ export function App() {
   const [projectJson, setProjectJson] = useState("");
   const [exportMessage, setExportMessage] = useState("");
   const [exportCompleted, setExportCompleted] = useState(false);
+  const [isExportingWav, setIsExportingWav] = useState(false);
   const [micState, setMicState] = useState<MicCaptureState>({ status: "idle" });
   const engineRef = useRef<BeatEngine | null>(null);
   const toneSampleKeyRef = useRef<string | null>(null);
@@ -1238,18 +1240,25 @@ export function App() {
     }
   }
 
-  function downloadWav() {
-    if (!kit) {
-      setExportCompleted(false);
-      setExportMessage("Kit is still loading — try again in a moment.");
+  async function downloadWav() {
+    if (!kit || isExportingWav) {
+      if (!kit) {
+        setExportCompleted(false);
+        setExportMessage("Kit is still loading — try again in a moment.");
+      }
       return;
     }
 
+    setIsExportingWav(true);
     try {
       const tag =
         producerTagEnabled && producerTagSource === "recorded" && recordedPcm
           ? { samples: recordedPcm.samples, trigger: producerTagTrigger }
           : undefined;
+
+      // Fetch + decode the selected sampled voices so the download matches live
+      // playback; absent/off-rate voices degrade to synth inside the loader.
+      const voices = await loadInstrumentVoicesFromUrls(sequencer.laneVoices);
 
       const bytes = renderArrangementWav({
         // Export always renders the full stored beat and arrangement, never the
@@ -1259,6 +1268,7 @@ export function App() {
         kit,
         arrangement,
         tag,
+        voices,
       });
 
       triggerDownload(bytes, "render-u-beat.wav", "audio/wav");
@@ -1269,6 +1279,8 @@ export function App() {
       setExportMessage(
         error instanceof Error ? error.message : "WAV export failed.",
       );
+    } finally {
+      setIsExportingWav(false);
     }
   }
 
@@ -1476,6 +1488,7 @@ export function App() {
               onTogglePlayAsSong={togglePlayAsSong}
               onExportProject={exportProject}
               onDownloadWav={downloadWav}
+              wavExportDisabled={isExportingWav}
               onDownloadMidi={downloadMidi}
             />
           </div>

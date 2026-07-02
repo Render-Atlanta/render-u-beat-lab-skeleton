@@ -30,6 +30,8 @@ export interface ArrangementPanelProps {
   onTogglePlayAsSong: () => void;
   onExportProject: () => void;
   onDownloadWav: () => void;
+  /** Disables the WAV buttons while an async export is in flight. */
+  wavExportDisabled?: boolean;
   onDownloadMidi: () => void;
 }
 
@@ -47,6 +49,7 @@ export function ArrangementPanel({
   onTogglePlayAsSong,
   onExportProject,
   onDownloadWav,
+  wavExportDisabled = false,
   onDownloadMidi,
 }: ArrangementPanelProps) {
   // Build the chain copy from the live section labels so it never drifts from
@@ -70,6 +73,7 @@ export function ArrangementPanel({
             className="button secondary compact"
             type="button"
             onClick={onDownloadWav}
+            disabled={wavExportDisabled}
           >
             WAV
           </button>
@@ -155,6 +159,7 @@ export function ArrangementPanel({
           className="button secondary compact"
           type="button"
           onClick={onDownloadWav}
+          disabled={wavExportDisabled}
         >
           Download WAV
         </button>
