@@ -27,3 +27,15 @@ The analyzer only auto-suggests `feelBpm` when the detected tempo is ≥ 140 BPM
   then copy the clean `bpm` / `feelBpm` / `swing` / `profile` fields into
   `STYLE_REFERENCES` by hand. The tool never writes into the app.
 - WAV only. Convert other formats first: `ffmpeg -i in.mp3 out.wav`.
+
+## generate:game-tracks
+
+`npm run generate:game-tracks` renders one seamless-looping soundtrack per
+RenderATL Rush stage. Writes editable projects to `game-tracks/<slug>.beatlab.json`
+(committed here) and playable WAVs to `../renderatl-rush/assets/audio/<slug>.wav`
+(committed in that repo). Override the WAV dir with `RUSH_AUDIO_DIR=...` or a
+first CLI arg.
+
+For the richest melodies, extract the VCSL sampled voices first
+(`scripts/extract-vcsl-*.sh` / `npm run generate:kit`); without them, melodic lanes
+use the synth fallback. Drums + 808 render regardless.
