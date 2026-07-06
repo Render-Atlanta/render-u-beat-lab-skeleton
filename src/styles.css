@@ -3049,3 +3049,16 @@ button:disabled {
   height: 46px;
   width: 46px;
 }
+
+.rhythm-view { display: flex; flex-direction: column; gap: 16px; min-height: 70vh; }
+.rhythm-view__bar { display: flex; justify-content: space-between; align-items: center; }
+.rhythm-view__hud { font-variant-numeric: tabular-nums; opacity: 0.9; }
+.rhythm-select__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.rhythm-card { display: flex; flex-direction: column; gap: 6px; padding: 18px; border: 2px solid; border-radius: 12px; background: rgba(255,255,255,0.03); cursor: pointer; color: inherit; text-align: left; }
+.rhythm-card__name { font-weight: 700; }
+.rhythm-card__meta { opacity: 0.7; font-size: 0.85em; }
+.rhythm-stage { display: flex; justify-content: center; }
+.rhythm-highway { border-radius: 12px; background: #0b0b12; max-width: 100%; }
+.rhythm-results { text-align: center; display: flex; flex-direction: column; gap: 8px; align-items: center; }
+.rhythm-results__score { font-size: 3rem; font-weight: 800; margin: 0; }
+.rhythm-error { color: #f77; }

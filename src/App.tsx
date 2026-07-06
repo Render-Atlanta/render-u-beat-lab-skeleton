@@ -202,6 +202,9 @@ const SongDecomposePanel = lazy(() =>
     default: module.SongDecomposePanel,
   })),
 );
+const RhythmGameView = lazy(() =>
+  import("./components/RhythmGameView").then((m) => ({ default: m.RhythmGameView })),
+);
 
 function audibleStyle(state: SequencerState, guided: GuidedModeState) {
   const pattern = guided.active
@@ -337,6 +340,7 @@ export function App() {
   // Presentational shell state (redesign): layout mode, active tool tab, and the
   // mobile view selector. None of this touches the beat — it only arranges UI.
   const [layout, setLayout] = useState<LayoutMode>("rail");
+  const [view, setView] = useState<"workbench" | "play">("workbench");
   const [tool, setTool] = useState<ToolTab>("coach");
   const [mobileTab, setMobileTab] = useState<MobileTab>("make");
   // Which "Learn to play" lesson is open (null = the lesson list). Progress is
@@ -753,6 +757,17 @@ export function App() {
     setSongPosition(null);
   }
 
+  // Stop the live sequencer transport (used by the practice-aids stop path and when
+  // leaving the workbench for the rhythm-game view, so the bed doesn't mix with it).
+  function stopTransport() {
+    void getEngine().then((engine) => {
+      engine.stop();
+      engine.setMetronomeEnabled(false);
+    });
+    clearSongPlayback();
+    setIsPlaying(false);
+  }
+
   const practiceAids = usePracticeAids({
     bpm: sequencer.bpm,
     isPlaying,
@@ -773,14 +788,7 @@ export function App() {
         engine.playProducerTag(tagConfig);
       }
     },
-    onStopPlayback: () => {
-      void getEngine().then((engine) => {
-        engine.stop();
-        engine.setMetronomeEnabled(false);
-      });
-      clearSongPlayback();
-      setIsPlaying(false);
-    },
+    onStopPlayback: stopTransport,
   });
   const transportActive = isPlaying || practiceAids.isCountingIn;
   // The "{Section · bar N/total}" string while a song is playing; null otherwise.
@@ -1530,6 +1538,12 @@ export function App() {
       data-layout={layout}
       data-mobile={isMobile}
     >
+      {view === "play" ? (
+        <Suspense fallback={<div className="rhythm-loading">Loading…</div>}>
+          <RhythmGameView onExit={() => setView("workbench")} />
+        </Suspense>
+      ) : (
+        <>
       <CountInOverlay beat={practiceAids.countInBeat} />
       {SONGLAB_ENABLED ? (
         <Suspense
@@ -1574,6 +1588,16 @@ export function App() {
             onClick={toggleGuided}
           >
             {guidedState.active ? "Guided · on" : "Guided build"}
+          </button>
+          <button
+            type="button"
+            className="nav-play-toggle"
+            onClick={() => {
+              if (transportActive) stopTransport();
+              setView("play");
+            }}
+          >
+            ▶ Play
           </button>
         </div>
       </nav>
@@ -1795,6 +1819,8 @@ export function App() {
           ))}
         </nav>
       ) : null}
+        </>
+      )}
     </main>
   );
 }
