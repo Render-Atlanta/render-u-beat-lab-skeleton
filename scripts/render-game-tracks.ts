@@ -7,11 +7,13 @@ import {
   buildGameTrackProject,
   renderGameTrackWav,
 } from "../src/lib/gameTracks";
+import { buildRhythmChart, serializeRhythmChart } from "../src/lib/rhythmChart";
 
 // Where the editable projects live (committed in Beat Lab) and where the playable
 // WAVs go (committed in RenderATL Rush). The Rush dir defaults to the sibling
 // checkout and is overridable so the script still emits JSON when Rush is absent.
 const PROJECT_DIR = join(process.cwd(), "game-tracks");
+const CHART_DIR = join(process.cwd(), "game-charts");
 const RUSH_AUDIO_DIR = resolve(
   process.env.RUSH_AUDIO_DIR ??
     process.argv[2] ??
@@ -20,6 +22,7 @@ const RUSH_AUDIO_DIR = resolve(
 
 function main(): void {
   mkdirSync(PROJECT_DIR, { recursive: true });
+  mkdirSync(CHART_DIR, { recursive: true });
 
   // Load the kit only when we'll actually render WAVs. If it throws (e.g. VCSL
   // samples not extracted), the JSON-only fallback below still runs.
@@ -27,7 +30,12 @@ function main(): void {
   let kit: ReturnType<typeof loadKitFromDisk> | undefined;
   if (rushPresent) {
     mkdirSync(RUSH_AUDIO_DIR, { recursive: true });
-    kit = loadKitFromDisk();
+    try {
+      kit = loadKitFromDisk();
+    } catch (error) {
+      // Charts/projects are kit-independent and still emit below; only WAVs skip.
+      console.warn(`! Kit load failed (${(error as Error).message}) — writing JSON/charts only, skipping WAVs.`);
+    }
   } else {
     console.warn(`! Rush checkout not found at ${RUSH_AUDIO_DIR} — writing JSON only, skipping WAVs.`);
   }
@@ -35,6 +43,12 @@ function main(): void {
   for (const spec of GAME_TRACK_SPECS) {
     const project = buildGameTrackProject(spec);
     writeFileSync(join(PROJECT_DIR, `${spec.slug}.beatlab.json`), exportProjectJson(project));
+
+    const chartJson = serializeRhythmChart(buildRhythmChart(spec));
+    writeFileSync(join(CHART_DIR, `${spec.slug}.chart.json`), chartJson);
+    if (rushPresent) {
+      writeFileSync(join(RUSH_AUDIO_DIR, `${spec.slug}.chart.json`), chartJson);
+    }
 
     if (rushPresent && kit) {
       const wav = renderGameTrackWav(spec, kit);
