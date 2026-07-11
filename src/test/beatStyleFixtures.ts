@@ -9,9 +9,8 @@ export interface GoldenBeatStyleFixture {
   pocketSummary: string;
 }
 
-export const GOLDEN_BEAT_STYLE_FIXTURES: Record<
-  BeatStyleId,
-  GoldenBeatStyleFixture
+export const GOLDEN_BEAT_STYLE_FIXTURES: Partial<
+  Record<BeatStyleId, GoldenBeatStyleFixture>
 > = {
   trap: {
       "serializedPattern": "1001001000100010.0000000010000000.1010101011111011.0000010000000100.0000000010000000.1000001000100000.1000001000100000.0000000000000000",
@@ -53,13 +52,6 @@ export const GOLDEN_BEAT_STYLE_FIXTURES: Record<
       "hitCount": 25,
       "densityLevel": "balanced",
       "densitySummary": "Still balanced: 25 hits keeps the same density as Afrobeats.",
-      "pocketSummary": "The snare still marks steps 5 and 13, so the center stays easy to follow."
-  },
-  amapiano: {
-      "serializedPattern": "1000000010010010.0000100000001000.1001001001001001.0000010000100010.0000100000001000.1000000010010000.1000000010010000.0000000000000000",
-      "hitCount": 23,
-      "densityLevel": "balanced",
-      "densitySummary": "Still balanced: 23 hits keeps the same density as Amapiano.",
       "pocketSummary": "The snare still marks steps 5 and 13, so the center stays easy to follow."
   },
   house: {

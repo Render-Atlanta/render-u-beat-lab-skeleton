@@ -24,7 +24,7 @@ describe("pattern state helpers", () => {
     const pattern = BEAT_STYLES.trap.pattern;
     const serialized = serializePattern(pattern);
 
-    expect(serialized).toBe(GOLDEN_BEAT_STYLE_FIXTURES.trap.serializedPattern);
+    expect(serialized).toBe(GOLDEN_BEAT_STYLE_FIXTURES.trap!.serializedPattern);
     expect(deserializePattern(serialized)).toEqual(pattern);
   });
 

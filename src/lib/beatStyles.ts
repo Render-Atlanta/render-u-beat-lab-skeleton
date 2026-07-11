@@ -157,19 +157,15 @@ export const BEAT_STYLES: Record<BeatStyleId, BeatStyle> = {
     name: "Amapiano",
     bpm: 112,
     swing: 0.14,
+    // TODO(attendee): restore the amapiano pattern. Acceptance:
+    // src/lib/beatStyles.amapiano.test.ts (clap+808, kick on 1, hats,
+    // bpm 108-116, swing >= 0.10, 14-28 hits, non-empty lesson).
     pattern: patternFromSteps({
-      kick: [1, 9, 12, 15],
-      snare: [5, 13],
-      hat: [1, 4, 7, 10, 13, 16],
-      openHat: [6, 11, 15],
-      clap: [5, 13],
-      "808": [1, 9, 12],
-      bassGuitar: [1, 9, 12],
-      melody: [],
+      kick: [], snare: [], hat: [], openHat: [],
+      clap: [], "808": [], bassGuitar: [], melody: [],
     }),
     musicalKey: { root: "F", scale: "minor" },
-    lesson:
-      "Amapiano leaves air around the drums so the bass/log-drum idea can talk. Keep the pulse hypnotic and let accents answer each other.",
+    lesson: "",
   },
   house: {
     id: "house",

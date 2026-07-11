@@ -6,7 +6,10 @@ import { extractStyleFeatures, FIDELITY_DRUM_LANES, scoreStyleFidelity, styleSim
 import { STYLE_GOLDENS, STYLE_PROFILE_STATS } from "./styleProfiles.generated";
 
 const kit = loadKitFromDisk();
-const ids = Object.keys(BEAT_STYLES) as BeatStyleId[];
+// Amapiano is the workshop rebuild target — its pattern is intentionally
+// carved out, so it can't satisfy the exact audio-fidelity/genre goldens;
+// validated instead by beatStyles.amapiano.test.ts.
+const ids = (Object.keys(BEAT_STYLES) as BeatStyleId[]).filter((id) => id !== "amapiano");
 
 describe("style-fidelity harness", () => {
   it("drift guard: each canonical render matches its committed golden", () => {
