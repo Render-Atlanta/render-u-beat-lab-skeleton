@@ -1,4 +1,4 @@
-# render-u-beat-lab Agent Instructions
+# render-u-beat-lab-skeleton Agent Instructions
 
 ## Repo Map
 

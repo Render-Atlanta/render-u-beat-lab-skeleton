@@ -1,4 +1,4 @@
-# render-u-beat-lab Harness Progress
+# render-u-beat-lab-skeleton Harness Progress
 
 Add one entry per implementation or verification pass. Newest entry on top.
 
@@ -6,7 +6,7 @@ Add one entry per implementation or verification pass. Newest entry on top.
 
 - Feature: `restore-amapiano-style`
 - Command run: `npm run check` (hygiene → typecheck:scripts → vitest)
-- Result: **PASS** — `Test Files 111 passed | 1 skipped (112)`, `Tests 734 passed | 38 skipped (772)`, hygiene OK (239 files scanned), exit 0.
+- Result: **PASS** — `Test Files 111 passed | 1 skipped (112)`, `Tests 734 passed | 38 skipped (772)`, hygiene OK, exit 0.
 
   The baseline this came FROM was **RED**, and that red was the spec, not a broken
   setup. On `workshop-starter` the same gate reported `Test Files 1 failed | 110
