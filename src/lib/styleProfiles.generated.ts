@@ -7,30 +7,30 @@ export const STYLE_PROFILE_STATS: NormalizationStats = {
   "mean": {
     "bpmNorm": 0.5622222222222222,
     "swing": 0.07777777777777778,
-    "onsetDensity": 0.25,
-    "laneShareKick": 0.2513328528292409,
-    "laneShareSnare": 0.13901638628160817,
-    "laneShareHat": 0.47539163813673607,
-    "laneShareOpenHat": 0.13425912275241478,
-    "syncopation": 0.598682162923649,
-    "backbeat": 0.6666666666666666,
-    "rmsNorm": 0.09250226581475389,
-    "lowEnergyShare": 0.6048919438708946,
-    "zcr": 0.23997555336959644
+    "onsetDensity": 0.22395833333333334,
+    "laneShareKick": 0.22170322319961122,
+    "laneShareSnare": 0.12420157146679335,
+    "laneShareHat": 0.43094719369229173,
+    "laneShareOpenHat": 0.11203690053019259,
+    "syncopation": 0.5320154962569822,
+    "backbeat": 0.5555555555555556,
+    "rmsNorm": 0.0819375564844949,
+    "lowEnergyShare": 0.5406109293355017,
+    "zcr": 0.20906654912725886
   },
   "std": {
     "bpmNorm": 0.1062259413574855,
     "swing": 0.05691665988829199,
-    "onsetDensity": 0.035324635328777436,
-    "laneShareKick": 0.041752656209883936,
-    "laneShareSnare": 0.07227232333211714,
-    "laneShareHat": 0.08762755269652502,
-    "laneShareOpenHat": 0.06404589121158578,
-    "syncopation": 0.13553031364936236,
-    "backbeat": 0.4714045207910317,
-    "rmsNorm": 0.013016752330804312,
-    "lowEnergyShare": 0.05744158137481978,
-    "zcr": 0.07521055129133711
+    "onsetDensity": 0.08652733190539662,
+    "laneShareKick": 0.08864498557091505,
+    "laneShareSnare": 0.08454292032939893,
+    "laneShareHat": 0.173731217899583,
+    "laneShareOpenHat": 0.07162874212547332,
+    "syncopation": 0.2318368173161242,
+    "backbeat": 0.4969039949999533,
+    "rmsNorm": 0.03174624561045512,
+    "lowEnergyShare": 0.19936193881094802,
+    "zcr": 0.10458380556919296
   }
 };
 
@@ -52,16 +52,16 @@ export const STYLE_GOLDENS: Record<BeatStyleId, StyleFeatureVector> = {
   "amapiano": {
     "bpmNorm": 0.56,
     "swing": 0.14,
-    "onsetDensity": 0.234375,
-    "laneShareKick": 0.26666666666666666,
-    "laneShareSnare": 0.13333333333333333,
-    "laneShareHat": 0.4,
-    "laneShareOpenHat": 0.2,
-    "syncopation": 0.6,
-    "backbeat": 1,
-    "rmsNorm": 0.09508238397233088,
-    "lowEnergyShare": 0.5785291308185356,
-    "zcr": 0.2781810381810382
+    "onsetDensity": 0,
+    "laneShareKick": 0,
+    "laneShareSnare": 0,
+    "laneShareHat": 0,
+    "laneShareOpenHat": 0,
+    "syncopation": 0,
+    "backbeat": 0,
+    "rmsNorm": 0,
+    "lowEnergyShare": 0,
+    "zcr": 0
   },
   "bounce": {
     "bpmNorm": 0.49,
