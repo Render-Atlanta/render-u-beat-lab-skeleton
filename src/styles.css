@@ -3062,3 +3062,16 @@ button:disabled {
 .rhythm-results { text-align: center; display: flex; flex-direction: column; gap: 8px; align-items: center; }
 .rhythm-results__score { font-size: 3rem; font-weight: 800; margin: 0; }
 .rhythm-error { color: #f77; }
+
+/* RenderATL Rush (Phaser) host — full-bleed dark stage; the game draws all chrome
+   in-canvas, so the DOM is just the host + a slim floating exit control. */
+.rush-view { position: relative; width: 100%; min-height: 100dvh; background: hsl(266 32% 6%); overflow: hidden; }
+.rush-view__host { position: absolute; inset: 0; }
+.rush-view__host canvas { display: block; touch-action: none; }
+.rush-view__back {
+  position: absolute; top: 14px; left: 14px; z-index: 10;
+  font: 600 13px/1 "JetBrains Mono", ui-monospace, monospace; letter-spacing: 1px;
+  color: #b9a7c9; background: rgba(28, 22, 48, 0.72); border: 1px solid #33294d;
+  border-radius: 8px; padding: 9px 13px; cursor: pointer; backdrop-filter: blur(4px);
+}
+.rush-view__back:hover { color: #f7ecd6; border-color: #ff5bd0; }

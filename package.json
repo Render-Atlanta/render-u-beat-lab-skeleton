@@ -16,11 +16,13 @@
     "generate:kit": "tsx scripts/generate-kit.ts",
     "generate:style-profiles": "tsx scripts/generate-style-profiles.ts",
     "generate:game-tracks": "tsx scripts/render-game-tracks.ts",
-    "typecheck:scripts": "tsc -p tsconfig.scripts.json"
+    "typecheck:scripts": "tsc -p tsconfig.scripts.json",
+    "test:ext": "vitest run --config vitest.ext.config.ts"
   },
   "dependencies": {
     "@vitejs/plugin-react": "^5.0.0",
     "meyda": "^5.6.3",
+    "phaser": "^3.90.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "tone": "^15.1.22",
