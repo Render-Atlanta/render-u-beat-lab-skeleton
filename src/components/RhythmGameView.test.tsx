@@ -4,13 +4,12 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { RhythmGameView } from "./RhythmGameView";
 
 describe("RhythmGameView", () => {
-  it("shows the stage-select grid with all six stages on first render", () => {
+  // The arcade itself renders inside a Phaser canvas mounted in a client-only
+  // effect, so SSR yields just the host container + the exit control. The stage
+  // grid, title, and HUD now live in-canvas (see src/game/*).
+  it("renders the Phaser host container and a Beat Lab exit control", () => {
     const html = renderToStaticMarkup(<RhythmGameView onExit={() => {}} />);
-    for (const name of [
-      "Airport Arrival", "Connector Sprint", "Badge Pickup",
-      "Vendor Hall", "Main Stage", "Afterparty",
-    ]) {
-      expect(html).toContain(name);
-    }
+    expect(html).toContain("rush-view__host");
+    expect(html).toMatch(/Beat Lab/);
   });
 });
